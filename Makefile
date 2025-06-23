@@ -33,7 +33,7 @@ $(ODIR)/%.o: $(SDIR)/%.asm
 	@mkdir -p $(dir $@)
 	@$(AS) $(ASFLAGS) $< -o $@
 
-run:
+run: all
 	qemu-system-i386 -kernel $(NAME)
 
 clean:
