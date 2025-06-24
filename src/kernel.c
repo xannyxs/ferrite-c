@@ -1,4 +1,5 @@
 #include "drivers/console.h"
+#include "drivers/keyboard.h"
 #include "drivers/video/vga.h"
 
 #include <stdbool.h>
@@ -15,6 +16,13 @@
 void _main(void) {
   vga_init();
 
-  kprintf("Hello\n");
-  kprintf("world");
+  while (1) {
+    char c = keyboard_input();
+
+    if (c == 0) {
+      continue;
+    }
+
+    add_buffer(c);
+  }
 }
