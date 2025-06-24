@@ -16,8 +16,8 @@ pinnedPkgs.mkShell {
     gnumake
     binutils
     xorriso
+    clang-tools
 
-    # Rust specific
     pkg-config
     mdbook
 
