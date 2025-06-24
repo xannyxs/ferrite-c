@@ -1,8 +1,11 @@
 #ifndef CONSOLE_H
 #define CONSOLE_H
 
-#include <stdint.h>
+typedef struct exec {
+  const char *cmd;
+  void (*f)(void);
+} exec_t;
 
-int32_t kprintf(const char *fmt, ...);
+void add_buffer(char c);
 
 #endif /* CONSOLE_H */
