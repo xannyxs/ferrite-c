@@ -10,7 +10,7 @@ void halt_loop() {
   }
 }
 
-void reboot() {
+__attribute__((noreturn)) void reboot() {
   uint8_t good = 0x02;
 
   while (good == 0x02) {
@@ -20,4 +20,5 @@ void reboot() {
   outb(0x64, 0xfe);
 
   halt_loop();
+  __builtin_unreachable();
 }

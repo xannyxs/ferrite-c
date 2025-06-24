@@ -13,7 +13,7 @@
 #error "This tutorial needs to be compiled with a ix86-elf compiler"
 #endif
 
-void _main(void) {
+__attribute__((noreturn)) void _main(void) {
   vga_init();
 
   while (1) {
@@ -25,4 +25,6 @@ void _main(void) {
 
     add_buffer(c);
   }
+
+  __builtin_unreachable();
 }
