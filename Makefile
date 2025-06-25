@@ -37,6 +37,9 @@ $(ODIR)/%.o: $(SDIR)/%.asm
 run: all
 	qemu-system-i386 -kernel $(NAME)
 
+debug: all
+	qemu-system-i386 -kernel $(NAME) -s -S
+
 clean:
 	@echo "CLEAN"
 	@rm -rf $(ODIR) $(NAME)

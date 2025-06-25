@@ -1,6 +1,7 @@
 #include "video/vga.h"
 
 #include <stdarg.h>
+#include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <string.h>
@@ -9,7 +10,7 @@ char buf[1024];
 
 /* Private */
 
-static char *simple_number(char *str, long num, int base, int is_signed) {
+static char *simple_number(char *str, long num, int32_t base, bool is_signed) {
   char tmp[36];
   int i = 0;
 

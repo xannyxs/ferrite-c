@@ -52,9 +52,10 @@ stack_top:
 _start:
 	mov esp, stack_top
 
-	;      Call kernel
 	extern _main
-	call   _main
+
+	;    Call kernel
+	call _main
 
 	cli ; Disable interrupts
 

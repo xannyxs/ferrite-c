@@ -1,3 +1,4 @@
+#include "arch/x86/gdt/gdt.h"
 #include "drivers/console.h"
 #include "drivers/keyboard.h"
 #include "drivers/video/vga.h"
@@ -14,6 +15,8 @@
 #endif
 
 __attribute__((noreturn)) void _main(void) {
+  gdt_init();
+
   vga_init();
   console_init();
 
