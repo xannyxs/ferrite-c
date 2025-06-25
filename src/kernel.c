@@ -15,6 +15,7 @@
 
 __attribute__((noreturn)) void _main(void) {
   vga_init();
+  console_init();
 
   while (1) {
     char c = keyboard_input();
@@ -23,7 +24,7 @@ __attribute__((noreturn)) void _main(void) {
       continue;
     }
 
-    add_buffer(c);
+    console_add_buffer(c);
   }
 
   __builtin_unreachable();

@@ -6,6 +6,8 @@ typedef struct exec {
   void (*f)(void);
 } exec_t;
 
-void add_buffer(char c);
+void console_add_buffer(char c);
+
+void console_init(void);
 
 #endif /* CONSOLE_H */

@@ -20,7 +20,7 @@ void delete_character(void) {
 
   buffer[i] = 0;
   i -= 1;
-  // clear_char();
+  vga_clear_char();
 }
 
 void print_help() {
@@ -33,8 +33,9 @@ void print_help() {
 
 void execute_buffer(void) {
   static const exec_t command_table[] = {
-      {"reboot", reboot}, {"gdt", NULL}, {"clear", NULL}, {"help", print_help},
-      {"panic", abort},   {"idt", NULL}, {"", NULL},      {NULL, NULL}};
+      {"reboot", reboot},   {"gdt", NULL},    {"clear", vga_init},
+      {"help", print_help}, {"panic", abort}, {"idt", NULL},
+      {NULL, NULL}};
 
   printk("\n");
 
@@ -53,7 +54,9 @@ void execute_buffer(void) {
 
 /* Public */
 
-void add_buffer(char c) {
+void console_init(void) { printk("%s", prompt); }
+
+void console_add_buffer(char c) {
   switch (c) {
   case '\n':
     execute_buffer();
