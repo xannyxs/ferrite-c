@@ -5,7 +5,7 @@
 #define VGA_HEIGHT 25
 #define VGA_MEMORY 0xB8000
 
-enum vga_color {
+typedef enum vga_color {
   VGA_COLOR_BLACK = 0,
   VGA_COLOR_BLUE = 1,
   VGA_COLOR_GREEN = 2,
@@ -22,7 +22,9 @@ enum vga_color {
   VGA_COLOR_LIGHT_MAGENTA = 13,
   VGA_COLOR_LIGHT_BROWN = 14,
   VGA_COLOR_WHITE = 15,
-};
+} vga_color_t;
+
+void vga_setcolor(vga_color_t color);
 
 void vga_init(void);
 
