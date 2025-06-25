@@ -1,3 +1,7 @@
+# Project
+*.bin
+.cache/
+
 # Prerequisites
 *.d
 

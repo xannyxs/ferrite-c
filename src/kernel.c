@@ -1,4 +1,5 @@
 #include "drivers/console.h"
+#include "drivers/keyboard.h"
 #include "drivers/video/vga.h"
 
 #include <stdbool.h>
@@ -12,9 +13,19 @@
 #error "This tutorial needs to be compiled with a ix86-elf compiler"
 #endif
 
-void _main(void) {
+__attribute__((noreturn)) void _main(void) {
   vga_init();
+  console_init();
 
-  kprintf("Hello\n");
-  kprintf("world");
+  while (1) {
+    char c = keyboard_input();
+
+    if (c == 0) {
+      continue;
+    }
+
+    console_add_buffer(c);
+  }
+
+  __builtin_unreachable();
 }

@@ -1,108 +1,74 @@
-#include "video/vga.h"
+#include "drivers/console.h"
+#include "arch/x86/cpu.h"
+#include "drivers/printk.h"
+#include "drivers/video/vga.h"
+#include "stdlib.h"
 
-#include <stdarg.h>
-#include <stddef.h>
 #include <stdint.h>
 #include <string.h>
 
-char buf[1024];
+static const char *prompt = "[42]$ ";
+static char buffer[VGA_WIDTH];
+static int32_t i = 0;
 
 /* Private */
 
-static char *simple_number(char *str, long num, int base, int is_signed) {
-  char tmp[36];
-  int i = 0;
-
-  if (is_signed && base == 10 && num < 0) {
-    *str++ = '-';
-    num = -num;
+void delete_character(void) {
+  if (i == 0) {
+    return;
   }
 
-  if (num == 0) {
-    tmp[i++] = '0';
-  } else {
-    while (num != 0) {
-      unsigned long rem = (unsigned long)num % base;
-      tmp[i++] = (rem > 9) ? (rem - 10) + 'a' : rem + '0';
-      num = (unsigned long)num / base;
-    }
-  }
-
-  while (i-- > 0) {
-    *str++ = tmp[i];
-  }
-
-  return str;
+  buffer[i] = 0;
+  i -= 1;
+  vga_clear_char();
 }
 
-static int kfmt(char *buf, const char *fmt, va_list args) {
-  char *str = buf;
+void print_help() {
+  printk("Available commands:\n");
+  printk("  reboot  - Restart the system\n");
+  printk("  gdt     - Print Global Descriptor Table\n");
+  printk("  clear   - Clear the screen\n");
+  printk("  help    - Show this help message\n");
+}
 
-  for (; *fmt; ++fmt) {
-    if (*fmt != '%') {
-      *str++ = *fmt;
-      continue;
-    }
+void execute_buffer(void) {
+  static const exec_t command_table[] = {
+      {"reboot", reboot},   {"gdt", NULL},    {"clear", vga_init},
+      {"help", print_help}, {"panic", abort}, {"idt", NULL},
+      {NULL, NULL}};
 
-    ++fmt;
+  printk("\n");
 
-    switch (*fmt) {
-    case 'c': {
-      *str++ = (unsigned char)va_arg(args, int);
+  for (int32_t i = 0; command_table[i].cmd; i++) {
+    if (command_table[i].f && strcmp(buffer, command_table[i].cmd) == 0) {
+      command_table[i].f();
       break;
-    }
-    case 's': {
-      const char *s = va_arg(args, const char *);
-      if (!s) {
-        s = "<NULL>";
-      }
-
-      size_t len = strlen(s);
-
-      for (size_t i = 0; i < len; ++i) {
-        *str++ = *s++;
-      }
-      break;
-    }
-    case 'd':
-    case 'i': {
-      long i = va_arg(args, long);
-      str = simple_number(str, i, 10, 1);
-      break;
-    }
-    case 'u': {
-      unsigned long u = va_arg(args, unsigned long);
-      str = simple_number(str, u, 10, 0);
-      break;
-    }
-    default: {
-      *str++ = '%';
-      if (*fmt) {
-        *str++ = *fmt;
-      } else {
-        --fmt;
-      }
-      break;
-    }
     }
   }
 
-  *str = '\0';
-  return str - buf;
+  memset(buffer, 0, VGA_WIDTH);
+  i = 0;
+
+  printk("%s", prompt);
 }
 
 /* Public */
 
-int32_t kprintf(const char *fmt, ...) {
-  va_list args;
+void console_init(void) { printk("%s", prompt); }
 
-  va_start(args, fmt);
-  int32_t len = kfmt(buf, fmt, args);
-  va_end(args);
-
-  for (int i = 0; i < len; i++) {
-    vga_putchar(buf[i]);
+void console_add_buffer(char c) {
+  switch (c) {
+  case '\n':
+    execute_buffer();
+    break;
+  case '\x08':
+    delete_character();
+    break;
+  default:
+    if (i < VGA_WIDTH - 1) {
+      buffer[i] = c;
+      printk("%c", c);
+      i++;
+    }
   }
-
-  return len;
 }

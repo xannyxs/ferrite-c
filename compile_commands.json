@@ -1,0 +1,212 @@
+[
+  {
+    "arguments": [
+      "/nix/store/x3bl1vw9wvs2vjn1ijnrfi8y1j7fcnlc-i686-elf-gcc-wrapper-13.3.0/bin/i686-elf-gcc",
+      "-c",
+      "-I./src",
+      "-m32",
+      "-ffreestanding",
+      "-O2",
+      "-Wall",
+      "-Wextra",
+      "-Werror",
+      "-fno-stack-protector",
+      "-D__is_libk",
+      "-o",
+      "build/lib/stdlib/abort.o",
+      "src/lib/stdlib/abort.c"
+    ],
+    "directory": "/home/xannyx/Documents/ideaProjects/ferrite-c",
+    "file": "/home/xannyx/Documents/ideaProjects/ferrite-c/src/lib/stdlib/abort.c",
+    "output": "/home/xannyx/Documents/ideaProjects/ferrite-c/build/lib/stdlib/abort.o"
+  },
+  {
+    "arguments": [
+      "/nix/store/x3bl1vw9wvs2vjn1ijnrfi8y1j7fcnlc-i686-elf-gcc-wrapper-13.3.0/bin/i686-elf-gcc",
+      "-c",
+      "-I./src",
+      "-m32",
+      "-ffreestanding",
+      "-O2",
+      "-Wall",
+      "-Wextra",
+      "-Werror",
+      "-fno-stack-protector",
+      "-D__is_libk",
+      "-o",
+      "build/lib/string/memset.o",
+      "src/lib/string/memset.c"
+    ],
+    "directory": "/home/xannyx/Documents/ideaProjects/ferrite-c",
+    "file": "/home/xannyx/Documents/ideaProjects/ferrite-c/src/lib/string/memset.c",
+    "output": "/home/xannyx/Documents/ideaProjects/ferrite-c/build/lib/string/memset.o"
+  },
+  {
+    "arguments": [
+      "/nix/store/x3bl1vw9wvs2vjn1ijnrfi8y1j7fcnlc-i686-elf-gcc-wrapper-13.3.0/bin/i686-elf-gcc",
+      "-c",
+      "-I./src",
+      "-m32",
+      "-ffreestanding",
+      "-O2",
+      "-Wall",
+      "-Wextra",
+      "-Werror",
+      "-fno-stack-protector",
+      "-D__is_libk",
+      "-o",
+      "build/lib/string/strcmp.o",
+      "src/lib/string/strcmp.c"
+    ],
+    "directory": "/home/xannyx/Documents/ideaProjects/ferrite-c",
+    "file": "/home/xannyx/Documents/ideaProjects/ferrite-c/src/lib/string/strcmp.c",
+    "output": "/home/xannyx/Documents/ideaProjects/ferrite-c/build/lib/string/strcmp.o"
+  },
+  {
+    "arguments": [
+      "/nix/store/x3bl1vw9wvs2vjn1ijnrfi8y1j7fcnlc-i686-elf-gcc-wrapper-13.3.0/bin/i686-elf-gcc",
+      "-c",
+      "-I./src",
+      "-m32",
+      "-ffreestanding",
+      "-O2",
+      "-Wall",
+      "-Wextra",
+      "-Werror",
+      "-fno-stack-protector",
+      "-D__is_libk",
+      "-o",
+      "build/lib/string/strlen.o",
+      "src/lib/string/strlen.c"
+    ],
+    "directory": "/home/xannyx/Documents/ideaProjects/ferrite-c",
+    "file": "/home/xannyx/Documents/ideaProjects/ferrite-c/src/lib/string/strlen.c",
+    "output": "/home/xannyx/Documents/ideaProjects/ferrite-c/build/lib/string/strlen.o"
+  },
+  {
+    "arguments": [
+      "/nix/store/x3bl1vw9wvs2vjn1ijnrfi8y1j7fcnlc-i686-elf-gcc-wrapper-13.3.0/bin/i686-elf-gcc",
+      "-c",
+      "-I./src",
+      "-m32",
+      "-ffreestanding",
+      "-O2",
+      "-Wall",
+      "-Wextra",
+      "-Werror",
+      "-fno-stack-protector",
+      "-D__is_libk",
+      "-o",
+      "build/lib/string/memmove.o",
+      "src/lib/string/memmove.c"
+    ],
+    "directory": "/home/xannyx/Documents/ideaProjects/ferrite-c",
+    "file": "/home/xannyx/Documents/ideaProjects/ferrite-c/src/lib/string/memmove.c",
+    "output": "/home/xannyx/Documents/ideaProjects/ferrite-c/build/lib/string/memmove.o"
+  },
+  {
+    "arguments": [
+      "/nix/store/x3bl1vw9wvs2vjn1ijnrfi8y1j7fcnlc-i686-elf-gcc-wrapper-13.3.0/bin/i686-elf-gcc",
+      "-c",
+      "-I./src",
+      "-m32",
+      "-ffreestanding",
+      "-O2",
+      "-Wall",
+      "-Wextra",
+      "-Werror",
+      "-fno-stack-protector",
+      "-D__is_libk",
+      "-o",
+      "build/drivers/video/vga_text.o",
+      "src/drivers/video/vga_text.c"
+    ],
+    "directory": "/home/xannyx/Documents/ideaProjects/ferrite-c",
+    "file": "/home/xannyx/Documents/ideaProjects/ferrite-c/src/drivers/video/vga_text.c",
+    "output": "/home/xannyx/Documents/ideaProjects/ferrite-c/build/drivers/video/vga_text.o"
+  },
+  {
+    "arguments": [
+      "/nix/store/x3bl1vw9wvs2vjn1ijnrfi8y1j7fcnlc-i686-elf-gcc-wrapper-13.3.0/bin/i686-elf-gcc",
+      "-c",
+      "-I./src",
+      "-m32",
+      "-ffreestanding",
+      "-O2",
+      "-Wall",
+      "-Wextra",
+      "-Werror",
+      "-fno-stack-protector",
+      "-D__is_libk",
+      "-o",
+      "build/drivers/keyboard.o",
+      "src/drivers/keyboard.c"
+    ],
+    "directory": "/home/xannyx/Documents/ideaProjects/ferrite-c",
+    "file": "/home/xannyx/Documents/ideaProjects/ferrite-c/src/drivers/keyboard.c",
+    "output": "/home/xannyx/Documents/ideaProjects/ferrite-c/build/drivers/keyboard.o"
+  },
+  {
+    "arguments": [
+      "/nix/store/x3bl1vw9wvs2vjn1ijnrfi8y1j7fcnlc-i686-elf-gcc-wrapper-13.3.0/bin/i686-elf-gcc",
+      "-c",
+      "-I./src",
+      "-m32",
+      "-ffreestanding",
+      "-O2",
+      "-Wall",
+      "-Wextra",
+      "-Werror",
+      "-fno-stack-protector",
+      "-D__is_libk",
+      "-o",
+      "build/drivers/console.o",
+      "src/drivers/console.c"
+    ],
+    "directory": "/home/xannyx/Documents/ideaProjects/ferrite-c",
+    "file": "/home/xannyx/Documents/ideaProjects/ferrite-c/src/drivers/console.c",
+    "output": "/home/xannyx/Documents/ideaProjects/ferrite-c/build/drivers/console.o"
+  },
+  {
+    "arguments": [
+      "/nix/store/x3bl1vw9wvs2vjn1ijnrfi8y1j7fcnlc-i686-elf-gcc-wrapper-13.3.0/bin/i686-elf-gcc",
+      "-c",
+      "-I./src",
+      "-m32",
+      "-ffreestanding",
+      "-O2",
+      "-Wall",
+      "-Wextra",
+      "-Werror",
+      "-fno-stack-protector",
+      "-D__is_libk",
+      "-o",
+      "build/drivers/printk.o",
+      "src/drivers/printk.c"
+    ],
+    "directory": "/home/xannyx/Documents/ideaProjects/ferrite-c",
+    "file": "/home/xannyx/Documents/ideaProjects/ferrite-c/src/drivers/printk.c",
+    "output": "/home/xannyx/Documents/ideaProjects/ferrite-c/build/drivers/printk.o"
+  },
+  {
+    "arguments": [
+      "/nix/store/x3bl1vw9wvs2vjn1ijnrfi8y1j7fcnlc-i686-elf-gcc-wrapper-13.3.0/bin/i686-elf-gcc",
+      "-c",
+      "-I./src",
+      "-m32",
+      "-ffreestanding",
+      "-O2",
+      "-Wall",
+      "-Wextra",
+      "-Werror",
+      "-fno-stack-protector",
+      "-D__is_libk",
+      "-o",
+      "build/kernel.o",
+      "src/kernel.c"
+    ],
+    "directory": "/home/xannyx/Documents/ideaProjects/ferrite-c",
+    "file": "/home/xannyx/Documents/ideaProjects/ferrite-c/src/kernel.c",
+    "output": "/home/xannyx/Documents/ideaProjects/ferrite-c/build/kernel.o"
+  }
+]
