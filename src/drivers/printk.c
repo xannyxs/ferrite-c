@@ -1,3 +1,4 @@
+#include "drivers/serial.h"
 #include "video/vga.h"
 
 #include <stdarg.h>
@@ -101,9 +102,8 @@ int32_t printk(const char *fmt, ...) {
   int32_t len = kfmt(buf, fmt, args);
   va_end(args);
 
-  for (int i = 0; i < len; i++) {
-    vga_putchar(buf[i]);
-  }
+  vga_writestring(buf);
+  serial_write_string(buf);
 
   return len;
 }
