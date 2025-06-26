@@ -29,6 +29,7 @@ pinnedPkgs.mkShell {
     grub2
     bear
     tree
+    bochs
   ];
 
   shellHook = ''

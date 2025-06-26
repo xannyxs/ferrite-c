@@ -1,0 +1,5 @@
+display_library: x, options="gui_debug"
+romimage: file=/nix/store/rfflq573v0xs63hs3w8wlfgbahz25f7g-bochs-2.8/share/bochs/BIOS-bochs-latest
+vgaromimage: file=/nix/store/rfflq573v0xs63hs3w8wlfgbahz25f7g-bochs-2.8/share/bochs/VGABIOS-lgpl-latest
+boot: cdrom
+ata0-master: type=cdrom, path=kernel.iso, status=inserted

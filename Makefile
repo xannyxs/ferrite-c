@@ -8,7 +8,7 @@ SDIR = ./src
 ODIR = ./build
 
 CFLAGS = -I$(SDIR) -m32 -ffreestanding -g -O2 -Wall -Wextra -Werror \
-         -fno-stack-protector -D__is_libk
+         -fno-stack-protector -D__is_libk -D__print_serial
 ASFLAGS = -felf32
 LDFLAGS = -T $(SDIR)/arch/x86/x86.ld -ffreestanding -nostdlib -lgcc
 
