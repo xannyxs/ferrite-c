@@ -55,8 +55,12 @@ clean:
 	@echo "CLEAN"
 	@rm -rf $(ODIR) $(NAME)
 
+fclean:
+	@echo "FCLEAN"
+	@rm -rf $(ODIR) $(NAME) isodir kernel.iso
+
 re:
-	@$(MAKE) clean
+	@$(MAKE) fclean
 	@$(MAKE) all
 
-.PHONY: all run clean re debug iso
+.PHONY: all run test clean fclean re debug iso
