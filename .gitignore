@@ -1,4 +1,6 @@
 # Project
+isodir
+*.iso
 *.bin
 .cache/
 

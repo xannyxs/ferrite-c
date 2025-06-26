@@ -18,6 +18,8 @@ ASM_SOURCES = $(shell find $(SDIR) -type f -name '*.asm')
 C_OBJECTS = $(patsubst $(SDIR)/%.c,$(ODIR)/%.o,$(C_SOURCES))
 ASM_OBJECTS = $(patsubst $(SDIR)/%.asm,$(ODIR)/%.o,$(ASM_SOURCES))
 
+QEMUFLAGS = -serial stdio
+
 all: $(NAME)
 
 $(NAME): $(ASM_OBJECTS) $(C_OBJECTS)
@@ -34,11 +36,20 @@ $(ODIR)/%.o: $(SDIR)/%.asm
 	@mkdir -p $(dir $@)
 	@$(AS) $(ASFLAGS) $< -o $@
 
-run: all
-	qemu-system-i386 -kernel $(NAME)
+iso: all
+	mkdir -p isodir/boot/grub
+	cp $(NAME) isodir/boot/$(NAME)
+	cp grub.cfg isodir/boot/grub/grub.cfg
+	grub-mkrescue -o kernel.iso isodir
 
-debug: all
-	qemu-system-i386 -kernel $(NAME) -s -S
+run: iso 
+	qemu-system-i386 -cdrom kernel.iso $(QEMUFLAGS)
+
+debug: QEMUFLAGS += -s -S
+debug: run
+
+test: QEMUFLAGS += -device isa-debug-exit,iobase=0xf4,iosize=0x04 -display none
+test: run
 
 clean:
 	@echo "CLEAN"
@@ -48,4 +59,4 @@ re:
 	@$(MAKE) clean
 	@$(MAKE) all
 
-.PHONY: all run clean re
+.PHONY: all run clean re debug iso
