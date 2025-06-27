@@ -18,7 +18,7 @@ ASM_SOURCES = $(shell find $(SDIR) -type f -name '*.asm')
 C_OBJECTS = $(patsubst $(SDIR)/%.c,$(ODIR)/%.o,$(C_SOURCES))
 ASM_OBJECTS = $(patsubst $(SDIR)/%.asm,$(ODIR)/%.o,$(ASM_SOURCES))
 
-QEMUFLAGS = -serial stdio
+QEMUFLAGS = -serial stdio -m 8
 
 all: $(NAME)
 
@@ -46,7 +46,8 @@ run: iso
 	qemu-system-i386 -cdrom kernel.iso $(QEMUFLAGS)
 
 debug: QEMUFLAGS += -s -S
-debug: run
+debug: iso 
+	bochs -f .bochsrc -q
 
 test: QEMUFLAGS += -device isa-debug-exit,iobase=0xf4,iosize=0x04 -display none
 test: run
