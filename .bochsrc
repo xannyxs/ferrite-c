@@ -1,4 +1,6 @@
 display_library: x, options="gui_debug"
+port_e9_hack: enabled=1
+magic_break: enabled=1
 romimage: file=/nix/store/rfflq573v0xs63hs3w8wlfgbahz25f7g-bochs-2.8/share/bochs/BIOS-bochs-latest
 vgaromimage: file=/nix/store/rfflq573v0xs63hs3w8wlfgbahz25f7g-bochs-2.8/share/bochs/VGABIOS-lgpl-latest
 boot: cdrom

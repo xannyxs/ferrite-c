@@ -45,9 +45,12 @@ iso: all
 run: iso 
 	qemu-system-i386 -cdrom kernel.iso $(QEMUFLAGS)
 
-debug: QEMUFLAGS += -s -S
-debug: iso 
+debug_bochs: QEMUFLAGS += -s -S
+debug_bochs: iso 
 	bochs -f .bochsrc -q
+
+debug: QEMUFLAGS += -s -S
+debug: run 
 
 test: QEMUFLAGS += -device isa-debug-exit,iobase=0xf4,iosize=0x04 -display none
 test: run
