@@ -15,22 +15,9 @@
 #define REC_PAGETABLE(i) ((uint32_t *)0xFFC00000) + ((i) << 12)
 
 extern uint32_t KERNEL_VIRTUAL_BASE;
-extern uint32_t _virtual_kernel_end;
-extern uint32_t _physical_kernel_end;
-
 extern uint32_t initial_page_dir[1024];
 
 void mem_map_page(uint32_t vaddr, uint32_t paddr, uint32_t flags);
-
-uint32_t pmm_alloc_page_frame(void);
-
-/**
- * @brief Scans the Multiboot memory map and returns the first available
- * memory block above 1MB.
- * @note This function will panic the kernel if no suitable memory block is
- * found. It does not return on failure.
- */
-void pmm_init_from_map(multiboot_info_t *mbd);
 
 void init_memory(uint32_t, uint32_t);
 

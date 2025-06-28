@@ -1,6 +1,7 @@
 #include "drivers/printk.h"
 #include "lib/math.h"
 #include "memory/block.h"
+#include "memory/pmm.h"
 
 #include <stdbool.h>
 #include <stddef.h>

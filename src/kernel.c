@@ -5,8 +5,9 @@
 #include "drivers/printk.h"
 #include "drivers/video/vga.h"
 #include "lib/stdlib.h"
-
 #include "memory/block.h"
+#include "memory/pmm.h"
+
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
