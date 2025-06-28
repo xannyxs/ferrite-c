@@ -5,8 +5,6 @@
 
 #include <stdint.h>
 
-#define KMALLOC_START 0xD0000000
-
 #define PAGE_FLAG_PRESENT (1 << 0)
 #define PAGE_FLAG_WRITE (1 << 1)
 #define PAGE_FLAG_OWNER (1 << 9)
@@ -19,6 +17,6 @@ extern uint32_t initial_page_dir[1024];
 
 void mem_map_page(uint32_t vaddr, uint32_t paddr, uint32_t flags);
 
-void init_memory(uint32_t, uint32_t);
+void init_memory(void);
 
 #endif /* BLOCK_H */

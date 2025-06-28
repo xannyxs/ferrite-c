@@ -28,10 +28,8 @@ static inline void pmm_set_bit(uint32_t paddr) {
   pmm_bitmap[byte] |= (1 << bit);
 }
 
-uint32_t pmm_alloc_page_frame(void);
+uint32_t pmm_alloc_page(void);
 
 void pmm_init_from_map(multiboot_info_t *mbd);
-
-void pmm_init(uint32_t mem_low, uint32_t mem_upper);
 
 #endif /* PMM_H */
