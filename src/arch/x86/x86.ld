@@ -11,39 +11,53 @@
 * protection and efficient virtual memory management.
 */
 
+KERNEL_VIRTUAL_BASE = 0xC0000000;
+KERNEL_PHYSICAL_BASE = 0x200000;
+
 ENTRY(_start)
 
 SECTIONS {
   /* Start at 2MB */
-  . = 2M;
+	. = KERNEL_PHYSICAL_BASE;
 
-  .gdt 0x800 : {
+  .gdt 0x800 : ALIGN(0x800) {
     *(.gdt)
   }
 
-  /* Text section with multiboot header */
-  .text BLOCK(4K) : ALIGN(4K)
-    {
-    KEEP(*(.multiboot))
+  .note.gnu.build-id ALIGN(4K) : {
+    *(.note.gnu.build-id)
+  }
+
+  .boot ALIGN(4K) : {
+    *(.multiboot)
+    *(.boot)
+  }
+
+  . = ALIGN(4K);
+  . += KERNEL_VIRTUAL_BASE;
+
+  /* --- Higher-Half Kernel Sections --- */
+
+  .text ALIGN(4K) : AT(ADDR(.text) - KERNEL_VIRTUAL_BASE) {
     *(.text)
   }
 
-  /* Read-only data. */
-  .rodata BLOCK(4K) : ALIGN(4K)
-    {
+  .rodata ALIGN(4K) : AT(ADDR(.rodata) - KERNEL_VIRTUAL_BASE) {
     *(.rodata)
   }
 
-  /* Read-write data (initialized) */
-  .data BLOCK(4K) : ALIGN(4K)
-    {
+  .data ALIGN(4K) : AT(ADDR(.data) - KERNEL_VIRTUAL_BASE) {
     *(.data)
   }
 
-  /* Read-write data (uninitialized) and stack */
-  .bss BLOCK(4K) : ALIGN(4K)
-    {
+  .bss ALIGN(4K) : AT(ADDR(.bss) - KERNEL_VIRTUAL_BASE) {
+    _bss_start = .; 
     *(COMMON)
     *(.bss)
+    _bss_end = .; 
   }
+
+  . = ALIGN(4K);
+  _virtual_kernel_end = .;
+  _physical_kernel_end = _virtual_kernel_end - KERNEL_VIRTUAL_BASE;
 }
