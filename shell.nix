@@ -6,13 +6,13 @@ let
       { };
 
   bochs-src = pinnedPkgs.fetchurl {
-    url = "https://downloads.sourceforge.net/project/bochs/bochs/2.8/bochs-2.8.tar.gz";
-    sha256 = "sha256-qFsTr/fYQR96nzVrpsM7X13B+7EH61AYzCOmJjnaAFk=";
+    url = "https://downloads.sourceforge.net/project/bochs/bochs/3.0/bochs-3.0.tar.gz";
+    sha256 = "sha256-y29UK1HzWizJIGsqmA21YCt80bfPLk7U8Ras1VB3gao=";
   };
 
   customBochs = pinnedPkgs.bochs.overrideAttrs (oldAttrs: {
-    name = "bochs-with-debugger-2.8"; # Give our custom version a new name
-    src = bochs-src; # Replace the source with the one we just fetched
+    name = "bochs-with-debugger";
+    src = bochs-src;
 
     configureFlags = oldAttrs.configureFlags ++ [
       "--enable-debugger"
