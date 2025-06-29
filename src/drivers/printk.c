@@ -6,6 +6,10 @@
 #include <stdint.h>
 #include <string.h>
 
+#if defined(__print_serial)
+#include "drivers/serial.h"
+#endif
+
 char buf[1024];
 
 /* Private */
@@ -65,6 +69,13 @@ static int kfmt(char *buf, const char *fmt, va_list args) {
       }
       break;
     }
+
+    case 'x':
+    case 'X': {
+      str = simple_number(str, va_arg(args, unsigned long), 16, 1);
+      break;
+    }
+
     case 'd':
     case 'i': {
       long i = va_arg(args, long);
@@ -76,6 +87,7 @@ static int kfmt(char *buf, const char *fmt, va_list args) {
       str = simple_number(str, u, 10, 0);
       break;
     }
+
     default: {
       *str++ = '%';
       if (*fmt) {
@@ -101,9 +113,11 @@ int32_t printk(const char *fmt, ...) {
   int32_t len = kfmt(buf, fmt, args);
   va_end(args);
 
-  for (int i = 0; i < len; i++) {
-    vga_putchar(buf[i]);
-  }
+  vga_writestring(buf);
+
+#if defined(__print_serial)
+  serial_write_string(buf);
+#endif
 
   return len;
 }
