@@ -179,7 +179,7 @@ struct multiboot_mmap_entry {
 #define MULTIBOOT_MEMORY_BADRAM 5
   multiboot_uint32_t type;
 } __attribute__((packed));
-typedef struct multiboot_mmap_entry multiboot_memory_map_t;
+typedef struct multiboot_mmap_entry multiboot_mmap_t;
 
 #endif /* ! ASM_FILE */
 

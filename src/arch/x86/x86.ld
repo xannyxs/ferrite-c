@@ -24,7 +24,7 @@ SECTIONS {
   /* Text section with multiboot header */
   .text BLOCK(4K) : ALIGN(4K)
     {
-    KEEP(*(.multiboot))
+    *(.multiboot)
     *(.text)
   }
 
@@ -46,4 +46,6 @@ SECTIONS {
     *(COMMON)
     *(.bss)
   }
+
+  _kernel_end = .;
 }
