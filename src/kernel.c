@@ -2,8 +2,10 @@
 #include "arch/x86/multiboot.h"
 #include "drivers/console.h"
 #include "drivers/keyboard.h"
+#include "drivers/printk.h"
 #include "drivers/video/vga.h"
 #include "lib/stdlib.h"
+#include "memory/kmalloc.h"
 #include "memory/pmm.h"
 
 #include <stdbool.h>
@@ -28,6 +30,17 @@ __attribute__((noreturn)) void kmain(uint32_t magic, multiboot_info_t *mbd) {
   }
 
   pmm_init_from_map(mbd);
+
+  char *str = kmalloc(10);
+  str[0] = 'H';
+  str[1] = 'A';
+  str[2] = 'L';
+  str[3] = 'L';
+  str[4] = 'O';
+  str[5] = '\0';
+
+  printk("%s\n", str);
+  pmm_print_bitmap();
 
   console_init();
 

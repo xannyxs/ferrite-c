@@ -5,11 +5,6 @@ gdt_flush:
 	mov  eax, [esp + 4]
 	lgdt [eax]
 
-	;   Enable protected mode
-	mov eax, cr0
-	or  eax, 1
-	mov cr0, eax
-
 	;   Set up segments
 	mov eax, 0x10
 	mov ds, ax
