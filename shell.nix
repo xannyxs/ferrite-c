@@ -16,13 +16,13 @@ let
 
     configureFlags = oldAttrs.configureFlags ++ [
       "--enable-debugger"
+      "--enable-debugger-gui"
       "--enable-smp"
       "--enable-cpu-level=6"
       "--enable-all-optimizations"
       "--enable-x86-64"
       "--enable-pci"
       "--enable-vmx"
-      "--enable-debugger-gui"
       "--enable-logging"
       "--enable-fpu"
       "--enable-3dnow"
@@ -32,8 +32,7 @@ let
       "--enable-iodebug"
       "--disable-plugins"
       "--disable-docbook"
-      "--with-x11"
-      "--with-term"
+      "--with-x --with-x11 --with-term"
     ];
   });
 
