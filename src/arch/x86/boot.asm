@@ -52,12 +52,15 @@ stack_top:
 _start:
 	mov esp, stack_top
 
-	extern _main
-
-	;    Call kernel
-	call _main
+	;    Add magic number and mutliboot header into stack
+	push ebx
+	push eax
 
 	cli ; Disable interrupts
+
+	;      Call kernel
+	extern kmain
+	call   kmain
 
 .hang:
 	hlt ; Halt the CPU
