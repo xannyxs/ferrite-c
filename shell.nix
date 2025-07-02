@@ -6,8 +6,8 @@ let
       { };
 
   bochs-src = pinnedPkgs.fetchurl {
-    url = "https://downloads.sourceforge.net/project/bochs/bochs/3.0/bochs-3.0.tar.gz";
-    sha256 = "sha256-y29UK1HzWizJIGsqmA21YCt80bfPLk7U8Ras1VB3gao=";
+    url = "https://downloads.sourceforge.net/project/bochs/bochs/2.8/bochs-2.8.tar.gz";
+    sha256 = "sha256-qFsTr/fYQR96nzVrpsM7X13B+7EH61AYzCOmJjnaAFk=";
   };
 
   customBochs = pinnedPkgs.bochs.overrideAttrs (oldAttrs: {
@@ -58,6 +58,7 @@ pinnedPkgs.mkShell {
   ];
 
   shellHook = ''
-    echo "✅ Development environment with custom-built Bochs is ready!"
+    echo "✅ Development environment is ready!"
+    export BXSHARE="${pinnedPkgs.bochs}/share/bochs"
   '';
 }
