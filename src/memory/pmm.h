@@ -34,6 +34,8 @@ static inline void pmm_set_bit(uint32_t addr) {
   pmm_bitmap[byte] |= (1 << bit);
 }
 
+void *pmm_get_physaddr(void *vaddr);
+
 void pmm_init_from_map(multiboot_info_t *);
 
 void pmm_print_bitmap(void);

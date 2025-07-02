@@ -2,6 +2,7 @@
 #include "arch/x86/multiboot.h"
 #include "drivers/printk.h"
 #include "lib/math.h"
+#include "memory/vmm.h"
 #include "string.h"
 
 #include <stdint.h>
@@ -45,6 +46,26 @@ void pmm_print_bitmap() {
   printk("\n------------------------\n");
 
   printk("Amount of bytes: %d\n", i);
+}
+
+void *pmm_get_physaddr(void *vaddr) {
+  uint32_t pdindex = (uint32_t)vaddr >> 22;
+  uint32_t ptindex = (uint32_t)vaddr >> 12 & 0x03FF;
+  uint32_t offset = (uint32_t)vaddr & 0xFFF;
+  uint32_t *pd = (uint32_t *)0xFFFFF000;
+
+  if (!(pd[pdindex] & PAGE_FLAG_PRESENT)) {
+    return 0;
+  }
+
+  uint32_t *pt = (uint32_t *)(0xFFC00000 + (pdindex * PAGE_SIZE));
+  if (!(pt[ptindex] & PAGE_FLAG_PRESENT)) {
+    return 0;
+  }
+
+  uint32_t phys_frame_addr = pt[ptindex] & ~0xFFF;
+
+  return (void *)(phys_frame_addr + offset);
 }
 
 uint32_t get_total_memory(multiboot_info_t *mbd) {
