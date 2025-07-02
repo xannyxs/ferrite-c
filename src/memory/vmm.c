@@ -10,14 +10,24 @@ extern void flush_tbl();
 extern void load_page_directory(uint32_t *);
 extern void enable_paging();
 
+static uint32_t next_free_virtual_addr = 0;
+
 uint32_t page_directory[1024] __attribute__((aligned(4096)));
 
-uint32_t vmm_alloc_page_frame(void) {
-  void *ptr = (void *)next_free_page;
-  uint32_t addr_to_set = next_free_page;
-  pmm_set_bit(addr_to_set);
+void *vmm_find_free_region(uint32_t pages_needed) {
+  if (next_free_virtual_addr == 0) {
+    abort("allocator hasn't been initialized");
+  }
 
-  return (uint32_t)ptr;
+  void *start_of_region = (void *)next_free_virtual_addr;
+
+  uint32_t allocation_size = pages_needed * PAGE_SIZE;
+  next_free_virtual_addr += allocation_size;
+
+  // TODO: Add a check to ensure next_free_virtual_addr hasn't overflowed
+  // or run into another memory region (like the end of kernel space).
+
+  return start_of_region;
 }
 
 void vmm_map_page(void *physaddr, void *virtualaddr, uint32_t flags) {
@@ -28,20 +38,19 @@ void vmm_map_page(void *physaddr, void *virtualaddr, uint32_t flags) {
   uint32_t *pt = (uint32_t *)(0xFFC00000 + (pdindex * PAGE_SIZE));
 
   if (!(pd[pdindex] & PAGE_FLAG_PRESENT)) {
-    uint32_t addr = vmm_alloc_page_frame();
-    if (addr == 0) {
+    uint32_t paddr = pmm_alloc_frame();
+    if (paddr == 0) {
       abort("Out of physical memory");
     }
 
     pd[pdindex] =
-        addr | PAGE_FLAG_SUPERVISOR | PAGE_FLAG_WRITABLE | PAGE_FLAG_PRESENT;
+        paddr | PAGE_FLAG_SUPERVISOR | PAGE_FLAG_WRITABLE | PAGE_FLAG_PRESENT;
     flush_tbl();
 
-    memset(&pt, 0, sizeof(pt));
+    memset(pt, 0, PAGE_SIZE);
   }
 
-  uint32_t *pte = &pt[ptindex];
-  if (*pte & PAGE_FLAG_PRESENT) {
+  if (pt[ptindex] & PAGE_FLAG_PRESENT) {
     abort("Virtual Address is already taken");
   }
 
@@ -55,7 +64,7 @@ void vmm_init_pages(void) {
     page_directory[i] = PAGE_FLAG_SUPERVISOR | PAGE_FLAG_WRITABLE;
   }
 
-  uint32_t pt_phys_addr = vmm_alloc_page_frame();
+  uint32_t pt_phys_addr = pmm_alloc_frame();
   if (pt_phys_addr == 0) {
     abort("Out of physical memory");
   }
@@ -74,4 +83,7 @@ void vmm_init_pages(void) {
 
   load_page_directory(page_directory);
   enable_paging();
+
+  // Temp value
+  next_free_virtual_addr = (0xC000000 + PAGE_SIZE - 1) & ~(PAGE_SIZE - 1);
 }

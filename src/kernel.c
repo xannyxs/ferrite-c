@@ -24,7 +24,6 @@
 __attribute__((noreturn)) void kmain(uint32_t magic, multiboot_info_t *mbd) {
   gdt_init();
   vga_init();
-  (void)next_free_page;
 
   if (magic != MULTIBOOT_BOOTLOADER_MAGIC) {
     abort("invalid magic number!");

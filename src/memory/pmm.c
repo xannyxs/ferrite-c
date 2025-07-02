@@ -48,6 +48,23 @@ void pmm_print_bitmap() {
   printk("Amount of bytes: %d\n", i);
 }
 
+uint32_t pmm_alloc_frame(void) {
+  for (uint32_t i = 0; i < pmm_bitmap_size; i++) {
+    uint32_t byte_index = i / 8;
+    uint32_t bit_index = i % 8;
+
+    if (pmm_bitmap[byte_index] & (1 << bit_index)) {
+      continue;
+    }
+
+    uint32_t addr = i * PAGE_SIZE;
+    pmm_set_bit(addr);
+    return addr;
+  }
+
+  return 0;
+}
+
 void *pmm_get_physaddr(void *vaddr) {
   uint32_t pdindex = (uint32_t)vaddr >> 22;
   uint32_t ptindex = (uint32_t)vaddr >> 12 & 0x03FF;
