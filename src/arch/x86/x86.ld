@@ -47,5 +47,8 @@ SECTIONS {
     *(.bss)
   }
 
+  . = ALIGN(4K);
+  pmm_bitmap = .;
+
   _kernel_end = .;
 }
