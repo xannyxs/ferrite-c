@@ -7,6 +7,7 @@
 #include "lib/stdlib.h"
 #include "memory/kmalloc.h"
 #include "memory/pmm.h"
+#include "memory/vmm.h"
 
 #include <stdbool.h>
 #include <stddef.h>
@@ -23,13 +24,13 @@
 __attribute__((noreturn)) void kmain(uint32_t magic, multiboot_info_t *mbd) {
   gdt_init();
   vga_init();
-  (void)mbd;
 
   if (magic != MULTIBOOT_BOOTLOADER_MAGIC) {
     abort("invalid magic number!");
   }
 
   pmm_init_from_map(mbd);
+  vmm_init_pages();
 
   char *str = kmalloc(10);
   str[0] = 'H';
