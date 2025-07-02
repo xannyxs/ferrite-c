@@ -1,6 +1,5 @@
 #include "memory/vmm.h"
 #include "lib/stdlib.h"
-#include "memory/kmalloc.h"
 #include "memory/pmm.h"
 #include "string.h"
 
