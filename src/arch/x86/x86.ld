@@ -14,6 +14,10 @@
 ENTRY(_start)
 
 SECTIONS {
+  .gdt 0x800 : ALIGN(0x800) {
+    *(.gdt)
+  }
+
   . = 0xC0100000;
 
   /* Text section with multiboot header */
