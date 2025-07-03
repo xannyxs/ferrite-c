@@ -2,7 +2,7 @@ CC = i686-elf-gcc
 LD = i686-elf-gcc  
 AS = nasm 
 
-NAME = ferrite-c.bin
+NAME = ferrite-c.elf
 
 SDIR = ./src
 ODIR = ./build
