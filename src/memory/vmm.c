@@ -1,4 +1,5 @@
 #include "memory/vmm.h"
+#include "arch/x86/memlayout.h"
 #include "lib/stdlib.h"
 #include "memory/pmm.h"
 #include "string.h"
@@ -59,30 +60,34 @@ void vmm_map_page(void *physaddr, void *virtualaddr, uint32_t flags) {
 }
 
 void vmm_init_pages(void) {
+
   for (int32_t i = 0; i < 1024; i++) {
     page_directory[i] = PAGE_FLAG_SUPERVISOR | PAGE_FLAG_WRITABLE;
   }
 
   uint32_t pt_phys_addr = pmm_alloc_frame();
   if (pt_phys_addr == 0) {
-    abort("Out of physical memory");
+    abort("Out of physical memory when allocating initial page table");
   }
 
-  uint32_t *pt = (uint32_t *)pt_phys_addr;
+  uint32_t pt_virt_addr = P2V_WO(pt_phys_addr);
+  uint32_t *pt = (uint32_t *)pt_virt_addr;
   for (uint32_t i = 0; i < 1024; i++) {
     uint32_t page_phys_addr = i * PAGE_SIZE;
     pt[i] = page_phys_addr | PAGE_FLAG_PRESENT | PAGE_FLAG_WRITABLE |
             PAGE_FLAG_SUPERVISOR;
   }
 
+  uint32_t page_directory_paddr = V2P_WO((uint32_t)page_directory);
   page_directory[0] = pt_phys_addr | PAGE_FLAG_SUPERVISOR | PAGE_FLAG_WRITABLE |
                       PAGE_FLAG_PRESENT;
-  page_directory[1023] = (uint32_t)page_directory | PAGE_FLAG_PRESENT |
+  page_directory[768] = pt_phys_addr | PAGE_FLAG_SUPERVISOR |
+                        PAGE_FLAG_WRITABLE | PAGE_FLAG_PRESENT;
+  page_directory[1023] = page_directory_paddr | PAGE_FLAG_PRESENT |
                          PAGE_FLAG_WRITABLE | PAGE_FLAG_SUPERVISOR;
 
-  load_page_directory(page_directory);
+  load_page_directory((uint32_t *)page_directory_paddr);
   enable_paging();
 
-  // Temp value
-  next_free_virtual_addr = (0xC000000 + PAGE_SIZE - 1) & ~(PAGE_SIZE - 1);
+  next_free_virtual_addr = (KERNBASE + PAGE_SIZE - 1) & ~(PAGE_SIZE - 1);
 }
