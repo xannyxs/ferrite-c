@@ -14,35 +14,28 @@
 ENTRY(_start)
 
 SECTIONS {
-  /* Start at 2MB */
-  . = 2M;
-
-  .gdt 0x800 : {
-    *(.gdt)
-  }
+  . = 0xC0100000;
 
   /* Text section with multiboot header */
-  .text BLOCK(4K) : ALIGN(4K)
-    {
-    *(.multiboot)
-    *(.text)
+  .text : AT(0x100000) {
+      *(.multiboot)
+      *(.text)
   }
 
   /* Read-only data. */
-  .rodata BLOCK(4K) : ALIGN(4K)
-    {
+  .rodata : {
     *(.rodata)
   }
 
+  . = ALIGN(4K);
+
   /* Read-write data (initialized) */
-  .data BLOCK(4K) : ALIGN(4K)
-    {
+  .data : {
     *(.data)
   }
 
   /* Read-write data (uninitialized) and stack */
-  .bss BLOCK(4K) : ALIGN(4K)
-    {
+  .bss : {
     *(COMMON)
     *(.bss)
   }
