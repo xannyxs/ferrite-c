@@ -46,6 +46,7 @@ run: iso
 	qemu-system-i386 -cdrom kernel.iso $(QEMUFLAGS)
 
 debug_bochs: QEMUFLAGS += -s -S
+debug_bochs: CFLAGS += -D__bochs
 debug_bochs: iso 
 	bochs -f .bochsrc -q
 

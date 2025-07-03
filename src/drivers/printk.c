@@ -1,3 +1,4 @@
+#include "debug/debug.h"
 #include "video/vga.h"
 
 #include <stdarg.h>
@@ -117,6 +118,9 @@ int32_t printk(const char *fmt, ...) {
 
 #if defined(__print_serial)
   serial_write_string(buf);
+#endif
+#if defined(__bochs)
+  bochs_print_string(buf);
 #endif
 
   return len;
