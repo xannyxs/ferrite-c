@@ -21,6 +21,8 @@ void *vmm_find_free_region(uint32_t pages_needed) {
 
   void *start_of_region = (void *)next_free_virtual_addr;
 
+  printk("0x%x\n", next_free_virtual_addr);
+
   uint32_t allocation_size = pages_needed * PAGE_SIZE;
   next_free_virtual_addr += allocation_size;
 
@@ -89,5 +91,5 @@ void vmm_init_pages(void) {
   load_page_directory((uint32_t *)page_directory_paddr);
   enable_paging();
 
-  next_free_virtual_addr = (KERNBASE + PAGE_SIZE - 1) & ~(PAGE_SIZE - 1);
+  next_free_virtual_addr = 0xD0000000;
 }
