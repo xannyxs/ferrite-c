@@ -1,6 +1,8 @@
 #ifndef DEBUG_H
 #define DEBUG_H
 
+#if defined(__bochs)
+
 #include "arch/x86/io.h"
 
 #define BOCHS_BREAK()                                                          \
@@ -13,5 +15,7 @@ static inline void bochs_print_string(const char *str) {
     outb(0xe9, str[i]);
   }
 }
+
+#endif /* BOCHS */
 
 #endif /* DEBUG_H */

@@ -1,4 +1,5 @@
 #include "memory/pmm.h"
+#include "arch/x86/memlayout.h"
 #include "arch/x86/multiboot.h"
 #include "drivers/printk.h"
 #include "lib/math.h"
@@ -39,17 +40,17 @@ void pmm_print_bitmap() {
     }
     printk(" ");
     if ((i + 1) % 16 == 0) {
-      printk("\n");
+      printk("\n\n");
     }
   }
 
   printk("\n------------------------\n");
 
-  printk("Amount of bytes: %d\n", i);
+  printk("Amount of bytes: %d\n", pmm_bitmap_size);
 }
 
 uint32_t pmm_alloc_frame(void) {
-  for (uint32_t i = 0; i < pmm_bitmap_size; i++) {
+  for (uint32_t i = 0; i < pmm_bitmap_size * 8; i++) {
     uint32_t byte_index = i / 8;
     uint32_t bit_index = i % 8;
 
@@ -104,13 +105,14 @@ uint32_t get_total_memory(multiboot_info_t *mbd) {
 void pmm_init_from_map(multiboot_info_t *mbd) {
   uint32_t total_memory = get_total_memory(mbd);
   pmm_bitmap_size = total_memory / PAGE_SIZE / 8;
-  uint32_t bitmap_end_addr = (uint32_t)&pmm_bitmap + pmm_bitmap_size;
+  uint32_t bitmap_end_vaddr = (uint32_t)&pmm_bitmap + pmm_bitmap_size;
 
-  uint32_t first_free_page_addr = ALIGN(bitmap_end_addr, PAGE_SIZE);
+  uint32_t first_free_page_vaddr = ALIGN(bitmap_end_vaddr, PAGE_SIZE);
+  uint32_t first_free_page_paddr = first_free_page_vaddr - KERNBASE;
 
-  uint32_t kernel_end = (uint32_t)&_kernel_end;
+  uint32_t kernel_end = (uint32_t)&_kernel_end - KERNBASE;
   printk("Kernel physical end: 0x%x\n", kernel_end);
-  printk("first free page: 0x%x\n", first_free_page_addr);
+  printk("first free page: 0x%x\n", first_free_page_paddr);
 
   for (size_t i = 0; i < pmm_bitmap_size; i++) {
     pmm_bitmap[i] = 0xFF;
@@ -129,7 +131,7 @@ void pmm_init_from_map(multiboot_info_t *mbd) {
     for (uint32_t p = 0; p < entry->len_low; p += PAGE_SIZE) {
       uint32_t current_addr = entry->addr_low + p;
 
-      if (current_addr >= first_free_page_addr) {
+      if (current_addr >= first_free_page_paddr) {
         pmm_clear_bit(current_addr);
       }
     }

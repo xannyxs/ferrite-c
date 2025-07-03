@@ -2,7 +2,7 @@ CC = i686-elf-gcc
 LD = i686-elf-gcc  
 AS = nasm 
 
-NAME = ferrite-c.bin
+NAME = ferrite-c.elf
 
 SDIR = ./src
 ODIR = ./build
@@ -46,6 +46,7 @@ run: iso
 	qemu-system-i386 -cdrom kernel.iso $(QEMUFLAGS)
 
 debug_bochs: QEMUFLAGS += -s -S
+debug_bochs: CFLAGS += -D__bochs
 debug_bochs: iso 
 	bochs -f .bochsrc -q
 

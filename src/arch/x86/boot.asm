@@ -33,7 +33,8 @@
 
 	;       Second section: Stack setup
 	section .bss
-	align   16; Ensure proper alignment for the stack
+
+	align 16; Ensure proper alignment for the stack
 
 stack_bottom:
 	resb 16384; Reserve 16KB for our stack
@@ -47,24 +48,48 @@ stack_top:
 	; ----------------------------------------------
 
 	section .text
-	global  _start:function
+	global  _start
 
 _start:
+	mov ecx, (initial_page_dir - 0xC0000000)
+	mov cr3, ecx
+
+	mov ecx, cr4
+	or  ecx, 0x10
+	mov cr4, ecx
+
+	mov ecx, cr0
+	or  ecx, 0x80000000
+	mov cr0, ecx
+
+	jmp higher_half
+
+higher_half:
 	mov esp, stack_top
 
 	;    Add magic number and mutliboot header into stack
 	push ebx
 	push eax
 
-	cli ; Disable interrupts
-
 	;      Call kernel
 	extern kmain
 	call   kmain
 
 .hang:
+	cli
 	hlt ; Halt the CPU
 	jmp .hang
 
-.end:
-	global _start.end
+section .data
+align   4096
+global  initial_page_dir
+
+initial_page_dir:
+	dd    10000011b
+	times (768 - 1) dd 0
+
+	dd    (0 << 22) | 10000011b
+	dd    (1 << 22) | 10000011b
+	dd    (2 << 22) | 10000011b
+	dd    (3 << 22) | 10000011b
+	times (1024 - 768 - 4) dd 0
