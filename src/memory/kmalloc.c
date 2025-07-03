@@ -1,33 +1,38 @@
-#include "lib/math.h"
-#include "lib/stdlib.h"
-#include "memory/pmm.h"
-#include "memory/vmm.h"
+#include "memory/kmalloc.h"
 
 #include <stddef.h>
-#include <stdint.h>
+
+static void *heap_start_addr = NULL;
+static void *next_free_addr = NULL;
+
+void kmalloc_init() {
+  kmem_init();
+  heap_start_addr = HEAP_START;
+  next_free_addr = heap_start_addr;
+}
 
 void *kmalloc(size_t num_bytes) {
   if (num_bytes == 0) {
     return NULL;
   }
 
-  uint32_t pages_needed = CEIL_DIV(num_bytes, PAGE_SIZE);
-  void *vaddr = vmm_find_free_region(pages_needed);
-  if (vaddr == NULL) {
-    // NOTE: No more virtual address space!
-    return NULL;
-  }
+  void *heap_end_addr = get_current_break();
+  void *total_needed_space =
+      next_free_addr + num_bytes + sizeof(block_header_t);
 
-  for (uint32_t i = 0; i < pages_needed; i++) {
-    void *ptr = (void *)pmm_alloc_frame();
-
-    if (!ptr) {
-      abort("No free physical memory");
+  if (total_needed_space > heap_end_addr) {
+    void *new_end = kbrk(total_needed_space);
+    if (new_end < total_needed_space) {
+      return NULL;
     }
-
-    void *vpage = vaddr + (i * PAGE_SIZE);
-    vmm_map_page(ptr, vpage, 0);
   }
 
-  return vaddr;
+  void *ptr = next_free_addr;
+  block_header_t *header_ptr = (block_header_t *)ptr;
+  header_ptr->size = num_bytes;
+  header_ptr->magic = 0xDEADBEEF;
+
+  next_free_addr += num_bytes + sizeof(block_header_t);
+
+  return ptr + sizeof(block_header_t);
 }

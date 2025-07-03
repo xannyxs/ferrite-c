@@ -32,6 +32,8 @@ __attribute__((noreturn)) void kmain(uint32_t magic, multiboot_info_t *mbd) {
   pmm_init_from_map(mbd);
   vmm_init_pages();
 
+  kmalloc_init();
+
   char *str = kmalloc(10);
   str[0] = 'H';
   str[1] = 'A';
@@ -41,6 +43,10 @@ __attribute__((noreturn)) void kmain(uint32_t magic, multiboot_info_t *mbd) {
   str[5] = '\0';
 
   printk("%s\n", str);
+  printk("Size of ptr: %d\n", ksize(str));
+
+  kfree(str);
+
   pmm_print_bitmap();
 
   console_init();
