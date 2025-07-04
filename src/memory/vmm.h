@@ -13,4 +13,6 @@ void vmm_map_page(void *physaddr, void *virtualaddr, uint32_t flags);
 
 void vmm_init_pages(void);
 
+void vmm_unmap_page(void *vaddr);
+
 #endif /* VMM_H */

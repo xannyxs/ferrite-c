@@ -10,26 +10,24 @@ extern void flush_tbl();
 extern void load_page_directory(uint32_t *);
 extern void enable_paging();
 
-static uint32_t next_free_virtual_addr = 0;
-
 uint32_t page_directory[1024] __attribute__((aligned(4096)));
 
-void *vmm_find_free_region(uint32_t pages_needed) {
-  if (next_free_virtual_addr == 0) {
-    abort("allocator hasn't been initialized");
+void vmm_unmap_page(void *vaddr) {
+  uint32_t pdindex = (uint32_t)vaddr >> 22;
+  uint32_t ptindex = (uint32_t)vaddr >> 12 & 0x03FF;
+
+  uint32_t *pt = (uint32_t *)(0xFFC00000 + (pdindex * PAGE_SIZE));
+  uint32_t *pte = &pt[ptindex];
+
+  if (!(*pte & PAGE_FLAG_PRESENT)) {
+    return;
   }
 
-  void *start_of_region = (void *)next_free_virtual_addr;
+  void *paddr = (void *)(*pte & ~0xFFF);
+  pmm_free_frame(paddr);
 
-  printk("0x%x\n", next_free_virtual_addr);
-
-  uint32_t allocation_size = pages_needed * PAGE_SIZE;
-  next_free_virtual_addr += allocation_size;
-
-  // TODO: Add a check to ensure next_free_virtual_addr hasn't overflowed
-  // or run into another memory region (like the end of kernel space).
-
-  return start_of_region;
+  *pte = 0;
+  flush_tbl();
 }
 
 void vmm_map_page(void *physaddr, void *virtualaddr, uint32_t flags) {
@@ -62,7 +60,6 @@ void vmm_map_page(void *physaddr, void *virtualaddr, uint32_t flags) {
 }
 
 void vmm_init_pages(void) {
-
   for (int32_t i = 0; i < 1024; i++) {
     page_directory[i] = PAGE_FLAG_SUPERVISOR | PAGE_FLAG_WRITABLE;
   }
@@ -90,6 +87,4 @@ void vmm_init_pages(void) {
 
   load_page_directory((uint32_t *)page_directory_paddr);
   enable_paging();
-
-  next_free_virtual_addr = 0xD0000000;
 }

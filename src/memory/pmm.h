@@ -37,4 +37,6 @@ uint32_t pmm_alloc_frame(void);
 
 void pmm_print_bit(uint32_t addr);
 
+void pmm_free_frame(void *paddr);
+
 #endif /* PMM_H */
