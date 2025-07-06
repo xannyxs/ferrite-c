@@ -11,6 +11,26 @@
 
 static uint32_t pmm_bitmap_size = 0;
 
+/* Private */
+
+static uint32_t get_total_memory(multiboot_info_t *mbd) {
+  uint32_t total_memory = 0;
+
+  for (uint32_t i = 0; i < mbd->mmap_length; i += sizeof(multiboot_mmap_t)) {
+    multiboot_mmap_t *entry = (multiboot_mmap_t *)(mbd->mmap_addr + i);
+    if (entry->type == MULTIBOOT_MEMORY_AVAILABLE) {
+      uint32_t block_end = entry->addr_low + entry->len_low;
+      if (block_end > total_memory) {
+        total_memory = block_end;
+      }
+    }
+  }
+
+  return total_memory;
+}
+
+/* Public */
+
 void pmm_print_bit(uint32_t addr) {
   uint32_t i = addr / PAGE_SIZE;
   uint32_t byte_index = i / 8;
@@ -110,22 +130,6 @@ void *pmm_get_physaddr(void *vaddr) {
   return (void *)(phys_frame_addr + offset);
 }
 
-uint32_t get_total_memory(multiboot_info_t *mbd) {
-  uint32_t total_memory = 0;
-
-  for (uint32_t i = 0; i < mbd->mmap_length; i += sizeof(multiboot_mmap_t)) {
-    multiboot_mmap_t *entry = (multiboot_mmap_t *)(mbd->mmap_addr + i);
-    if (entry->type == MULTIBOOT_MEMORY_AVAILABLE) {
-      uint32_t block_end = entry->addr_low + entry->len_low;
-      if (block_end > total_memory) {
-        total_memory = block_end;
-      }
-    }
-  }
-
-  return total_memory;
-}
-
 void pmm_init_from_map(multiboot_info_t *mbd) {
   uint32_t total_memory = get_total_memory(mbd);
   pmm_bitmap_size = total_memory / PAGE_SIZE / 8;
@@ -160,6 +164,4 @@ void pmm_init_from_map(multiboot_info_t *mbd) {
       }
     }
   }
-
-  pmm_print_bitmap();
 }

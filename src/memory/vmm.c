@@ -6,11 +6,13 @@
 
 #include <stdint.h>
 
-extern void flush_tbl();
+extern void flush_tbl(); /* i386 does not support invld. Using this instead */
 extern void load_page_directory(uint32_t *);
 extern void enable_paging();
 
 uint32_t page_directory[1024] __attribute__((aligned(4096)));
+
+/* Public */
 
 void vmm_unmap_page(void *vaddr) {
   uint32_t pdindex = (uint32_t)vaddr >> 22;
