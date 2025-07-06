@@ -1,5 +1,6 @@
 #include "arch/x86/memlayout.h"
 #include "drivers/printk.h"
+#include "lib/stdlib.h"
 #include "memory/kmalloc.h"
 #include "memory/pmm.h"
 #include "memory/vmm.h"
@@ -12,7 +13,11 @@ void kfree(void *ptr) {
     return;
   }
   block_header_t *header_ptr = (block_header_t *)ptr - 1;
-  printk("Size: %d | Magic: 0x%x\n", header_ptr->size, header_ptr->magic);
+  printk("Size: %d \n", header_ptr->size);
+
+  if (header_ptr->magic != MAGIC) {
+    abort("Corrupt pointer");
+  }
 
   for (uint32_t i = 0; i < header_ptr->size / PAGE_SIZE; i++) {
     vmm_unmap_page(ptr + i * PAGE_SIZE);

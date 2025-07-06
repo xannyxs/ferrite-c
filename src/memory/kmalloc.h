@@ -5,6 +5,7 @@
 #include <stdint.h>
 
 #define HEAP_START (void *)0xD0000000
+#define MAGIC 0xDEADBEEF
 
 typedef struct block_header {
   size_t size;

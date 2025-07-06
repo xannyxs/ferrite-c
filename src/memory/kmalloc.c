@@ -30,7 +30,7 @@ void *kmalloc(size_t num_bytes) {
   void *ptr = next_free_addr;
   block_header_t *header_ptr = (block_header_t *)ptr;
   header_ptr->size = num_bytes;
-  header_ptr->magic = 0xDEADBEEF;
+  header_ptr->magic = MAGIC;
 
   next_free_addr += num_bytes + sizeof(block_header_t);
 
