@@ -1,6 +1,6 @@
 #include "drivers/console.h"
 #include "arch/x86/cpu.h"
-#include "arch/x86/gdt/gdt.h"
+#include "arch/x86/entry.h"
 #include "drivers/printk.h"
 #include "drivers/video/vga.h"
 #include "stdlib.h"
@@ -28,12 +28,22 @@ static void print_help() {
   printk("Available commands:\n");
   printk("  reboot  - Restart the system\n");
   printk("  gdt     - Print Global Descriptor Table\n");
+  printk("  idt     - Print Interrupt Descriptor Table\n");
   printk("  clear   - Clear the screen\n");
   printk("  help    - Show this help message\n");
 }
 
+static void print_idt() {
+  descriptor_pointer_t idtr;
+
+  __asm__ volatile("sidt %0" : "=m"(idtr));
+
+  printk("IDT Base Address: 0x%x\n", idtr.base);
+  printk("IDT Limit: 0x%xx\n", idtr.limit);
+}
+
 static void print_gdt() {
-  gdt_pointer_t gdtr;
+  descriptor_pointer_t gdtr;
 
   __asm__ volatile("sgdt %0" : "=m"(gdtr));
 
@@ -44,7 +54,7 @@ static void print_gdt() {
 static void execute_buffer(void) {
   static const exec_t command_table[] = {
       {"reboot", reboot},   {"gdt", print_gdt}, {"clear", vga_init},
-      {"help", print_help}, {"panic", abort},   {"idt", NULL},
+      {"help", print_help}, {"panic", abort},   {"idt", print_idt},
       {NULL, NULL}};
 
   printk("\n");

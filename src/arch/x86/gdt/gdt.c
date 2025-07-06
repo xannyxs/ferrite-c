@@ -1,11 +1,11 @@
-#include "gdt.h"
+#include "arch/x86/entry.h"
 
 #include <stdint.h>
 
 extern void gdt_flush(uint32_t);
 
-gdt_entry_t gdt_entries[5] __attribute__((section(".gdt")));
-gdt_pointer_t gdt_ptr;
+entry_t gdt_entries[5] __attribute__((section(".gdt")));
+descriptor_pointer_t gdt_ptr;
 
 /* Private */
 
@@ -25,7 +25,7 @@ static void gdt_set_gate(uint32_t num, uint32_t base, uint32_t limit,
 /* Public */
 
 void gdt_init() {
-  gdt_ptr.limit = sizeof(gdt_entry_t) * 5 - 1;
+  gdt_ptr.limit = sizeof(entry_t) * 5 - 1;
   gdt_ptr.base = (uint32_t)&gdt_entries;
 
   gdt_set_gate(0, 0, 0, 0, 0);                            // NULL Gate
