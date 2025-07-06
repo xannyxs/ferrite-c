@@ -3,12 +3,33 @@
 #include "arch/x86/multiboot.h"
 #include "drivers/printk.h"
 #include "lib/math.h"
+#include "lib/stdlib.h"
 #include "memory/vmm.h"
 #include "string.h"
 
 #include <stdint.h>
 
 static uint32_t pmm_bitmap_size = 0;
+
+/* Private */
+
+static uint32_t get_total_memory(multiboot_info_t *mbd) {
+  uint32_t total_memory = 0;
+
+  for (uint32_t i = 0; i < mbd->mmap_length; i += sizeof(multiboot_mmap_t)) {
+    multiboot_mmap_t *entry = (multiboot_mmap_t *)(mbd->mmap_addr + i);
+    if (entry->type == MULTIBOOT_MEMORY_AVAILABLE) {
+      uint32_t block_end = entry->addr_low + entry->len_low;
+      if (block_end > total_memory) {
+        total_memory = block_end;
+      }
+    }
+  }
+
+  return total_memory;
+}
+
+/* Public */
 
 void pmm_print_bit(uint32_t addr) {
   uint32_t i = addr / PAGE_SIZE;
@@ -49,6 +70,29 @@ void pmm_print_bitmap() {
   printk("Amount of bytes: %d\n", pmm_bitmap_size);
 }
 
+// TODO: Notify error if not found
+// How to know if there was more than 1 page allocated?
+void pmm_free_frame(void *paddr) {
+  if ((uint32_t)paddr % PAGE_SIZE != 0) {
+    abort("pmm_free_frame: Address is not page-aligned.");
+  }
+
+  uint32_t frame_index = (uint32_t)paddr / PAGE_SIZE;
+  printk("paddr: 0x%x\n", paddr);
+  printk("frame_index: %d\n", frame_index);
+
+  if (frame_index >= (pmm_bitmap_size * 8)) {
+    abort("pmm_free_frame: Address is out of bitmap range.");
+  }
+
+  /* if (!pmm_test_bit(frame_index)) {
+    printk("KERNEL PANIC: Double free detected for paddr 0x%x\n", paddr);
+    abort("Double free or freeing unallocated memory.");
+  } */
+
+  pmm_clear_bit((uint32_t)paddr);
+}
+
 uint32_t pmm_alloc_frame(void) {
   for (uint32_t i = 0; i < pmm_bitmap_size * 8; i++) {
     uint32_t byte_index = i / 8;
@@ -86,22 +130,6 @@ void *pmm_get_physaddr(void *vaddr) {
   return (void *)(phys_frame_addr + offset);
 }
 
-uint32_t get_total_memory(multiboot_info_t *mbd) {
-  uint32_t total_memory = 0;
-
-  for (uint32_t i = 0; i < mbd->mmap_length; i += sizeof(multiboot_mmap_t)) {
-    multiboot_mmap_t *entry = (multiboot_mmap_t *)(mbd->mmap_addr + i);
-    if (entry->type == MULTIBOOT_MEMORY_AVAILABLE) {
-      uint32_t block_end = entry->addr_low + entry->len_low;
-      if (block_end > total_memory) {
-        total_memory = block_end;
-      }
-    }
-  }
-
-  return total_memory;
-}
-
 void pmm_init_from_map(multiboot_info_t *mbd) {
   uint32_t total_memory = get_total_memory(mbd);
   pmm_bitmap_size = total_memory / PAGE_SIZE / 8;
@@ -136,6 +164,4 @@ void pmm_init_from_map(multiboot_info_t *mbd) {
       }
     }
   }
-
-  pmm_print_bitmap();
 }
