@@ -42,12 +42,7 @@ __attribute__((noreturn)) void kmain(uint32_t magic, multiboot_info_t *mbd) {
   str[4] = 'O';
   str[5] = '\0';
 
-  printk("%s\n", str);
-  printk("Size of ptr: %d\n", ksize(str));
-
   kfree(str);
-
-  pmm_print_bitmap();
 
   console_init();
 
