@@ -1,4 +1,5 @@
 #include "arch/x86/gdt/gdt.h"
+#include "arch/x86/idt/idt.h"
 #include "arch/x86/multiboot.h"
 #include "drivers/console.h"
 #include "drivers/keyboard.h"
@@ -23,6 +24,7 @@
 
 __attribute__((noreturn)) void kmain(uint32_t magic, multiboot_info_t *mbd) {
   gdt_init();
+  idt_init();
   vga_init();
 
   if (magic != MULTIBOOT_BOOTLOADER_MAGIC) {
@@ -45,6 +47,8 @@ __attribute__((noreturn)) void kmain(uint32_t magic, multiboot_info_t *mbd) {
   kfree(str);
 
   console_init();
+
+  __asm__ volatile("int $0x01");
 
   while (1) {
     char c = keyboard_input();

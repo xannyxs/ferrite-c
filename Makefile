@@ -8,9 +8,9 @@ SDIR = ./src
 ODIR = ./build
 
 CFLAGS = -I$(SDIR) -m32 -ffreestanding -g -O2 -Wall -Wextra -Werror \
-         -fno-stack-protector -D__is_libk -D__print_serial
+         -fno-stack-protector -D__is_libk -D__print_serial -pedantic -std=c99 -march=i386
 ASFLAGS = -felf32
-LDFLAGS = -T $(SDIR)/arch/x86/x86.ld -ffreestanding -nostdlib -lgcc
+LDFLAGS = -T $(SDIR)/arch/x86/x86.ld -ffreestanding -nostdlib -lgcc -march=i386
 
 C_SOURCES = $(shell find $(SDIR) -type f -name '*.c')
 ASM_SOURCES = $(shell find $(SDIR) -type f -name '*.asm')

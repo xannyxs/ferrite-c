@@ -1,0 +1,176 @@
+#include "arch/x86/idt/idt.h"
+#include "drivers/printk.h"
+#include "lib/stdlib.h"
+
+void print_frame(struct interrupt_frame *frame) {
+  printk("INTERRUPT FRAME:\n");
+  printk("  EIP: 0x%x\n", frame->instruction_pointer);
+  printk("  CS:  0x%x\n", frame->code_segment);
+  printk("  EFLAGS: 0x%x\n", frame->eflags);
+  printk("  ESP: 0x%x\n", frame->stack_pointer);
+  printk("  SS:  0x%x\n", frame->stack_segment);
+}
+
+__attribute__((target("general-regs-only"))) __attribute__((interrupt)) void
+divide_by_zero_handler(struct interrupt_frame *frame) {
+  printk("EXCEPTION: DIVIDE BY ZERO (#DE)\n");
+
+  if ((frame->code_segment & 0x3) == 0) {
+    abort("Cannot divide by zero in kernel mode\n");
+  }
+
+  printk("User process attempted division by zero\n");
+  printk("Terminating process...\n");
+
+  __asm__ volatile("cli; hlt");
+}
+
+__attribute__((target("general-regs-only"))) __attribute__((interrupt)) void
+debug_interrupt_handler(struct interrupt_frame *frame) {
+  (void)frame;
+
+  printk("EXCEPTION: DEBUG EXCEPTION (#DB)\n");
+}
+
+__attribute__((target("general-regs-only"))) __attribute__((interrupt)) void
+non_maskable_interrupt_handler(struct interrupt_frame *frame) {
+  (void)frame;
+
+  __asm__ volatile("cli; hlt");
+}
+
+__attribute__((target("general-regs-only"))) __attribute__((interrupt)) void
+breakpoint_handler(struct interrupt_frame *frame) {
+  (void)frame;
+
+  __asm__ volatile("cli; hlt");
+}
+
+__attribute__((target("general-regs-only"))) __attribute__((interrupt)) void
+overflow_handler(struct interrupt_frame *frame) {
+  (void)frame;
+
+  __asm__ volatile("cli; hlt");
+}
+
+__attribute__((target("general-regs-only"))) __attribute__((interrupt)) void
+bound_range_exceeded_handler(struct interrupt_frame *frame) {
+  (void)frame;
+
+  __asm__ volatile("cli; hlt");
+}
+
+__attribute__((target("general-regs-only"))) __attribute__((interrupt)) void
+invalid_opcode(struct interrupt_frame *frame) {
+  (void)frame;
+
+  __asm__ volatile("cli; hlt");
+}
+
+__attribute__((target("general-regs-only"))) __attribute__((interrupt)) void
+device_not_available(struct interrupt_frame *frame) {
+  (void)frame;
+
+  __asm__ volatile("cli; hlt");
+}
+
+__attribute__((target("general-regs-only"))) __attribute__((interrupt)) void
+coprocessor_segment_overrun(struct interrupt_frame *frame) {
+  (void)frame;
+
+  __asm__ volatile("cli; hlt");
+}
+
+__attribute__((target("general-regs-only"))) __attribute__((interrupt)) void
+x87_floating_point(struct interrupt_frame *frame) {
+  (void)frame;
+
+  __asm__ volatile("cli; hlt");
+}
+
+__attribute__((target("general-regs-only"))) __attribute__((interrupt)) void
+machine_check(struct interrupt_frame *frame) {
+  (void)frame;
+
+  __asm__ volatile("cli; hlt");
+}
+
+__attribute__((target("general-regs-only"))) __attribute__((interrupt)) void
+simd_floating_point(struct interrupt_frame *frame) {
+  (void)frame;
+
+  __asm__ volatile("cli; hlt");
+}
+
+__attribute__((target("general-regs-only"))) __attribute__((interrupt)) void
+virtualization(struct interrupt_frame *frame) {
+  (void)frame;
+
+  __asm__ volatile("cli; hlt");
+}
+
+// --- Handlers that HAVE an error code ---
+
+__attribute__((target("general-regs-only"))) __attribute__((interrupt)) void
+double_fault(struct interrupt_frame *frame, uint32_t error_code) {
+  (void)error_code;
+  (void)frame;
+
+  __asm__ volatile("cli; hlt");
+}
+
+__attribute__((target("general-regs-only"))) __attribute__((interrupt)) void
+invalid_tss(struct interrupt_frame *frame, uint32_t error_code) {
+  (void)frame;
+  (void)error_code;
+
+  __asm__ volatile("cli; hlt");
+}
+
+__attribute__((target("general-regs-only"))) __attribute__((interrupt)) void
+segment_not_present(struct interrupt_frame *frame, uint32_t error_code) {
+  (void)frame;
+  (void)error_code;
+
+  __asm__ volatile("cli; hlt");
+}
+
+__attribute__((target("general-regs-only"))) __attribute__((interrupt)) void
+stack_segment_fault(struct interrupt_frame *frame, uint32_t error_code) {
+  (void)error_code;
+  (void)frame;
+
+  __asm__ volatile("cli; hlt");
+}
+
+__attribute__((target("general-regs-only"))) __attribute__((interrupt)) void
+general_protection_fault(struct interrupt_frame *frame, uint32_t error_code) {
+  (void)frame;
+  (void)error_code;
+
+  __asm__ volatile("cli; hlt");
+}
+
+__attribute__((target("general-regs-only"))) __attribute__((interrupt)) void
+page_fault(struct interrupt_frame *frame, uint32_t error_code) {
+  (void)frame;
+  (void)error_code;
+
+  __asm__ volatile("cli; hlt");
+}
+
+__attribute__((target("general-regs-only"))) __attribute__((interrupt)) void
+alignment_check(struct interrupt_frame *frame, uint32_t error_code) {
+  (void)frame;
+  (void)error_code;
+
+  __asm__ volatile("cli; hlt");
+}
+
+__attribute__((target("general-regs-only"))) __attribute__((interrupt)) void
+security_exception(struct interrupt_frame *frame, uint32_t error_code) {
+  (void)frame;
+  (void)error_code;
+
+  __asm__ volatile("cli; hlt");
+}
