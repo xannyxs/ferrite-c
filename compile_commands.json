@@ -14,6 +14,9 @@
       "-fno-stack-protector",
       "-D__is_libk",
       "-D__print_serial",
+      "-pedantic",
+      "-std=c99",
+      "-march=i386",
       "-o",
       "build/lib/stdlib/abort.o",
       "src/lib/stdlib/abort.c"
@@ -37,6 +40,9 @@
       "-fno-stack-protector",
       "-D__is_libk",
       "-D__print_serial",
+      "-pedantic",
+      "-std=c99",
+      "-march=i386",
       "-o",
       "build/lib/string/memset.o",
       "src/lib/string/memset.c"
@@ -60,6 +66,9 @@
       "-fno-stack-protector",
       "-D__is_libk",
       "-D__print_serial",
+      "-pedantic",
+      "-std=c99",
+      "-march=i386",
       "-o",
       "build/lib/string/strcmp.o",
       "src/lib/string/strcmp.c"
@@ -83,6 +92,9 @@
       "-fno-stack-protector",
       "-D__is_libk",
       "-D__print_serial",
+      "-pedantic",
+      "-std=c99",
+      "-march=i386",
       "-o",
       "build/lib/string/strlen.o",
       "src/lib/string/strlen.c"
@@ -106,6 +118,9 @@
       "-fno-stack-protector",
       "-D__is_libk",
       "-D__print_serial",
+      "-pedantic",
+      "-std=c99",
+      "-march=i386",
       "-o",
       "build/lib/string/memmove.o",
       "src/lib/string/memmove.c"
@@ -129,6 +144,9 @@
       "-fno-stack-protector",
       "-D__is_libk",
       "-D__print_serial",
+      "-pedantic",
+      "-std=c99",
+      "-march=i386",
       "-o",
       "build/drivers/video/vga_text.o",
       "src/drivers/video/vga_text.c"
@@ -152,6 +170,9 @@
       "-fno-stack-protector",
       "-D__is_libk",
       "-D__print_serial",
+      "-pedantic",
+      "-std=c99",
+      "-march=i386",
       "-o",
       "build/drivers/keyboard.o",
       "src/drivers/keyboard.c"
@@ -175,6 +196,9 @@
       "-fno-stack-protector",
       "-D__is_libk",
       "-D__print_serial",
+      "-pedantic",
+      "-std=c99",
+      "-march=i386",
       "-o",
       "build/drivers/serial.o",
       "src/drivers/serial.c"
@@ -198,6 +222,9 @@
       "-fno-stack-protector",
       "-D__is_libk",
       "-D__print_serial",
+      "-pedantic",
+      "-std=c99",
+      "-march=i386",
       "-o",
       "build/drivers/console.o",
       "src/drivers/console.c"
@@ -221,6 +248,9 @@
       "-fno-stack-protector",
       "-D__is_libk",
       "-D__print_serial",
+      "-pedantic",
+      "-std=c99",
+      "-march=i386",
       "-o",
       "build/drivers/printk.o",
       "src/drivers/printk.c"
@@ -244,6 +274,9 @@
       "-fno-stack-protector",
       "-D__is_libk",
       "-D__print_serial",
+      "-pedantic",
+      "-std=c99",
+      "-march=i386",
       "-o",
       "build/kernel.o",
       "src/kernel.c"
@@ -267,6 +300,61 @@
       "-fno-stack-protector",
       "-D__is_libk",
       "-D__print_serial",
+      "-pedantic",
+      "-std=c99",
+      "-march=i386",
+      "-o",
+      "build/arch/x86/idt/exceptions.o",
+      "src/arch/x86/idt/exceptions.c"
+    ],
+    "directory": "/home/xannyx/Documents/ideaProjects/ferrite-c",
+    "file": "/home/xannyx/Documents/ideaProjects/ferrite-c/src/arch/x86/idt/exceptions.c",
+    "output": "/home/xannyx/Documents/ideaProjects/ferrite-c/build/arch/x86/idt/exceptions.o"
+  },
+  {
+    "arguments": [
+      "/nix/store/x3bl1vw9wvs2vjn1ijnrfi8y1j7fcnlc-i686-elf-gcc-wrapper-13.3.0/bin/i686-elf-gcc",
+      "-c",
+      "-I./src",
+      "-m32",
+      "-ffreestanding",
+      "-g",
+      "-O2",
+      "-Wall",
+      "-Wextra",
+      "-Werror",
+      "-fno-stack-protector",
+      "-D__is_libk",
+      "-D__print_serial",
+      "-pedantic",
+      "-std=c99",
+      "-march=i386",
+      "-o",
+      "build/arch/x86/idt/idt.o",
+      "src/arch/x86/idt/idt.c"
+    ],
+    "directory": "/home/xannyx/Documents/ideaProjects/ferrite-c",
+    "file": "/home/xannyx/Documents/ideaProjects/ferrite-c/src/arch/x86/idt/idt.c",
+    "output": "/home/xannyx/Documents/ideaProjects/ferrite-c/build/arch/x86/idt/idt.o"
+  },
+  {
+    "arguments": [
+      "/nix/store/x3bl1vw9wvs2vjn1ijnrfi8y1j7fcnlc-i686-elf-gcc-wrapper-13.3.0/bin/i686-elf-gcc",
+      "-c",
+      "-I./src",
+      "-m32",
+      "-ffreestanding",
+      "-g",
+      "-O2",
+      "-Wall",
+      "-Wextra",
+      "-Werror",
+      "-fno-stack-protector",
+      "-D__is_libk",
+      "-D__print_serial",
+      "-pedantic",
+      "-std=c99",
+      "-march=i386",
       "-o",
       "build/arch/x86/gdt/gdt.o",
       "src/arch/x86/gdt/gdt.c"
@@ -290,13 +378,16 @@
       "-fno-stack-protector",
       "-D__is_libk",
       "-D__print_serial",
+      "-pedantic",
+      "-std=c99",
+      "-march=i386",
       "-o",
-      "build/boot/bootmain.o",
-      "src/boot/bootmain.c"
+      "build/memory/ksize.o",
+      "src/memory/ksize.c"
     ],
     "directory": "/home/xannyx/Documents/ideaProjects/ferrite-c",
-    "file": "/home/xannyx/Documents/ideaProjects/ferrite-c/src/boot/bootmain.c",
-    "output": "/home/xannyx/Documents/ideaProjects/ferrite-c/build/boot/bootmain.o"
+    "file": "/home/xannyx/Documents/ideaProjects/ferrite-c/src/memory/ksize.c",
+    "output": "/home/xannyx/Documents/ideaProjects/ferrite-c/build/memory/ksize.o"
   },
   {
     "arguments": [
@@ -313,6 +404,35 @@
       "-fno-stack-protector",
       "-D__is_libk",
       "-D__print_serial",
+      "-pedantic",
+      "-std=c99",
+      "-march=i386",
+      "-o",
+      "build/memory/kfree.o",
+      "src/memory/kfree.c"
+    ],
+    "directory": "/home/xannyx/Documents/ideaProjects/ferrite-c",
+    "file": "/home/xannyx/Documents/ideaProjects/ferrite-c/src/memory/kfree.c",
+    "output": "/home/xannyx/Documents/ideaProjects/ferrite-c/build/memory/kfree.o"
+  },
+  {
+    "arguments": [
+      "/nix/store/x3bl1vw9wvs2vjn1ijnrfi8y1j7fcnlc-i686-elf-gcc-wrapper-13.3.0/bin/i686-elf-gcc",
+      "-c",
+      "-I./src",
+      "-m32",
+      "-ffreestanding",
+      "-g",
+      "-O2",
+      "-Wall",
+      "-Wextra",
+      "-Werror",
+      "-fno-stack-protector",
+      "-D__is_libk",
+      "-D__print_serial",
+      "-pedantic",
+      "-std=c99",
+      "-march=i386",
       "-o",
       "build/memory/pmm.o",
       "src/memory/pmm.c"
@@ -336,6 +456,9 @@
       "-fno-stack-protector",
       "-D__is_libk",
       "-D__print_serial",
+      "-pedantic",
+      "-std=c99",
+      "-march=i386",
       "-o",
       "build/memory/vmm.o",
       "src/memory/vmm.c"
@@ -359,6 +482,9 @@
       "-fno-stack-protector",
       "-D__is_libk",
       "-D__print_serial",
+      "-pedantic",
+      "-std=c99",
+      "-march=i386",
       "-o",
       "build/memory/kmalloc.o",
       "src/memory/kmalloc.c"
@@ -366,5 +492,31 @@
     "directory": "/home/xannyx/Documents/ideaProjects/ferrite-c",
     "file": "/home/xannyx/Documents/ideaProjects/ferrite-c/src/memory/kmalloc.c",
     "output": "/home/xannyx/Documents/ideaProjects/ferrite-c/build/memory/kmalloc.o"
+  },
+  {
+    "arguments": [
+      "/nix/store/x3bl1vw9wvs2vjn1ijnrfi8y1j7fcnlc-i686-elf-gcc-wrapper-13.3.0/bin/i686-elf-gcc",
+      "-c",
+      "-I./src",
+      "-m32",
+      "-ffreestanding",
+      "-g",
+      "-O2",
+      "-Wall",
+      "-Wextra",
+      "-Werror",
+      "-fno-stack-protector",
+      "-D__is_libk",
+      "-D__print_serial",
+      "-pedantic",
+      "-std=c99",
+      "-march=i386",
+      "-o",
+      "build/memory/kbrk.o",
+      "src/memory/kbrk.c"
+    ],
+    "directory": "/home/xannyx/Documents/ideaProjects/ferrite-c",
+    "file": "/home/xannyx/Documents/ideaProjects/ferrite-c/src/memory/kbrk.c",
+    "output": "/home/xannyx/Documents/ideaProjects/ferrite-c/build/memory/kbrk.o"
   }
 ]
