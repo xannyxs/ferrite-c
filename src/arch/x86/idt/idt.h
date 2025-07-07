@@ -64,6 +64,9 @@ void page_fault(struct interrupt_frame *frame, uint32_t error_code);
 void alignment_check(struct interrupt_frame *frame, uint32_t error_code);
 void security_exception(struct interrupt_frame *frame, uint32_t error_code);
 
-void idt_init();
+// --- Hardware Interrupts ---
+void keyboard_handler(struct interrupt_frame *frame);
+
+void idt_init(void);
 
 #endif /* IDT_H */

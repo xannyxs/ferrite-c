@@ -1,6 +1,12 @@
 #include "arch/x86/idt/idt.h"
+#include "arch/x86/io.h"
+#include "arch/x86/pic.h"
+#include "drivers/console.h"
+#include "drivers/keyboard.h"
 #include "drivers/printk.h"
 #include "lib/stdlib.h"
+
+#include <stdint.h>
 
 void print_frame(struct interrupt_frame *frame) {
   printk("INTERRUPT FRAME:\n");
@@ -173,4 +179,20 @@ security_exception(struct interrupt_frame *frame, uint32_t error_code) {
   (void)error_code;
 
   __asm__ volatile("cli; hlt");
+}
+
+/* Hardware Interrupts */
+
+__attribute__((target("general-regs-only"))) __attribute__((interrupt)) void
+keyboard_handler(struct interrupt_frame *frame) {
+  (void)frame;
+
+  int32_t scancode = inb(0x60);
+
+  char c = keyboard_input(scancode);
+  if (c != 0) {
+    console_add_buffer(c);
+  }
+
+  pic_send_eoi(1);
 }
