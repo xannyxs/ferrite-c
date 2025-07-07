@@ -3,7 +3,9 @@
 
 #include <stddef.h>
 
-static inline size_t strlen(const char *s);
+size_t strlen(const char *s);
+
+void *memcpy(void *dest, const void *src, size_t n);
 
 void *memmove(void *dest, const void *src, size_t len);
 

@@ -33,4 +33,6 @@ static inline void outl(uint16_t addr, uint32_t val) {
   __asm__ __volatile__("outl %1, %0" : : "d"(addr), "a"(val));
 }
 
+static inline void io_wait(void) { outb(0x80, 0); }
+
 #endif /* IO_H */

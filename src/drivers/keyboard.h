@@ -2,6 +2,7 @@
 #define KEYBOARD_H
 
 #include <stdbool.h>
+#include <stdint.h>
 
 typedef enum keyboard_key {
   KeyEsc = 0x01,
@@ -131,6 +132,6 @@ typedef enum keyboard_key {
   KeyPause = 0xef,
 } keyboard_key_t;
 
-char keyboard_input();
+char keyboard_input(uint8_t scancode);
 
 #endif /* KEYBOARD_H */

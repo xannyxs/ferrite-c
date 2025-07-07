@@ -1,6 +1,7 @@
 #include "arch/x86/gdt/gdt.h"
 #include "arch/x86/idt/idt.h"
 #include "arch/x86/multiboot.h"
+#include "arch/x86/pic.h"
 #include "drivers/console.h"
 #include "drivers/keyboard.h"
 #include "drivers/printk.h"
@@ -13,6 +14,7 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
+#include <string.h>
 
 #if defined(__linux__)
 #error "You are not using a cross-compiler"
@@ -23,13 +25,15 @@
 #endif
 
 __attribute__((noreturn)) void kmain(uint32_t magic, multiboot_info_t *mbd) {
-  gdt_init();
-  idt_init();
-  vga_init();
-
   if (magic != MULTIBOOT_BOOTLOADER_MAGIC) {
     abort("invalid magic number!");
   }
+
+  gdt_init();
+  idt_init();
+  pic_remap(0x20, 0x28);
+
+  vga_init();
 
   pmm_init_from_map(mbd);
   vmm_init_pages();
@@ -37,27 +41,19 @@ __attribute__((noreturn)) void kmain(uint32_t magic, multiboot_info_t *mbd) {
   kmalloc_init();
 
   char *str = kmalloc(10);
-  str[0] = 'H';
-  str[1] = 'A';
-  str[2] = 'L';
-  str[3] = 'L';
-  str[4] = 'O';
-  str[5] = '\0';
+  memcpy(str, "Hello!", 10);
+  printk("%s\n", str);
 
   kfree(str);
 
   console_init();
 
-  __asm__ volatile("int $0x01");
+  // __asm__ volatile("int $0x01");
 
-  while (1) {
-    char c = keyboard_input();
+  __asm__ volatile("sti"); // Enable "Set Interrupt Flag"
 
-    if (c == 0) {
-      continue;
-    }
-
-    console_add_buffer(c);
+  while (true) {
+    __asm__ volatile("hlt");
   }
 
   __builtin_unreachable();

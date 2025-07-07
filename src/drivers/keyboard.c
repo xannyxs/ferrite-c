@@ -39,26 +39,20 @@ char scancode_to_ascii(uint8_t scan_code, bool shift_pressed) {
   return scancode_map_no_shift[scan_code];
 }
 
-char keyboard_input() {
-  if ((inb(KEYBOARD_STATUS_PORT) & 1) == 0) {
-    return '\0';
-  }
-
-  uint8_t scan_code = inb(KEYBOARD_DATA_PORT);
-
+char keyboard_input(uint8_t scancode) {
   // Shift Pressed
-  if (scan_code == 42) {
+  if (scancode == 42) {
     SHIFT_PRESSED = true;
     return 0;
   }
 
   // Shift Released
-  if (scan_code == 170) {
+  if (scancode == 170) {
     SHIFT_PRESSED = false;
     return 0;
   }
 
-  char c = scancode_to_ascii(scan_code, SHIFT_PRESSED);
+  char c = scancode_to_ascii(scancode, SHIFT_PRESSED);
 
   return c;
 }
