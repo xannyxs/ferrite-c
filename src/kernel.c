@@ -48,8 +48,6 @@ __attribute__((noreturn)) void kmain(uint32_t magic, multiboot_info_t *mbd) {
 
   console_init();
 
-  // __asm__ volatile("int $0x01");
-
   __asm__ volatile("sti"); // Enable "Set Interrupt Flag"
 
   while (true) {

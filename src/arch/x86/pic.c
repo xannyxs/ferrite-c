@@ -28,6 +28,6 @@ void pic_remap(int32_t offset1, int32_t offset2) {
   io_wait();
 
   // Unmask both PICs.
-  outb(PIC2_DATA, 0xFF);
-  outb(PIC1_DATA, 0xFD);
+  outb(PIC2_DATA, 0xFE);
+  outb(PIC1_DATA, 0xF9);
 }

@@ -66,6 +66,7 @@ void security_exception(struct interrupt_frame *frame, uint32_t error_code);
 
 // --- Hardware Interrupts ---
 void keyboard_handler(struct interrupt_frame *frame);
+void rtc_handler(struct interrupt_frame *frame);
 
 void idt_init(void);
 

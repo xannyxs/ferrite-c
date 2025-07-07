@@ -1,6 +1,7 @@
 #include "arch/x86/idt/idt.h"
 #include "arch/x86/io.h"
 #include "arch/x86/pic.h"
+#include "arch/x86/time/rtc.h"
 #include "debug/debug.h"
 #include "drivers/console.h"
 #include "drivers/keyboard.h"
@@ -197,4 +198,22 @@ keyboard_handler(struct interrupt_frame *frame) {
   }
 
   pic_send_eoi(1);
+}
+
+volatile uint64_t ticks = 0;
+
+__attribute__((target("general-regs-only"))) __attribute__((interrupt)) void
+rtc_handler(struct interrupt_frame *frame) {
+  (void)frame;
+
+  outb(0x70, 0x0C); // select register C
+  inb(0x71);        // just throw away contents
+
+  ticks += 1;
+  int32_t frequency = getfrequency();
+  if (ticks % frequency == 0) {
+    // seconds_since_epoch++;
+  }
+
+  pic_send_eoi(8);
 }
