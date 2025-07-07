@@ -20,6 +20,6 @@ void kfree(void *ptr) {
   }
 
   for (uint32_t i = 0; i < header_ptr->size / PAGE_SIZE; i++) {
-    vmm_unmap_page(ptr + i * PAGE_SIZE);
+    vmm_unmap_page((void *)((uint32_t)ptr + i * PAGE_SIZE));
   }
 }

@@ -22,7 +22,7 @@ void *kbrk(void *addr) {
     }
 
     vmm_map_page(ptr, heap_current_break, 0);
-    heap_current_break += PAGE_SIZE;
+    heap_current_break = (void *)((uint32_t)heap_current_break + PAGE_SIZE);
   }
 
   heap_current_break = aligned_new_break;

@@ -1,5 +1,6 @@
 #include "arch/x86/idt/idt.h"
 #include "arch/x86/entry.h"
+
 #include <stdint.h>
 
 const interrupt_handler_entry_t INTERRUPT_HANDLERS[21] = {
@@ -33,7 +34,7 @@ static void idt_set_gate(uint32_t num, uint32_t handler) {
   idt_entries[num].pointer_low = (handler & 0xffff);
   idt_entries[num].selector = 0x08;
   idt_entries[num].zero = 0;
-  idt_entries[num].type_attributes = 0b10001110;
+  idt_entries[num].type_attributes = 0x8E;
   idt_entries[num].pointer_high = ((handler >> 16) & 0xffff);
 }
 

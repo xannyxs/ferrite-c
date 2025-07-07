@@ -150,11 +150,11 @@ typedef struct multiboot_info {
 #define MULTIBOOT_FRAMEBUFFER_TYPE_RGB 1
 #define MULTIBOOT_FRAMEBUFFER_TYPE_EGA_TEXT 2
   multiboot_uint8_t framebuffer_type;
-  union {
+  union framebuffer {
     struct {
       multiboot_uint32_t framebuffer_palette_addr;
       multiboot_uint16_t framebuffer_palette_num_colors;
-    };
+    } palette_t;
     struct {
       multiboot_uint8_t framebuffer_red_field_position;
       multiboot_uint8_t framebuffer_red_mask_size;
@@ -162,8 +162,8 @@ typedef struct multiboot_info {
       multiboot_uint8_t framebuffer_green_mask_size;
       multiboot_uint8_t framebuffer_blue_field_position;
       multiboot_uint8_t framebuffer_blue_mask_size;
-    };
-  };
+    } color_t;
+  } framebuffer_u;
 } multiboot_info_t;
 
 struct multiboot_mmap_entry {

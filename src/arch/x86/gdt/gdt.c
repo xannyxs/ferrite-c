@@ -28,11 +28,11 @@ void gdt_init() {
   gdt_ptr.limit = sizeof(entry_t) * 5 - 1;
   gdt_ptr.base = (uint32_t)&gdt_entries;
 
-  gdt_set_gate(0, 0, 0, 0, 0);                            // NULL Gate
-  gdt_set_gate(1, 0, 0xFFFFFFFF, 0b10011010, 0b11001111); // Kernel Code Segment
-  gdt_set_gate(2, 0, 0xFFFFFFFF, 0b10010010, 0b11001111); // Kernel Data Segment
-  gdt_set_gate(3, 0, 0xFFFFFFFF, 0b11111010, 0b11001111); // User Code Segment
-  gdt_set_gate(4, 0, 0xFFFFFFFF, 0b11110010, 0b11001111); // User Data Segment
+  gdt_set_gate(0, 0, 0, 0, 0);                // NULL Gate
+  gdt_set_gate(1, 0, 0xFFFFFFFF, 0x9A, 0xCF); // Kernel Code Segment
+  gdt_set_gate(2, 0, 0xFFFFFFFF, 0x92, 0xCF); // Kernel Data Segment
+  gdt_set_gate(3, 0, 0xFFFFFFFF, 0xFA, 0xCF); // User Code Segment
+  gdt_set_gate(4, 0, 0xFFFFFFFF, 0xF2, 0xCF); // User Data Segment
 
   gdt_flush((uint32_t)&gdt_ptr);
 }
