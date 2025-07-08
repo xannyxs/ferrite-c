@@ -2,6 +2,7 @@
 #include "arch/x86/io.h"
 #include "arch/x86/pic.h"
 #include "arch/x86/time/rtc.h"
+#include "arch/x86/time/time.h"
 #include "debug/debug.h"
 #include "drivers/console.h"
 #include "drivers/keyboard.h"
@@ -36,8 +37,6 @@ divide_by_zero_handler(struct interrupt_frame *frame) {
 __attribute__((target("general-regs-only"))) __attribute__((interrupt)) void
 debug_interrupt_handler(struct interrupt_frame *frame) {
   (void)frame;
-
-  printk("EXCEPTION: DEBUG EXCEPTION (#DB)\n");
   BOCHS_BREAK();
 }
 
@@ -51,7 +50,6 @@ non_maskable_interrupt_handler(struct interrupt_frame *frame) {
 __attribute__((target("general-regs-only"))) __attribute__((interrupt)) void
 breakpoint_handler(struct interrupt_frame *frame) {
   (void)frame;
-
   BOCHS_BREAK();
 }
 
@@ -211,8 +209,12 @@ rtc_handler(struct interrupt_frame *frame) {
 
   ticks += 1;
   int32_t frequency = getfrequency();
+  uint64_t seconds_since_epoch = getepoch();
+
   if (ticks % frequency == 0) {
-    // seconds_since_epoch++;
+    seconds_since_epoch += 1;
+
+    setepoch(seconds_since_epoch);
   }
 
   pic_send_eoi(8);

@@ -3,7 +3,6 @@
 #include "arch/x86/multiboot.h"
 #include "arch/x86/pic.h"
 #include "drivers/console.h"
-#include "drivers/keyboard.h"
 #include "drivers/printk.h"
 #include "drivers/video/vga.h"
 #include "lib/stdlib.h"
