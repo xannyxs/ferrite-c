@@ -1,4 +1,5 @@
 # Project
+docs/build
 *.ini
 isodir
 *.iso
