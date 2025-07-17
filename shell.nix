@@ -55,6 +55,11 @@ pinnedPkgs.mkShell {
     tree
 
     customBochs
+
+    python312
+    python312Packages.sphinx
+    python312Packages.sphinx-rtd-theme
+    python312Packages.sphinx-autobuild
   ];
 
   shellHook = ''

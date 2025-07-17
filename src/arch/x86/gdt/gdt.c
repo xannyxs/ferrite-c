@@ -24,7 +24,7 @@ static void gdt_set_gate(uint32_t num, uint32_t base, uint32_t limit,
 
 /* Public */
 
-void gdt_init() {
+void gdt_init(void) {
   gdt_ptr.limit = sizeof(entry_t) * 5 - 1;
   gdt_ptr.base = (uint32_t)&gdt_entries;
 
