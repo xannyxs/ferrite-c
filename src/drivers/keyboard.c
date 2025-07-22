@@ -1,13 +1,14 @@
 #include "drivers/keyboard.h"
-#include "arch/x86/io.h"
+#include "arch/x86/idt/idt.h"
+#include "drivers/console.h"
 
 #include <stdbool.h>
 #include <stdint.h>
 
-const int16_t KEYBOARD_DATA_PORT = 0x60;
-const int16_t KEYBOARD_STATUS_PORT = 0x64;
-
+static int32_t g_last_scancode = 0;
 static bool SHIFT_PRESSED = false;
+
+/* Private */
 
 char scancode_to_ascii(uint8_t scan_code, bool shift_pressed) {
   static const char scancode_map_no_shift[] = {
@@ -39,20 +40,28 @@ char scancode_to_ascii(uint8_t scan_code, bool shift_pressed) {
   return scancode_map_no_shift[scan_code];
 }
 
-char keyboard_input(uint8_t scancode) {
+/* Public */
+
+int32_t getscancode(void) { return g_last_scancode; }
+
+void setscancode(int32_t scancode) { g_last_scancode = scancode; }
+
+void keyboard_input(struct interrupt_frame *frame) {
+  (void)frame;
+
   // Shift Pressed
-  if (scancode == 42) {
+  if (g_last_scancode == 42) {
     SHIFT_PRESSED = true;
-    return 0;
+    return;
   }
 
   // Shift Released
-  if (scancode == 170) {
+  if (g_last_scancode == 170) {
     SHIFT_PRESSED = false;
-    return 0;
+    return;
   }
 
-  char c = scancode_to_ascii(scancode, SHIFT_PRESSED);
+  char c = scancode_to_ascii(g_last_scancode, SHIFT_PRESSED);
 
-  return c;
+  console_add_buffer(c);
 }

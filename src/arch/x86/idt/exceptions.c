@@ -8,6 +8,7 @@
 #include "drivers/keyboard.h"
 #include "drivers/printk.h"
 #include "lib/stdlib.h"
+#include "sys/tasks.h"
 
 #include <stdint.h>
 
@@ -188,12 +189,10 @@ __attribute__((target("general-regs-only"))) __attribute__((interrupt)) void
 keyboard_handler(struct interrupt_frame *frame) {
   (void)frame;
 
-  int32_t scancode = inb(0x60);
+  int32_t scancode = inb(KEYBOARD_DATA_PORT);
+  setscancode(scancode);
 
-  char c = keyboard_input(scancode);
-  if (c != 0) {
-    console_add_buffer(c);
-  }
+  schedule_task(keyboard_input);
 
   pic_send_eoi(1);
 }

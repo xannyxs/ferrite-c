@@ -9,6 +9,7 @@
 #include "memory/kmalloc.h"
 #include "memory/pmm.h"
 #include "memory/vmm.h"
+#include "sys/tasks.h"
 
 #include <stdbool.h>
 #include <stddef.h>
@@ -50,6 +51,8 @@ __attribute__((noreturn)) void kmain(uint32_t magic, multiboot_info_t *mbd) {
   __asm__ volatile("sti"); // Enable "Set Interrupt Flag"
 
   while (true) {
+    run_scheduled_tasks();
+
     __asm__ volatile("hlt");
   }
 
