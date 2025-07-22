@@ -2,28 +2,18 @@
 #include "arch/x86/io.h"
 #include "arch/x86/pic.h"
 #include "arch/x86/time/rtc.h"
+#include "debug/debug.h"
+#include "debug/panic.h"
 #include "drivers/keyboard.h"
 #include "drivers/printk.h"
-#include "lib/stdlib.h"
 #include "sys/tasks.h"
 
 #include <stdint.h>
 
-void print_frame(struct interrupt_frame *frame) {
-  printk("INTERRUPT FRAME:\n");
-  printk("  EIP: 0x%x\n", frame->instruction_pointer);
-  printk("  CS:  0x%x\n", frame->code_segment);
-  printk("  EFLAGS: 0x%x\n", frame->eflags);
-  printk("  ESP: 0x%x\n", frame->stack_pointer);
-  printk("  SS:  0x%x\n", frame->stack_segment);
-}
-
 __attribute__((target("general-regs-only"))) __attribute__((interrupt)) void
-divide_by_zero_handler(struct interrupt_frame *frame) {
-  printk("EXCEPTION: DIVIDE BY ZERO (#DE)\n");
-
-  if ((frame->code_segment & 0x3) == 0) {
-    abort("Cannot divide by zero in kernel mode\n");
+divide_by_zero_handler(registers_t *regs) {
+  if ((regs->cs & 0x3) == 0) {
+    panic(regs, "Division by Zero");
   }
 
   printk("User process attempted division by zero\n");
@@ -33,83 +23,83 @@ divide_by_zero_handler(struct interrupt_frame *frame) {
 }
 
 __attribute__((target("general-regs-only"))) __attribute__((interrupt)) void
-debug_interrupt_handler(struct interrupt_frame *frame) {
-  (void)frame;
+debug_interrupt_handler(registers_t *regs) {
+  (void)regs;
   BOCHS_BREAK();
 }
 
 __attribute__((target("general-regs-only"))) __attribute__((interrupt)) void
-non_maskable_interrupt_handler(struct interrupt_frame *frame) {
-  (void)frame;
+non_maskable_interrupt_handler(registers_t *regs) {
+  (void)regs;
 
-  __asm__ volatile("cli; hlt");
+  panic(regs, "Non Maskable Interrupt");
 }
 
 __attribute__((target("general-regs-only"))) __attribute__((interrupt)) void
-breakpoint_handler(struct interrupt_frame *frame) {
-  (void)frame;
+breakpoint_handler(registers_t *regs) {
+  (void)regs;
   BOCHS_BREAK();
 }
 
 __attribute__((target("general-regs-only"))) __attribute__((interrupt)) void
-overflow_handler(struct interrupt_frame *frame) {
-  (void)frame;
+overflow_handler(registers_t *regs) {
+  (void)regs;
+
+  panic(regs, "Overflow");
+}
+
+__attribute__((target("general-regs-only"))) __attribute__((interrupt)) void
+bound_range_exceeded_handler(registers_t *regs) {
+  (void)regs;
 
   __asm__ volatile("cli; hlt");
 }
 
 __attribute__((target("general-regs-only"))) __attribute__((interrupt)) void
-bound_range_exceeded_handler(struct interrupt_frame *frame) {
-  (void)frame;
+invalid_opcode(registers_t *regs) {
+  (void)regs;
 
   __asm__ volatile("cli; hlt");
 }
 
 __attribute__((target("general-regs-only"))) __attribute__((interrupt)) void
-invalid_opcode(struct interrupt_frame *frame) {
-  (void)frame;
+device_not_available(registers_t *regs) {
+  (void)regs;
 
   __asm__ volatile("cli; hlt");
 }
 
 __attribute__((target("general-regs-only"))) __attribute__((interrupt)) void
-device_not_available(struct interrupt_frame *frame) {
-  (void)frame;
+coprocessor_segment_overrun(registers_t *regs) {
+  (void)regs;
 
   __asm__ volatile("cli; hlt");
 }
 
 __attribute__((target("general-regs-only"))) __attribute__((interrupt)) void
-coprocessor_segment_overrun(struct interrupt_frame *frame) {
-  (void)frame;
+x87_floating_point(registers_t *regs) {
+  (void)regs;
 
   __asm__ volatile("cli; hlt");
 }
 
 __attribute__((target("general-regs-only"))) __attribute__((interrupt)) void
-x87_floating_point(struct interrupt_frame *frame) {
-  (void)frame;
+machine_check(registers_t *regs) {
+  (void)regs;
 
   __asm__ volatile("cli; hlt");
 }
 
 __attribute__((target("general-regs-only"))) __attribute__((interrupt)) void
-machine_check(struct interrupt_frame *frame) {
-  (void)frame;
+simd_floating_point(registers_t *regs) {
+  (void)regs;
 
   __asm__ volatile("cli; hlt");
 }
 
 __attribute__((target("general-regs-only"))) __attribute__((interrupt)) void
-simd_floating_point(struct interrupt_frame *frame) {
-  (void)frame;
-
-  __asm__ volatile("cli; hlt");
-}
-
-__attribute__((target("general-regs-only"))) __attribute__((interrupt)) void
-virtualization(struct interrupt_frame *frame) {
-  (void)frame;
+virtualization(registers_t *regs) {
+  (void)regs;
 
   __asm__ volatile("cli; hlt");
 }
@@ -117,64 +107,64 @@ virtualization(struct interrupt_frame *frame) {
 // --- Handlers that HAVE an error code ---
 
 __attribute__((target("general-regs-only"))) __attribute__((interrupt)) void
-double_fault(struct interrupt_frame *frame, uint32_t error_code) {
+double_fault(registers_t *regs, uint32_t error_code) {
   (void)error_code;
-  (void)frame;
+  (void)regs;
 
   __asm__ volatile("cli; hlt");
 }
 
 __attribute__((target("general-regs-only"))) __attribute__((interrupt)) void
-invalid_tss(struct interrupt_frame *frame, uint32_t error_code) {
-  (void)frame;
-  (void)error_code;
-
-  __asm__ volatile("cli; hlt");
-}
-
-__attribute__((target("general-regs-only"))) __attribute__((interrupt)) void
-segment_not_present(struct interrupt_frame *frame, uint32_t error_code) {
-  (void)frame;
+invalid_tss(registers_t *regs, uint32_t error_code) {
+  (void)regs;
   (void)error_code;
 
   __asm__ volatile("cli; hlt");
 }
 
 __attribute__((target("general-regs-only"))) __attribute__((interrupt)) void
-stack_segment_fault(struct interrupt_frame *frame, uint32_t error_code) {
-  (void)error_code;
-  (void)frame;
-
-  __asm__ volatile("cli; hlt");
-}
-
-__attribute__((target("general-regs-only"))) __attribute__((interrupt)) void
-general_protection_fault(struct interrupt_frame *frame, uint32_t error_code) {
-  (void)frame;
+segment_not_present(registers_t *regs, uint32_t error_code) {
+  (void)regs;
   (void)error_code;
 
   __asm__ volatile("cli; hlt");
 }
 
 __attribute__((target("general-regs-only"))) __attribute__((interrupt)) void
-page_fault(struct interrupt_frame *frame, uint32_t error_code) {
-  (void)frame;
+stack_segment_fault(registers_t *regs, uint32_t error_code) {
+  (void)error_code;
+  (void)regs;
+
+  __asm__ volatile("cli; hlt");
+}
+
+__attribute__((target("general-regs-only"))) __attribute__((interrupt)) void
+general_protection_fault(registers_t *regs, uint32_t error_code) {
+  (void)regs;
   (void)error_code;
 
   __asm__ volatile("cli; hlt");
 }
 
 __attribute__((target("general-regs-only"))) __attribute__((interrupt)) void
-alignment_check(struct interrupt_frame *frame, uint32_t error_code) {
-  (void)frame;
+page_fault(registers_t *regs, uint32_t error_code) {
+  (void)regs;
   (void)error_code;
 
   __asm__ volatile("cli; hlt");
 }
 
 __attribute__((target("general-regs-only"))) __attribute__((interrupt)) void
-security_exception(struct interrupt_frame *frame, uint32_t error_code) {
-  (void)frame;
+alignment_check(registers_t *regs, uint32_t error_code) {
+  (void)regs;
+  (void)error_code;
+
+  __asm__ volatile("cli; hlt");
+}
+
+__attribute__((target("general-regs-only"))) __attribute__((interrupt)) void
+security_exception(registers_t *regs, uint32_t error_code) {
+  (void)regs;
   (void)error_code;
 
   __asm__ volatile("cli; hlt");
@@ -183,8 +173,8 @@ security_exception(struct interrupt_frame *frame, uint32_t error_code) {
 /* Hardware Interrupts */
 
 __attribute__((target("general-regs-only"))) __attribute__((interrupt)) void
-keyboard_handler(struct interrupt_frame *frame) {
-  (void)frame;
+keyboard_handler(registers_t *regs) {
+  (void)regs;
 
   int32_t scancode = inb(KEYBOARD_DATA_PORT);
   setscancode(scancode);
@@ -195,8 +185,8 @@ keyboard_handler(struct interrupt_frame *frame) {
 }
 
 __attribute__((target("general-regs-only"))) __attribute__((interrupt)) void
-rtc_handler(struct interrupt_frame *frame) {
-  (void)frame;
+rtc_handler(registers_t *regs) {
+  (void)regs;
 
   schedule_task(rtc_task);
 

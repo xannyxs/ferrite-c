@@ -3,7 +3,7 @@
 
 #include "arch/x86/idt/idt.h"
 
-typedef void (*interrupt_callback_t)(struct interrupt_frame *);
+typedef void (*interrupt_callback_t)(registers_t *);
 
 void run_scheduled_tasks(void);
 

@@ -18,6 +18,6 @@ uint32_t getfrequency(void);
 
 void rtc_init(void);
 
-void rtc_task(struct interrupt_frame *frame);
+void rtc_task(registers_t *);
 
 #endif

@@ -138,6 +138,6 @@ typedef enum keyboard_key {
 
 void setscancode(int32_t scancode);
 
-void keyboard_input(struct interrupt_frame *);
+void keyboard_input(registers_t *regs);
 
 #endif /* KEYBOARD_H */

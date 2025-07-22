@@ -69,8 +69,8 @@ void rtc_init(void) {
   setepoch(epoch);
 }
 
-void rtc_task(struct interrupt_frame *frame) {
-  (void)frame;
+void rtc_task(registers_t *regs) {
+  (void)regs;
 
   outb(0x70, 0x0C); // select register C
   inb(0x71);        // just throw away contents

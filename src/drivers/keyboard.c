@@ -45,8 +45,8 @@ char scancode_to_ascii(uint8_t scan_code, bool shift_pressed) {
 
 void setscancode(int32_t scancode) { g_last_scancode = scancode; }
 
-void keyboard_input(struct interrupt_frame *frame) {
-  (void)frame;
+void keyboard_input(registers_t *regs) {
+  (void)regs;
 
   // Shift Pressed
   if (g_last_scancode == 42) {
