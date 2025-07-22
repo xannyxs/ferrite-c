@@ -1,6 +1,7 @@
 #include "drivers/keyboard.h"
 #include "arch/x86/idt/idt.h"
 #include "drivers/console.h"
+#include <drivers/printk.h>
 
 #include <stdbool.h>
 #include <stdint.h>
@@ -42,8 +43,6 @@ char scancode_to_ascii(uint8_t scan_code, bool shift_pressed) {
 
 /* Public */
 
-int32_t getscancode(void) { return g_last_scancode; }
-
 void setscancode(int32_t scancode) { g_last_scancode = scancode; }
 
 void keyboard_input(struct interrupt_frame *frame) {
@@ -62,6 +61,9 @@ void keyboard_input(struct interrupt_frame *frame) {
   }
 
   char c = scancode_to_ascii(g_last_scancode, SHIFT_PRESSED);
+  if (c == 0) {
+    return;
+  }
 
   console_add_buffer(c);
 }

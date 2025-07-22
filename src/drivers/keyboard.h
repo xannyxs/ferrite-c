@@ -136,8 +136,6 @@ typedef enum keyboard_key {
   KeyPause = 0xef,
 } keyboard_key_t;
 
-int32_t getscancode(void);
-
 void setscancode(int32_t scancode);
 
 void keyboard_input(struct interrupt_frame *);

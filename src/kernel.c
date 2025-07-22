@@ -2,6 +2,7 @@
 #include "arch/x86/idt/idt.h"
 #include "arch/x86/multiboot.h"
 #include "arch/x86/pic.h"
+#include "arch/x86/time/rtc.h"
 #include "drivers/console.h"
 #include "drivers/printk.h"
 #include "drivers/video/vga.h"
@@ -38,6 +39,8 @@ __attribute__((noreturn)) void kmain(uint32_t magic, multiboot_info_t *mbd) {
   pmm_init_from_map(mbd);
   vmm_init_pages();
 
+  rtc_init();
+
   kmalloc_init();
 
   char *str = kmalloc(10);
@@ -48,7 +51,7 @@ __attribute__((noreturn)) void kmain(uint32_t magic, multiboot_info_t *mbd) {
 
   console_init();
 
-  __asm__ volatile("sti"); // Enable "Set Interrupt Flag"
+  __asm__ volatile("sti");
 
   while (true) {
     run_scheduled_tasks();
