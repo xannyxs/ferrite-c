@@ -71,6 +71,8 @@ higher_half:
 	push ebx
 	push eax
 
+	cli
+
 	;      Call kernel
 	extern kmain
 	call   kmain
