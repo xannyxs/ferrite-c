@@ -7,11 +7,11 @@ You'll need:
 
 ```bash
 # Clone the repository
-git clone https://github.com/xannyxs/ferrite
-cd ferrite
+git clone https://github.com/xannyxs/ferrite-c
+cd ferrite-c
 
 # Initiate nix-shell
-nix-shell shell.nix --command "zsh"
+nix-shell shell.nix 
 
 # Build the kernel
 make
