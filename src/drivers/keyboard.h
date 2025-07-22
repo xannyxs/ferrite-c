@@ -1,8 +1,12 @@
 #ifndef KEYBOARD_H
 #define KEYBOARD_H
 
+#include "arch/x86/idt/idt.h"
 #include <stdbool.h>
 #include <stdint.h>
+
+#define KEYBOARD_DATA_PORT 0x60
+#define KEYBOARD_STATUS_PORT 0x64
 
 typedef enum keyboard_key {
   KeyEsc = 0x01,
@@ -132,6 +136,8 @@ typedef enum keyboard_key {
   KeyPause = 0xef,
 } keyboard_key_t;
 
-char keyboard_input(uint8_t scancode);
+void setscancode(int32_t scancode);
+
+void keyboard_input(registers_t *regs);
 
 #endif /* KEYBOARD_H */

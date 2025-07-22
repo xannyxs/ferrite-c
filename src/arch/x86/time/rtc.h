@@ -1,6 +1,8 @@
 #ifndef _RTC_H_
 #define _RTC_H_
 
+#include "arch/x86/idt/idt.h"
+
 #include <stdint.h>
 
 typedef struct {
@@ -15,5 +17,7 @@ typedef struct {
 uint32_t getfrequency(void);
 
 void rtc_init(void);
+
+void rtc_task(registers_t *);
 
 #endif

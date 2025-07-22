@@ -13,17 +13,15 @@ typedef struct interrupt_descriptor {
   uint16_t pointer_high;   // offset bits 16..31
 } interrupt_descriptor_t;
 
-struct interrupt_frame {
-  uint32_t instruction_pointer;
-  uint32_t code_segment;
-  uint32_t eflags;
-  uint32_t stack_pointer;
-  uint32_t stack_segment;
-};
+typedef struct registers {
+  uint32_t ds;
+  uint32_t edi, esi, ebp, esp, ebx, edx, ecx, eax;
+  uint32_t int_no, err_code;
+  uint32_t eip, cs, eflags, useresp, ss;
+} registers_t;
 
-typedef void (*interrupt_handler)(struct interrupt_frame *frame);
-typedef void (*interrupt_handler_with_error)(struct interrupt_frame *frame,
-                                             uint32_t error_code);
+typedef void (*interrupt_handler)(registers_t *);
+typedef void (*interrupt_handler_with_error)(registers_t *, uint32_t);
 
 typedef enum {
   REGULAR,
@@ -39,34 +37,33 @@ typedef struct {
 } interrupt_handler_entry_t;
 
 // --- Handlers that DO NOT have an error code ---
-void divide_by_zero_handler(struct interrupt_frame *frame);
-void debug_interrupt_handler(struct interrupt_frame *frame);
-void non_maskable_interrupt_handler(struct interrupt_frame *frame);
-void breakpoint_handler(struct interrupt_frame *frame);
-void overflow_handler(struct interrupt_frame *frame);
-void bound_range_exceeded_handler(struct interrupt_frame *frame);
-void invalid_opcode(struct interrupt_frame *frame);
-void device_not_available(struct interrupt_frame *frame);
-void coprocessor_segment_overrun(struct interrupt_frame *frame);
-void x87_floating_point(struct interrupt_frame *frame);
-void machine_check(struct interrupt_frame *frame);
-void simd_floating_point(struct interrupt_frame *frame);
-void virtualization(struct interrupt_frame *frame);
+void divide_by_zero_handler(registers_t *);
+void debug_interrupt_handler(registers_t *);
+void non_maskable_interrupt_handler(registers_t *);
+void breakpoint_handler(registers_t *);
+void overflow_handler(registers_t *);
+void bound_range_exceeded_handler(registers_t *);
+void invalid_opcode(registers_t *);
+void device_not_available(registers_t *);
+void coprocessor_segment_overrun(registers_t *);
+void x87_floating_point(registers_t *);
+void machine_check(registers_t *);
+void simd_floating_point(registers_t *);
+void virtualization(registers_t *);
 
 // --- Handlers that HAVE an error code ---
-void double_fault(struct interrupt_frame *frame, uint32_t error_code);
-void invalid_tss(struct interrupt_frame *frame, uint32_t error_code);
-void segment_not_present(struct interrupt_frame *frame, uint32_t error_code);
-void stack_segment_fault(struct interrupt_frame *frame, uint32_t error_code);
-void general_protection_fault(struct interrupt_frame *frame,
-                              uint32_t error_code);
-void page_fault(struct interrupt_frame *frame, uint32_t error_code);
-void alignment_check(struct interrupt_frame *frame, uint32_t error_code);
-void security_exception(struct interrupt_frame *frame, uint32_t error_code);
+void double_fault(registers_t *, uint32_t error_code);
+void invalid_tss(registers_t *, uint32_t error_code);
+void segment_not_present(registers_t *, uint32_t error_code);
+void stack_segment_fault(registers_t *, uint32_t error_code);
+void general_protection_fault(registers_t *, uint32_t error_code);
+void page_fault(registers_t *, uint32_t error_code);
+void alignment_check(registers_t *, uint32_t error_code);
+void security_exception(registers_t *, uint32_t error_code);
 
 // --- Hardware Interrupts ---
-void keyboard_handler(struct interrupt_frame *frame);
-void rtc_handler(struct interrupt_frame *frame);
+void keyboard_handler(registers_t *);
+void rtc_handler(registers_t *);
 
 void idt_init(void);
 

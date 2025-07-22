@@ -1,9 +1,8 @@
 #include "rtc.h"
+#include "arch/x86/idt/idt.h"
 #include "arch/x86/io.h"
 #include "arch/x86/time/time.h"
-#include "debug/debug.h"
 #include "drivers/printk.h"
-#include "lib/stdlib.h"
 
 #include <stdbool.h>
 #include <stdint.h>
@@ -13,7 +12,7 @@
 
 uint8_t rate = 14;
 uint32_t frequency = 0;
-rtc_time_t global_time;
+volatile uint64_t ticks = 0;
 
 static inline uint8_t read_rtc_register(int32_t reg) {
   outb(0x70, reg);
@@ -26,28 +25,29 @@ static inline uint8_t bcd_to_bin(uint8_t bcd) {
 
 inline uint32_t getfrequency(void) { return frequency; }
 
-void rtc_read_time(void) {
+static void rtc_read_time(rtc_time_t *time) {
   while (read_rtc_register(0x0A) & 0x80)
     ;
 
-  global_time.second = read_rtc_register(0x00);
-  global_time.minute = read_rtc_register(0x02);
-  global_time.hour = read_rtc_register(0x04);
-  global_time.month = read_rtc_register(0x08);
-  global_time.year = read_rtc_register(0x09);
-  global_time.day = read_rtc_register(0x07);
+  time->second = read_rtc_register(0x00);
+  time->minute = read_rtc_register(0x02);
+  time->hour = read_rtc_register(0x04);
+  time->month = read_rtc_register(0x08);
+  time->year = read_rtc_register(0x09);
+  time->day = read_rtc_register(0x07);
 
   if (!(read_rtc_register(0x0B) & 0x04)) {
-    global_time.second = bcd_to_bin(global_time.second);
-    global_time.minute = bcd_to_bin(global_time.minute);
-    global_time.hour = bcd_to_bin(global_time.hour);
-    global_time.month = bcd_to_bin(global_time.month);
-    global_time.year = bcd_to_bin(global_time.year);
-    global_time.day = bcd_to_bin(global_time.day);
+    time->second = bcd_to_bin(time->second);
+    time->minute = bcd_to_bin(time->minute);
+    time->hour = bcd_to_bin(time->hour);
+    time->month = bcd_to_bin(time->month);
+    time->year = bcd_to_bin(time->year);
+    time->day = bcd_to_bin(time->day);
   }
 }
 
 void rtc_init(void) {
+  rtc_time_t time;
   frequency = 32768 >> (rate - 1);
 
   outb(0x70, REG_A);                  // Select Register A, disable NMI
@@ -60,12 +60,28 @@ void rtc_init(void) {
   outb(0x70, REG_B);         // Re-select Register B
   outb(0x71, prev_b | 0x40); // Enable bit 6 (Periodic Interrupt)
 
-  rtc_read_time();
+  rtc_read_time(&time);
 
-  printk("RTC Time: 20%d-%d-%d %d:%d:%d\n", global_time.year, global_time.month,
-         global_time.day, global_time.hour, global_time.minute,
-         global_time.second);
+  printk("RTC Time: 20%d-%d-%d %d:%d:%d\n", time.year, time.month, time.day,
+         time.hour, time.minute, time.second);
 
-  time_t epoch = to_epoch(&global_time);
+  time_t epoch = to_epoch(&time);
   setepoch(epoch);
+}
+
+void rtc_task(registers_t *regs) {
+  (void)regs;
+
+  outb(0x70, 0x0C); // select register C
+  inb(0x71);        // just throw away contents
+
+  ticks += 1;
+  int32_t frequency = getfrequency();
+  uint64_t seconds_since_epoch = getepoch();
+
+  if (ticks % frequency == 0) {
+    seconds_since_epoch += 1;
+
+    setepoch(seconds_since_epoch);
+  }
 }

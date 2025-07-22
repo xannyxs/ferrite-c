@@ -56,8 +56,6 @@ void idt_init(void) {
   idt_set_gate(0x21, (uint32_t)keyboard_handler);
   idt_set_gate(0x28, (uint32_t)rtc_handler);
 
-  rtc_init();
-
   idt_ptr.limit = sizeof(entry_t) * IDT_ENTRY_COUNT - 1;
   idt_ptr.base = (uint32_t)&idt_entries;
 

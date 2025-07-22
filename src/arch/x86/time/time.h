@@ -8,6 +8,8 @@
 
 typedef int64_t time_t;
 
+void gettime(rtc_time_t *t);
+
 time_t getepoch(void);
 
 void setepoch(time_t new);
