@@ -6,7 +6,9 @@
 
 volatile time_t seconds_since_epoch = 0;
 
-__attribute__((warn_unused_result)) time_t getepoch(void) {
+inline void gettime(rtc_time_t *t) { from_epoch(seconds_since_epoch, t); }
+
+__attribute__((warn_unused_result)) inline time_t getepoch(void) {
   return seconds_since_epoch;
 }
 
