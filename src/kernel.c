@@ -1,5 +1,4 @@
 #include "arch/x86/gdt/gdt.h"
-#include "arch/x86/idt/idt.h"
 #include "arch/x86/multiboot.h"
 #include "arch/x86/pic.h"
 #include "arch/x86/time/rtc.h"

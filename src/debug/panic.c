@@ -1,18 +1,20 @@
 #include "arch/x86/idt/idt.h"
-#include "drivers/printk.h"
+#include "drivers/video/vga.h"
 
 #include <stdbool.h>
 
-void save_stack(uint32_t stack_pointer) {
-  printk("\n--- STACK DUMP ---\n");
+__attribute__((target("general-regs-only"))) void
+save_stack(uint32_t stack_pointer) {
+  vga_writestring("\n--- STACK DUMP ---\n");
   uint32_t *stack = (uint32_t *)stack_pointer;
   for (int i = 0; i < 16; i++) {
-    printk("0x%x ", stack[i]);
+    vga_write_hex(stack[i]);
+    vga_putchar(' ');
   }
-  printk("\n------------------\n");
+  vga_writestring("\n------------------\n");
 }
 
-void clean_registers(void) {
+__attribute__((target("general-regs-only"))) void clean_registers(void) {
   __asm__ volatile("xor %%eax, %%eax\n"
                    "xor %%ebx, %%ebx\n"
                    "xor %%ecx, %%ecx\n"
@@ -24,25 +26,36 @@ void clean_registers(void) {
                    : "eax", "ebx", "ecx", "edx", "esi", "edi");
 }
 
-__attribute__((__noreturn__)) void panic(registers_t *regs, const char *msg) {
+__attribute__((target("general-regs-only"), noreturn)) void
+panic(registers_t *regs, const char *msg) {
+  (void)msg;
   __asm__ volatile("cli");
 
-  printk("!!! KERNEL PANIC !!!\n");
-  printk("%s\n\n", msg);
+  vga_writestring("!!! KERNEL PANIC !!!\n");
+  vga_writestring(msg);
+  vga_writestring("\n\n");
 
-  printk("EAX: 0x%x\n", regs->eax);
-  printk("EIP: 0x%x\n", regs->eip);
-  printk("CS:  0x%x\n", regs->cs);
-  printk("EFLAGS: 0x%x\n", regs->eflags);
-  printk("INT: 0x%x\n", regs->int_no);
+  vga_writestring("EAX: ");
+  vga_write_hex(regs->eax);
+  vga_putchar('\n');
+  vga_writestring("EIP: ");
+  vga_write_hex(regs->eip);
+  vga_putchar('\n');
+  vga_writestring("CS:  ");
+  vga_write_hex(regs->cs);
+  vga_putchar('\n');
+  vga_writestring("EFLAGS: ");
+  vga_write_hex(regs->eflags);
+  vga_putchar('\n');
+  vga_writestring("INT: ");
+  vga_write_hex(regs->int_no);
+  vga_putchar('\n');
 
   save_stack((uint32_t)regs);
-
   clean_registers();
 
-  printk("\nSystem Halted.");
+  vga_writestring("\nSystem Halted.");
   while (true) {
     __asm__ volatile("hlt");
   }
-  __builtin_unreachable();
 }

@@ -10,16 +10,9 @@
 
 #include <stdint.h>
 
-__attribute__((target("general-regs-only"))) __attribute__((interrupt)) void
+__attribute__((target("general-regs-only"), interrupt)) void
 divide_by_zero_handler(registers_t *regs) {
-  if ((regs->cs & 0x3) == 0) {
-    panic(regs, "Division by Zero");
-  }
-
-  printk("User process attempted division by zero\n");
-  printk("Terminating process...\n");
-
-  __asm__ volatile("cli; hlt");
+  panic(regs, "Division by Zero");
 }
 
 __attribute__((target("general-regs-only"))) __attribute__((interrupt)) void

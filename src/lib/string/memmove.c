@@ -1,6 +1,7 @@
 #include <stddef.h>
 
-void *memmove(void *dest, const void *src, size_t len) {
+__attribute__((target("general-regs-only"))) void *
+memmove(void *dest, const void *src, size_t len) {
   char *str_dest;
   char *str_src;
 
