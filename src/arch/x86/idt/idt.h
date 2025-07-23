@@ -45,11 +45,10 @@ void overflow_handler(registers_t *);
 void bound_range_exceeded_handler(registers_t *);
 void invalid_opcode(registers_t *);
 void device_not_available(registers_t *);
-void coprocessor_segment_overrun(registers_t *);
-void x87_floating_point(registers_t *);
-void machine_check(registers_t *);
-void simd_floating_point(registers_t *);
-void virtualization(registers_t *);
+void x87_fpu_exception(registers_t *);
+
+// Reserved, does nothing
+void reserved_by_cpu(registers_t *);
 
 // --- Handlers that HAVE an error code ---
 void double_fault(registers_t *, uint32_t error_code);
@@ -58,8 +57,6 @@ void segment_not_present(registers_t *, uint32_t error_code);
 void stack_segment_fault(registers_t *, uint32_t error_code);
 void general_protection_fault(registers_t *, uint32_t error_code);
 void page_fault(registers_t *, uint32_t error_code);
-void alignment_check(registers_t *, uint32_t error_code);
-void security_exception(registers_t *, uint32_t error_code);
 
 // --- Hardware Interrupts ---
 void keyboard_handler(registers_t *);

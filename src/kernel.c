@@ -1,5 +1,4 @@
 #include "arch/x86/gdt/gdt.h"
-#include "arch/x86/multiboot.h"
 #include "arch/x86/pic.h"
 #include "arch/x86/time/rtc.h"
 #include "drivers/console.h"

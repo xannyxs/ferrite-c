@@ -1,11 +1,9 @@
 #include "arch/x86/idt/idt.h"
 #include "arch/x86/entry.h"
-#include "arch/x86/io.h"
-#include "arch/x86/time/rtc.h"
 
 #include <stdint.h>
 
-const interrupt_handler_entry_t INTERRUPT_HANDLERS[21] = {
+const interrupt_handler_entry_t INTERRUPT_HANDLERS[17] = {
     {REGULAR, .handler.regular = divide_by_zero_handler},
     {REGULAR, .handler.regular = debug_interrupt_handler},
     {REGULAR, .handler.regular = non_maskable_interrupt_handler},
@@ -15,18 +13,14 @@ const interrupt_handler_entry_t INTERRUPT_HANDLERS[21] = {
     {REGULAR, .handler.regular = invalid_opcode},
     {REGULAR, .handler.regular = device_not_available},
     {WITH_ERROR_CODE, .handler.with_error_code = double_fault},
-    {REGULAR, .handler.regular = coprocessor_segment_overrun},
+    {REGULAR, .handler.regular = reserved_by_cpu},
     {WITH_ERROR_CODE, .handler.with_error_code = invalid_tss},
     {WITH_ERROR_CODE, .handler.with_error_code = segment_not_present},
     {WITH_ERROR_CODE, .handler.with_error_code = stack_segment_fault},
     {WITH_ERROR_CODE, .handler.with_error_code = general_protection_fault},
     {WITH_ERROR_CODE, .handler.with_error_code = page_fault},
-    {REGULAR, .handler.regular = x87_floating_point},
-    {WITH_ERROR_CODE, .handler.with_error_code = alignment_check},
-    {REGULAR, .handler.regular = machine_check},
-    {REGULAR, .handler.regular = simd_floating_point},
-    {REGULAR, .handler.regular = virtualization},
-    {WITH_ERROR_CODE, .handler.with_error_code = security_exception},
+    {REGULAR, .handler.regular = reserved_by_cpu},
+    {REGULAR, .handler.regular = x87_fpu_exception},
 };
 
 interrupt_descriptor_t idt_entries[IDT_ENTRY_COUNT];
@@ -41,7 +35,7 @@ static void idt_set_gate(uint32_t num, uint32_t handler) {
 }
 
 void idt_init(void) {
-  for (int32_t i = 0; i < 21; i += 1) {
+  for (int32_t i = 0; i < 17; i += 1) {
     uint32_t handler = 0;
 
     if (INTERRUPT_HANDLERS[i].type == REGULAR) {
