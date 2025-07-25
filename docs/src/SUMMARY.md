@@ -8,12 +8,13 @@
 - [KFS 01](project/kfs_01.md)
 - [KFS 02](project/kfs_02.md)
 <!-- - [KFS 03](project/kfs_03.md) -->
+- [KFS 04](project/kfs_04.md)
 
 # Architecture
 
 <!--- [System Overview](architecture/overview.md)-->
-- [Build Pipeline](architecture/build.md)
-- [Design Decisions](architecture/design.md)
+<!-- - [Build Pipeline](architecture/build.md) -->
+<!-- - [Design Decisions](architecture/design.md) -->
 
 # CPU
 

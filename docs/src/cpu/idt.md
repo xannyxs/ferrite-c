@@ -123,7 +123,7 @@ The final step is the `lidt` assembly instruction. This tells the CPU to load ou
 When an interrupt happens, the CPU needs to stop its current work and jump to the handler, but it must be able to return and resume its work later. The `__attribute__((interrupt))` tells the compiler to automatically add the necessary assembly code to save the machine's state before your C code runs and restore it after. This is why interrupts should be as fast as possible; while a handler is running, the rest of the system is paused. For frequent events like keyboard presses, a common strategy is for the handler to do the bare minimum—like adding a key press to a queue—and letting a separate, lower-priority task scheduler process it later.
 
 Here is a drawing on how the logic of the interrupts are being handled:
-<img width="1256" height="1144" alt="image" src="https://github.com/user-attachments/assets/dd45f4ad-2c10-4161-9d1a-9f629a780005" />
+<img src="https://github.com/user-attachments/assets/dd45f4ad-2c10-4161-9d1a-9f629a780005" alt="A flowchart showing the logic of how interrupts are handled, from the interrupt signal to the IDT, to the specific handler, and finally to a task scheduler." style="width: 100%; max-width: 800px; display: block; margin: 20px auto; border-radius: 8px;"/>
 
 ## System Calls via Software Interrupts
 
