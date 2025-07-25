@@ -15,11 +15,12 @@ static inline uint8_t vga_entry_color(enum vga_color fg, enum vga_color bg) {
   return fg | bg << 4;
 }
 
-static inline uint16_t vga_entry(unsigned char uc, uint8_t color) {
+__attribute__((target("general-regs-only"))) static inline uint16_t
+vga_entry(unsigned char uc, uint8_t color) {
   return (uint16_t)uc | (uint16_t)color << 8;
 }
 
-static void vga_scroll_up(void) {
+__attribute__((target("general-regs-only"))) static void vga_scroll_up(void) {
   memmove(terminal_buffer, terminal_buffer + VGA_WIDTH,
           sizeof(uint16_t) * VGA_WIDTH * (VGA_HEIGHT - 1));
 
@@ -30,6 +31,17 @@ static void vga_scroll_up(void) {
 }
 
 /* Public */
+
+__attribute__((target("general-regs-only"))) void vga_write_hex(uint32_t n) {
+  const char *hex = "0123456789ABCDEF";
+
+  vga_writestring("0x");
+
+  for (int i = 28; i >= 0; i -= 4) {
+    uint8_t nibble = (n >> i) & 0xF;
+    vga_putchar(hex[nibble]);
+  }
+}
 
 void vga_init(void) {
   terminal_column = 0;
@@ -46,19 +58,20 @@ void vga_init(void) {
 
 void vga_setcolor(vga_color_t color) { terminal_color = color; }
 
-void vga_putentryat(char c, uint8_t color, size_t x, size_t y) {
+__attribute__((target("general-regs-only"))) void
+vga_putentryat(char c, uint8_t color, size_t x, size_t y) {
   const size_t index = y * VGA_WIDTH + x;
   terminal_buffer[index] = vga_entry(c, color);
 }
 
-void vga_clear_char() {
+void vga_clear_char(void) {
   if (terminal_column > 0) {
     terminal_column--;
     vga_putentryat(' ', terminal_color, terminal_column, terminal_row);
   }
 }
 
-void vga_putchar(char c) {
+__attribute__((target("general-regs-only"))) void vga_putchar(char c) {
   if (c == '\n') {
     vga_scroll_up();
     terminal_column = 0;
@@ -74,10 +87,14 @@ void vga_putchar(char c) {
   }
 }
 
-void vga_write(const char *data, size_t size) {
+__attribute__((target("general-regs-only"))) void vga_write(const char *data,
+                                                            size_t size) {
   for (size_t i = 0; i < size; i++) {
     vga_putchar(data[i]);
   }
 }
 
-void vga_writestring(const char *data) { vga_write(data, strlen(data)); }
+__attribute__((target("general-regs-only"))) void
+vga_writestring(const char *data) {
+  vga_write(data, strlen(data));
+}
