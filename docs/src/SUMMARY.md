@@ -18,6 +18,7 @@
 # CPU
 
 - [Global Descriptor Table (GDT)](cpu/gdt.md)
+- [Interrupt Descriptor Table (IDT)](cpu/idt.md)
 
 # For Developers
 
