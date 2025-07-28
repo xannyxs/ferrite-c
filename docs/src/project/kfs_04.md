@@ -138,4 +138,12 @@ To break it down, the `keyboard_handler()` first reads the `scancode` from the k
 
 ## Challenges
 
-## Conclusion & Lesson Learned
+Implementing interrupts involved coordinating numerous individual components: the **GDT (Global Descriptor Table)**, **IDT**, **PIC (Programmable Interrupt Controller)**, and the interrupts themselves. While resources like `OsDev` provided great checklists for setup, piecing together all the seperate elements proved challenging. It was quite helpful that I already setup the GDT. It also made the IDT setup much easier.
+
+One unexpected hiccup was finding a source of truth for the behavior of each interrupt and determining which specific `i386` interrupts were essential for our kernel. While an LLM offered some assistance, it couldn't match the detail and accuracy found in a specific [MIT article](https://pdos.csail.mit.edu/6.828/2018/readings/i386/c09.htm).
+
+We also encountered a minor hiccup with our LSP (Language Server Protocol), **clangd**. It reported an error with our interrupt logic, despite `GCC`, our compiler, successfully compiling and running the code without issues. The solution was to ignore the LSP warning and ensure `gcc` used the `__attribute__((target("general-regs-only"), interrupt))` attributes. The `general-regs-only` attribute is a promise to the compiler that only general-purpose registers will be used, which can prevent certain headaches, though it doesn't eliminate all potential issues.
+
+## Conclusion & Lessons Learned
+
+In the end, this assignment was very insightful. It is so cool to delve into the components like the **Real-Time Clock (RTC)**, which can provide system time, or how **PS/2 keyboards** uses interrupts to communicate. Interrupts are truly an ingenious and fundamental part of any operating system. This deep dive has definitely interested me into exploring **system calls**, which also heavily rely on interrupts.
