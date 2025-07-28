@@ -4,7 +4,7 @@
 
 extern void gdt_flush(uint32_t);
 
-entry_t gdt_entries[5] __attribute__((section(".gdt")));
+entry_t gdt_entries[7] __attribute__((section(".gdt")));
 descriptor_pointer_t gdt_ptr;
 
 /* Private */
@@ -24,15 +24,17 @@ static void gdt_set_gate(uint32_t num, uint32_t base, uint32_t limit,
 
 /* Public */
 
-void gdt_init() {
-  gdt_ptr.limit = sizeof(entry_t) * 5 - 1;
+void gdt_init(void) {
+  gdt_ptr.limit = sizeof(entry_t) * 7 - 1;
   gdt_ptr.base = (uint32_t)&gdt_entries;
 
   gdt_set_gate(0, 0, 0, 0, 0);                // NULL Gate
   gdt_set_gate(1, 0, 0xFFFFFFFF, 0x9A, 0xCF); // Kernel Code Segment
   gdt_set_gate(2, 0, 0xFFFFFFFF, 0x92, 0xCF); // Kernel Data Segment
-  gdt_set_gate(3, 0, 0xFFFFFFFF, 0xFA, 0xCF); // User Code Segment
-  gdt_set_gate(4, 0, 0xFFFFFFFF, 0xF2, 0xCF); // User Data Segment
+  gdt_set_gate(3, 0, 0xFFFFFFFF, 0x96, 0xCF); // Kernel Stack
+  gdt_set_gate(4, 0, 0xFFFFFFFF, 0xFA, 0xCF); // User Code Segment
+  gdt_set_gate(5, 0, 0xFFFFFFFF, 0xF2, 0xCF); // User Data Segment
+  gdt_set_gate(6, 0, 0xFFFFFFFF, 0xF6, 0xCF); // User Stack
 
   gdt_flush((uint32_t)&gdt_ptr);
 }
