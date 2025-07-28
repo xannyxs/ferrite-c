@@ -4,7 +4,6 @@
 #define PAGE_SIZE 0x1000
 
 #include "arch/x86/multiboot.h"
-#include "drivers/printk.h"
 
 #include <stdint.h>
 
@@ -13,16 +12,16 @@ extern volatile uint8_t pmm_bitmap[];
 
 static inline void pmm_clear_bit(uint32_t addr) {
   uint32_t i = addr / PAGE_SIZE;
-  uint32_t byte = i / 8;
-  uint8_t bit = i % 8;
+  uint32_t byte = i >> 3; // Equivalent to i / 8
+  uint8_t bit = i & 0x7;  // Equivalent to i % 8
 
   pmm_bitmap[byte] &= ~(1 << bit);
 }
 
 static inline void pmm_set_bit(uint32_t addr) {
   uint32_t i = addr / PAGE_SIZE;
-  uint32_t byte = i / 8;
-  uint8_t bit = i % 8;
+  uint32_t byte = i >> 3; // Equivalent to i / 8
+  uint8_t bit = i & 0x7;  // Equivalent to i % 8
 
   pmm_bitmap[byte] |= (1 << bit);
 }
