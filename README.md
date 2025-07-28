@@ -17,7 +17,7 @@ git clone https://github.com/xannyxs/ferrite-c
 cd ferrite-c
 
 # Initiate nix-shell
-nix-shell shell.nix --command "zsh"
+nix-shell shell.nix
 
 # Build the kernel
 make
@@ -39,4 +39,3 @@ The documentation provides insights into Ferrite's design philosophy and impleme
 ## License
 
 Ferrite is licensed under the GPL License. See [LICENSE](LICENSE) for details.
-
