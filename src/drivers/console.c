@@ -67,7 +67,7 @@ static void print_gdt(void) {
   __asm__ volatile("sgdt %0" : "=m"(gdtr));
 
   printk("GDT Base Address: 0x%x\n", gdtr.base);
-  printk("GDT Limit: 0x%xx\n", gdtr.limit);
+  printk("GDT Limit: 0x%x\n", gdtr.limit);
 }
 
 static void execute_buffer(void) {
