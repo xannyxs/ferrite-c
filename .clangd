@@ -2,8 +2,11 @@ CompileFlags:
   Compiler: i686-elf-gcc
 
 If:
-  PathMatch: 'src/arch/x86/idt/exceptions.c'
+  PathMatch:
+    - 'src/arch/x86/idt/exceptions.c'
+    - 'src/arch/x86/idt/syscalls.c'
 
 Diagnostics:
   Suppress:
     - excessive-regsave
+

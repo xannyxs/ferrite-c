@@ -3,7 +3,12 @@
 
 #include <stdint.h>
 
-const interrupt_handler_entry_t INTERRUPT_HANDLERS[17] = {
+extern void syscall_handler(registers_t *);
+
+interrupt_descriptor_t idt_entries[IDT_ENTRY_COUNT];
+descriptor_pointer_t idt_ptr;
+
+const interrupt_handler_entry_t EXCEPTION_HANDLERS[17] = {
     {REGULAR, .handler.regular = divide_by_zero_handler},
     {REGULAR, .handler.regular = debug_interrupt_handler},
     {REGULAR, .handler.regular = non_maskable_interrupt_handler},
@@ -22,9 +27,8 @@ const interrupt_handler_entry_t INTERRUPT_HANDLERS[17] = {
     {REGULAR, .handler.regular = reserved_by_cpu},
     {REGULAR, .handler.regular = x87_fpu_exception},
 };
-
-interrupt_descriptor_t idt_entries[IDT_ENTRY_COUNT];
-descriptor_pointer_t idt_ptr;
+const interrupt_hardware_t HARDWARE_HANDLERS[2] = {{0x21, keyboard_handler},
+                                                   {0x28, rtc_handler}};
 
 static void idt_set_gate(uint32_t num, uint32_t handler) {
   idt_entries[num].pointer_low = (handler & 0xffff);
@@ -35,20 +39,26 @@ static void idt_set_gate(uint32_t num, uint32_t handler) {
 }
 
 void idt_init(void) {
+  // Exceptions
   for (int32_t i = 0; i < 17; i += 1) {
     uint32_t handler = 0;
 
-    if (INTERRUPT_HANDLERS[i].type == REGULAR) {
-      handler = (uint32_t)INTERRUPT_HANDLERS[i].handler.regular;
-    } else if (INTERRUPT_HANDLERS[i].type == WITH_ERROR_CODE) {
-      handler = (uint32_t)INTERRUPT_HANDLERS[i].handler.with_error_code;
+    if (EXCEPTION_HANDLERS[i].type == REGULAR) {
+      handler = (uint32_t)EXCEPTION_HANDLERS[i].handler.regular;
+    } else if (EXCEPTION_HANDLERS[i].type == WITH_ERROR_CODE) {
+      handler = (uint32_t)EXCEPTION_HANDLERS[i].handler.with_error_code;
     }
 
     idt_set_gate(i, handler);
   }
 
-  idt_set_gate(0x21, (uint32_t)keyboard_handler);
-  idt_set_gate(0x28, (uint32_t)rtc_handler);
+  // Hardware Interrupts
+  for (int32_t i = 0; i < 1; i += 1) {
+    idt_set_gate(HARDWARE_HANDLERS[i].hex, (uint32_t)HARDWARE_HANDLERS[i].func);
+  }
+
+  // Syscalls
+  idt_set_gate(0x80, (uint32_t)syscall_handler);
 
   idt_ptr.limit = sizeof(entry_t) * IDT_ENTRY_COUNT - 1;
   idt_ptr.base = (uint32_t)&idt_entries;
