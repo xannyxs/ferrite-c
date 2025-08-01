@@ -15,10 +15,6 @@
 #include <stdint.h>
 #include <string.h>
 
-#if defined(__linux__)
-#error "You are not using a cross-compiler"
-#endif
-
 #if !defined(__i386__)
 #error "This tutorial needs to be compiled with a ix86-elf compiler"
 #endif
@@ -39,15 +35,25 @@ __attribute__((noreturn)) void kmain(uint32_t magic, multiboot_info_t *mbd) {
 
   rtc_init();
 
-  kmalloc_init();
+  // kmalloc_init();
 
-  char *str = kmalloc(10);
-  memcpy(str, "Hello!", 10);
-  printk("%s\n", str);
+  // char *str = kmalloc(10);
+  // memcpy(str, "Hello!", 10);
+  // printk("%s\n", str);
 
-  kfree(str);
+  // kfree(str);
 
   console_init();
+
+  // int32_t syscall = 1;
+  // int32_t status = 1;
+  //
+  // __asm__ volatile("movl %0, %%eax\n\t"
+  //                  "movl %1, %%ebx\n\t"
+  //                  "int $0x80"
+  //                  :
+  //                  : "i"(syscall), "r"(status)
+  //                  : "eax", "ebx", "memory");
 
   __asm__ volatile("sti");
 

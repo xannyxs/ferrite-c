@@ -36,6 +36,11 @@ typedef struct {
   } handler;
 } interrupt_handler_entry_t;
 
+typedef struct {
+  uint32_t hex;
+  interrupt_handler func;
+} interrupt_hardware_t;
+
 // --- Handlers that DO NOT have an error code ---
 void divide_by_zero_handler(registers_t *);
 void debug_interrupt_handler(registers_t *);
