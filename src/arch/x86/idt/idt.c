@@ -53,7 +53,7 @@ void idt_init(void) {
   }
 
   // Hardware Interrupts
-  for (int32_t i = 0; i < 1; i += 1) {
+  for (int32_t i = 0; i < 2; i += 1) {
     idt_set_gate(HARDWARE_HANDLERS[i].hex, (uint32_t)HARDWARE_HANDLERS[i].func);
   }
 

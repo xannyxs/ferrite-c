@@ -1,6 +1,7 @@
 #include "arch/x86/gdt/gdt.h"
 #include "arch/x86/pic.h"
 #include "arch/x86/time/rtc.h"
+#include "debug/debug.h"
 #include "drivers/console.h"
 #include "drivers/printk.h"
 #include "drivers/video/vga.h"
@@ -44,16 +45,6 @@ __attribute__((noreturn)) void kmain(uint32_t magic, multiboot_info_t *mbd) {
   // kfree(str);
 
   console_init();
-
-  // int32_t syscall = 1;
-  // int32_t status = 1;
-  //
-  // __asm__ volatile("movl %0, %%eax\n\t"
-  //                  "movl %1, %%ebx\n\t"
-  //                  "int $0x80"
-  //                  :
-  //                  : "i"(syscall), "r"(status)
-  //                  : "eax", "ebx", "memory");
 
   __asm__ volatile("sti");
 
