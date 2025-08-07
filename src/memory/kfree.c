@@ -1,8 +1,8 @@
 #include "arch/x86/memlayout.h"
 #include "drivers/printk.h"
 #include "lib/stdlib.h"
-#include "memory/kmalloc.h"
-#include "memory/pmm.h"
+#include "memory/consts.h"
+#include "memory/memblock.h"
 #include "memory/vmm.h"
 
 #include <stdint.h>

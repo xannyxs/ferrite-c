@@ -1,9 +1,8 @@
 #ifndef PMM_H
 #define PMM_H
 
-#define PAGE_SIZE 0x1000
-
 #include "arch/x86/multiboot.h"
+#include "memory/consts.h"
 
 #include <stdint.h>
 

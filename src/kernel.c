@@ -6,7 +6,9 @@
 #include "drivers/printk.h"
 #include "drivers/video/vga.h"
 #include "lib/stdlib.h"
+#include "memory/buddy_allocator/buddy.h"
 #include "memory/kmalloc.h"
+#include "memory/memblock.h"
 #include "memory/pmm.h"
 #include "memory/vmm.h"
 #include "sys/tasks.h"
@@ -36,13 +38,14 @@ __attribute__((noreturn)) void kmain(uint32_t magic, multiboot_info_t *mbd) {
 
   rtc_init();
 
-  // kmalloc_init();
+  memblock_init();
+  buddy_init(0x10000, 0x1000 * 8);
 
-  // char *str = kmalloc(10);
-  // memcpy(str, "Hello!", 10);
-  // printk("%s\n", str);
+  char *str = kmalloc(10);
+  memcpy(str, "Hello!", 10);
+  printk("%s\n", str);
 
-  // kfree(str);
+  kfree(str);
 
   console_init();
 

@@ -1,5 +1,5 @@
 #include "lib/math.h"
-#include "memory/kmalloc.h"
+#include "memory/memblock.h"
 #include "memory/pmm.h"
 #include "memory/vmm.h"
 
@@ -8,9 +8,9 @@
 
 static void *heap_current_break = NULL;
 
-void kmem_init() { heap_current_break = HEAP_START; }
+void kmem_init(void) { heap_current_break = HEAP_START; }
 
-void *get_current_break() { return heap_current_break; }
+void *get_current_break(void) { return heap_current_break; }
 
 void *kbrk(void *addr) {
   void *aligned_new_break = (void *)ALIGN((uint32_t)addr, PAGE_SIZE);

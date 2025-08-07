@@ -2,28 +2,13 @@
 #define KMALLOC_H
 
 #include <stddef.h>
-#include <stdint.h>
 
-#define HEAP_START (void *)0xD0000000
-#define MAGIC 0xDEADBEEF
+enum alloc_e { NONE, MEMBLOCK, BUDDY, SLAB };
 
-typedef struct block_header {
-  size_t size;
-  uint32_t magic;
-} block_header_t;
+enum alloc_e get_allocator(void);
 
-void kmalloc_init();
+void set_allocator(enum alloc_e new_alloc);
 
 void *kmalloc(size_t);
-
-void kfree(void *ptr);
-
-size_t ksize(void *ptr);
-
-void kmem_init();
-
-void *get_current_break();
-
-void *kbrk(void *addr);
 
 #endif /* KMALLOC_H */
