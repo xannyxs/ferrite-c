@@ -2,12 +2,16 @@
 #define KMALLOC_H
 
 #include <stddef.h>
+#include <stdint.h>
 
-enum alloc_e { NONE, MEMBLOCK, BUDDY, SLAB };
+#define MAXIMUM_SLAB_ALLOCATION 16384
+#define MAGIC 0xDEADBEEF
 
-enum alloc_e get_allocator(void);
-
-void set_allocator(enum alloc_e new_alloc);
+typedef struct block_header {
+  uint8_t order;
+  uint8_t flags; // WIP, ignore for now
+  uint32_t magic;
+} block_header_t;
 
 void *kmalloc(size_t);
 

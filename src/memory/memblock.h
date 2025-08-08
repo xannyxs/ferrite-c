@@ -5,12 +5,6 @@
 #include <stdint.h>
 
 #define HEAP_START (void *)0xD0000000
-#define MAGIC 0xDEADBEEF
-
-typedef struct block_header {
-  size_t size;
-  uint32_t magic;
-} block_header_t;
 
 void memblock_init(void);
 
