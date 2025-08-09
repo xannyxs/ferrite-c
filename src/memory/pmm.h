@@ -6,6 +6,8 @@
 
 #include <stdint.h>
 
+// TODO: pmm_bitmap[] is BEFORE _kernel_end. There might be a possibility
+// that they overwrite each other.
 extern uint32_t _kernel_end;
 extern volatile uint8_t pmm_bitmap[];
 
@@ -36,5 +38,9 @@ uint32_t pmm_alloc_frame(void);
 void pmm_print_bit(uint32_t addr);
 
 void pmm_free_frame(void *paddr);
+
+uintptr_t pmm_get_first_addr(void);
+
+uint32_t pmm_bitmap_len(void);
 
 #endif /* PMM_H */

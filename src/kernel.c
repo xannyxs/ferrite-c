@@ -32,20 +32,27 @@ __attribute__((noreturn)) void kmain(uint32_t magic, multiboot_info_t *mbd) {
   pic_remap(0x20, 0x28);
 
   vga_init();
-
-  pmm_init_from_map(mbd);
-  vmm_init_pages();
-
   rtc_init();
 
-  memblock_init();
-  buddy_init(0x10000, 0x1000 * 8);
+  pmm_init_from_map(mbd);
 
-  char *str = kmalloc(10);
+  memblock_init();
+
+  char *str = memblock(10);
+  void *test = memblock(20);
+  (void)test;
   memcpy(str, "Hello!", 10);
   printk("%s\n", str);
 
-  kfree(str);
+  buddy_init(0x10000, 0x1000 * 8);
+
+  vmm_init_pages();
+
+  // char *str = kmalloc(10);
+  // memcpy(str, "Hello!", 10);
+  // printk("%s\n", str);
+  //
+  // kfree(str);
 
   console_init();
 

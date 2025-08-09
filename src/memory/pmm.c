@@ -45,7 +45,7 @@ void pmm_print_bit(uint32_t addr) {
   }
 }
 
-void pmm_print_bitmap() {
+void pmm_print_bitmap(void) {
   printk("--- PMM Bitmap State ---\n");
   uint32_t i = 0;
 
@@ -110,6 +110,27 @@ uint32_t pmm_alloc_frame(void) {
   return 0;
 }
 
+uint32_t pmm_bitmap_len(void) { return pmm_bitmap_size; }
+
+uintptr_t pmm_get_first_addr(void) {
+  for (size_t i = 0; i < pmm_bitmap_size; i++) {
+    if (pmm_bitmap[i] == 0xFF) {
+      continue;
+    }
+
+    for (int bit = 0; bit < 8; bit++) {
+      if ((pmm_bitmap[i] & (1 << bit)) == 0) {
+        size_t page_number = i * 8 + bit;
+
+        return page_number * PAGE_SIZE;
+      }
+    }
+  }
+
+  // Indicates out of memory. Should we abort()?
+  return 0;
+}
+
 void *pmm_get_physaddr(void *vaddr) {
   uint32_t pdindex = (uint32_t)vaddr >> 22;
   uint32_t ptindex = (uint32_t)vaddr >> 12 & 0x03FF;
@@ -132,13 +153,14 @@ void *pmm_get_physaddr(void *vaddr) {
 
 void pmm_init_from_map(multiboot_info_t *mbd) {
   uint32_t total_memory = get_total_memory(mbd);
-  pmm_bitmap_size = total_memory / PAGE_SIZE / 8;
+
+  pmm_bitmap_size = CEIL_DIV(total_memory / PAGE_SIZE, 8);
   uint32_t bitmap_end_vaddr = (uint32_t)&pmm_bitmap + pmm_bitmap_size;
 
   uint32_t first_free_page_vaddr = ALIGN(bitmap_end_vaddr, PAGE_SIZE);
-  uint32_t first_free_page_paddr = first_free_page_vaddr - KERNBASE;
+  uint32_t first_free_page_paddr = V2P_WO(first_free_page_vaddr);
 
-  uint32_t kernel_end = (uint32_t)&_kernel_end - KERNBASE;
+  uint32_t kernel_end = V2P_WO((uint32_t)&_kernel_end);
   printk("Kernel physical end: 0x%x\n", kernel_end);
   printk("first free page: 0x%x\n", first_free_page_paddr);
 
@@ -164,4 +186,6 @@ void pmm_init_from_map(multiboot_info_t *mbd) {
       }
     }
   }
+
+  pmm_print_bitmap();
 }
