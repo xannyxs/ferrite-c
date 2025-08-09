@@ -4,6 +4,8 @@
 #include "drivers/printk.h"
 #include "lib/math.h"
 #include "lib/stdlib.h"
+#include "memory/buddy_allocator/buddy.h"
+#include "memory/consts.h"
 #include "memory/vmm.h"
 #include "string.h"
 
@@ -93,21 +95,8 @@ void pmm_free_frame(void *paddr) {
   pmm_clear_bit((uint32_t)paddr);
 }
 
-uint32_t pmm_alloc_frame(void) {
-  for (uint32_t i = 0; i < pmm_bitmap_size * 8; i++) {
-    uint32_t byte_index = i / 8;
-    uint32_t bit_index = i % 8;
-
-    if (pmm_bitmap[byte_index] & (1 << bit_index)) {
-      continue;
-    }
-
-    uint32_t addr = i * PAGE_SIZE;
-    pmm_set_bit(addr);
-    return addr;
-  }
-
-  return 0;
+inline uintptr_t pmm_alloc_frame(void) {
+  return (uintptr_t)buddy_alloc(PAGE_SIZE);
 }
 
 uint32_t pmm_bitmap_len(void) { return pmm_bitmap_size; }
@@ -126,7 +115,6 @@ uintptr_t pmm_get_first_addr(void) {
       }
     }
   }
-
   // Indicates out of memory. Should we abort()?
   return 0;
 }
@@ -186,6 +174,4 @@ void pmm_init_from_map(multiboot_info_t *mbd) {
       }
     }
   }
-
-  pmm_print_bitmap();
 }

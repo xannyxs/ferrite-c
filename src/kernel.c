@@ -39,12 +39,10 @@ __attribute__((noreturn)) void kmain(uint32_t magic, multiboot_info_t *mbd) {
   memblock_init();
 
   char *str = memblock(10);
-  void *test = memblock(20);
-  (void)test;
   memcpy(str, "Hello!", 10);
   printk("%s\n", str);
 
-  buddy_init(0x10000, 0x1000 * 8);
+  buddy_init();
 
   vmm_init_pages();
 

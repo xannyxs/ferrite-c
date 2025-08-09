@@ -1,6 +1,8 @@
 #include "memory/vmm.h"
 #include "arch/x86/memlayout.h"
 #include "lib/stdlib.h"
+#include "memory/buddy_allocator/buddy.h"
+#include "memory/consts.h"
 #include "memory/pmm.h"
 #include "string.h"
 
@@ -66,7 +68,7 @@ void vmm_init_pages(void) {
     page_directory[i] = PAGE_FLAG_SUPERVISOR | PAGE_FLAG_WRITABLE;
   }
 
-  uint32_t pt_phys_addr = pmm_alloc_frame();
+  uintptr_t pt_phys_addr = pmm_alloc_frame();
   if (pt_phys_addr == 0) {
     abort("Out of physical memory when allocating initial page table");
   }

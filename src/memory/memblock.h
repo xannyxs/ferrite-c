@@ -2,22 +2,25 @@
 #define MEMBLOCK_H
 
 #include <stddef.h>
-#include <stdint.h>
 
 #define HEAP_START (void *)0xD0000000
-
-void memblock_init(void);
-
-void *memblock(size_t);
 
 void kfree(void *ptr);
 
 size_t ksize(void *ptr);
 
-void kmem_init(void);
-
 void *get_current_break(void);
 
 void *kbrk(void *addr);
+
+void kmem_init(void *);
+
+void memblock_init(void);
+
+void *memblock(size_t);
+
+void *get_next_free_addr(void);
+
+void *get_heap_end_addr(void);
 
 #endif /* MEMBLOCK_H */

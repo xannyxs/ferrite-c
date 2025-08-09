@@ -1,5 +1,4 @@
 #include "memory/memblock.h"
-#include "drivers/printk.h"
 #include "memory/consts.h"
 #include "memory/pmm.h"
 
@@ -8,6 +7,12 @@
 
 static void *next_free_addr = NULL;
 static void *heap_end_addr = NULL;
+
+/* Public */
+
+void *get_next_free_addr(void) { return next_free_addr; }
+
+void *get_heap_end_addr(void) { return heap_end_addr; }
 
 /*
  * FIXME: This implementation only uses the first available memory region and

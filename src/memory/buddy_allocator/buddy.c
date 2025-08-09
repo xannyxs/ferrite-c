@@ -4,6 +4,7 @@
 #include "lib/stdlib.h"
 #include "memory/consts.h"
 #include "memory/kmalloc.h"
+#include "memory/memblock.h"
 
 #include <stdbool.h>
 #include <stddef.h>
@@ -216,13 +217,20 @@ void *buddy_alloc(size_t n) {
 
   mark_allocated(block_addr, required_order);
 
+  buddy_visualize();
+
   return (void *)block_addr;
 }
 
-void buddy_init(uintptr_t base, size_t given_size) {
-  g_buddy.base = base;
-  g_buddy.size = given_size;
-  int32_t block_count = given_size / PAGE_SIZE;
+void buddy_init(void) {
+  uintptr_t start_addr = (uintptr_t)get_next_free_addr();
+  uintptr_t end_addr = (uintptr_t)get_heap_end_addr();
+  uintptr_t aligned_addr = ALIGN(start_addr, PAGE_SIZE);
+
+  g_buddy.base = aligned_addr;
+  g_buddy.size = end_addr - aligned_addr;
+
+  int32_t block_count = g_buddy.size / PAGE_SIZE;
 
   if (block_count == 0) {
     abort("No blocks!");

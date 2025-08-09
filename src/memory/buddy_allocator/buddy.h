@@ -20,7 +20,7 @@ typedef struct {
   uint8_t max_order;
 } buddy_allocator_t;
 
-void buddy_init(uintptr_t, size_t);
+void buddy_init(void);
 
 void *buddy_alloc(size_t n);
 
