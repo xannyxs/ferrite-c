@@ -24,7 +24,7 @@
 
 __attribute__((noreturn)) void kmain(uint32_t magic, multiboot_info_t *mbd) {
   if (magic != MULTIBOOT_BOOTLOADER_MAGIC) {
-    abort("invalid magic number!");
+    abort("Invalid magic number!");
   }
 
   gdt_init();
@@ -35,21 +35,14 @@ __attribute__((noreturn)) void kmain(uint32_t magic, multiboot_info_t *mbd) {
   rtc_init();
 
   pmm_init_from_map(mbd);
-
   memblock_init();
+  buddy_init();
+  vmm_init_pages();
 
-  char *str = memblock(10);
+  char *str = kmalloc(10);
   memcpy(str, "Hello!", 10);
   printk("%s\n", str);
 
-  buddy_init();
-
-  vmm_init_pages();
-
-  // char *str = kmalloc(10);
-  // memcpy(str, "Hello!", 10);
-  // printk("%s\n", str);
-  //
   // kfree(str);
 
   console_init();

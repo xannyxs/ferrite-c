@@ -95,9 +95,7 @@ void pmm_free_frame(void *paddr) {
   pmm_clear_bit((uint32_t)paddr);
 }
 
-inline uintptr_t pmm_alloc_frame(void) {
-  return (uintptr_t)buddy_alloc(PAGE_SIZE);
-}
+inline uintptr_t pmm_alloc_frame(void) { return (uintptr_t)buddy_alloc(0); }
 
 uint32_t pmm_bitmap_len(void) { return pmm_bitmap_size; }
 

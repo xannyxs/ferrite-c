@@ -183,12 +183,8 @@ void buddy_dealloc(uintptr_t addr, uint32_t order) {
   buddy_visualize();
 }
 
-void *buddy_alloc(size_t n) {
-  uint32_t k = 0;
-
-  while ((uint32_t)PAGE_SIZE * (1 << k) < n) {
-    k += 1;
-  }
+void *buddy_alloc(uint32_t order) {
+  uint32_t k = order;
 
   if (k > g_buddy.max_order) {
     return NULL;

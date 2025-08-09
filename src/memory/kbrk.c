@@ -8,7 +8,7 @@
 
 static void *heap_current_break = NULL;
 
-void kmem_init(void) { heap_current_break = HEAP_START; }
+void kmem_init(void *current_break) { heap_current_break = current_break; }
 
 void *get_current_break(void) { return heap_current_break; }
 
