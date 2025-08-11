@@ -13,13 +13,7 @@ typedef struct block_header {
   uint32_t magic;
 } block_header_t;
 
-void kmem_init(void *);
-
-void *get_current_break(void);
-
 void kfree(void *ptr);
-
-size_t ksize(void *ptr);
 
 void *kbrk(void *addr);
 
