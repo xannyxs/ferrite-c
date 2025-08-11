@@ -2,16 +2,16 @@
 	; Boot Assembly Entry Point
 
 	; This file serves as the entry point for our kernel, setting up the minimal
-	; environment needed before we can jump to our Rust code. It performs three
+	; environment needed before we can jump to our C code. It performs three
 	; critical tasks:
 
 	; 1. Creates a multiboot header that marks this as a kernel for GRUB/multiboot
 	; bootloaders. The header includes magic numbers and flags that tell the
 	; bootloader how to load us.
 	; 2. Sets up a small stack (16KB) that our kernel will initially use. The stack
-	; is crucial because Rust code requires it for function calls and local variables.
+	; is crucial because C code requires it for function calls and local variables.
 
-	; 3. Transfers control from assembly to our main kernel code written in Rust
+	; 3. Transfers control from assembly to our main kernel code written in C
 	; ensuring we never return from it (since there's nothing to return to).
 	;------------------------------------------------------------------------------
 
