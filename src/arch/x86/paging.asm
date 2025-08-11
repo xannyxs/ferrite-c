@@ -1,15 +1,15 @@
 	BITS 32
 
-	.text
-	global enable_paging
-	global load_page_directory
-	global flush_tbl
+	section .text
+	global  enable_paging
+	global  load_page_directory
+	global  flush_tlb
 
 	; The TLB is not transparently informed of changes made to paging structures.
 	; Therefore the TLB has to be flushed upon such a change. On x86 systems
 	; this can be done by writing to the page directory base register (CR3):
 
-flush_tbl:
+flush_tlb:
 	mov eax, cr3
 	mov cr3, eax
 
