@@ -1,5 +1,5 @@
 CC = i686-elf-gcc
-LD = i686-elf-gcc  
+LD = i686-elf-gcc # Change to "ld -m elf_i386"?
 AS = nasm 
 
 NAME = ferrite-c.elf

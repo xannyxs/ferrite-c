@@ -36,14 +36,6 @@ __attribute__((noreturn)) void kmain(uint32_t magic, multiboot_info_t *mbd) {
 
   rtc_init();
 
-  // kmalloc_init();
-
-  // char *str = kmalloc(10);
-  // memcpy(str, "Hello!", 10);
-  // printk("%s\n", str);
-
-  // kfree(str);
-
   console_init();
 
   __asm__ volatile("sti");
