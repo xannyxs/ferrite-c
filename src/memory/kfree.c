@@ -16,12 +16,26 @@ void kfree(void *ptr) {
 
   block_header_t *header_ptr = (block_header_t *)ptr - 1;
   if (header_ptr->magic != MAGIC) {
-    abort("Corrupt pointer provided to ksize");
+    abort("Corrupt pointer provided");
   }
 
-  buddy_dealloc((uintptr_t)header_ptr, header_ptr->order);
+  uintptr_t raw_block_vaddr = (uintptr_t)header_ptr;
+  int32_t order = header_ptr->order;
+  size_t allocation_size = (1 << order) * PAGE_SIZE;
 
-  // for (uint32_t i = 0; i < header_ptr->size / PAGE_SIZE; i++) {
-  //   vmm_unmap_page((void *)((uint32_t)ptr + i * PAGE_SIZE));
-  // }
+  uintptr_t first_page_paddr = 0;
+
+  for (size_t i = 0; i < allocation_size; i += PAGE_SIZE) {
+    uintptr_t paddr = (uintptr_t)vmm_unmap_page((void *)(raw_block_vaddr + i));
+
+    if (i == 0) {
+      first_page_paddr = paddr;
+    }
+  }
+
+  if (first_page_paddr == 0) {
+    abort("Failed to get physical address during unmap!");
+  }
+
+  buddy_dealloc(first_page_paddr, order);
 }

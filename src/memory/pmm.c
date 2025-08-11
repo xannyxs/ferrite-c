@@ -72,29 +72,6 @@ void pmm_print_bitmap(void) {
   printk("Amount of bytes: %d\n", pmm_bitmap_size);
 }
 
-// TODO: Notify error if not found
-// How to know if there was more than 1 page allocated?
-void pmm_free_frame(void *paddr) {
-  if ((uint32_t)paddr % PAGE_SIZE != 0) {
-    abort("pmm_free_frame: Address is not page-aligned.");
-  }
-
-  uint32_t frame_index = (uint32_t)paddr / PAGE_SIZE;
-  printk("paddr: 0x%x\n", paddr);
-  printk("frame_index: %d\n", frame_index);
-
-  if (frame_index >= (pmm_bitmap_size * 8)) {
-    abort("pmm_free_frame: Address is out of bitmap range.");
-  }
-
-  /* if (!pmm_test_bit(frame_index)) {
-    printk("KERNEL PANIC: Double free detected for paddr 0x%x\n", paddr);
-    abort("Double free or freeing unallocated memory.");
-  } */
-
-  pmm_clear_bit((uint32_t)paddr);
-}
-
 inline uintptr_t pmm_alloc_frame(void) { return (uintptr_t)buddy_alloc(0); }
 
 uint32_t pmm_bitmap_len(void) { return pmm_bitmap_size; }
