@@ -10,6 +10,7 @@
 
 void kfree(void *ptr) {
   if (!ptr) {
+    printk("ptr is null\n");
     return;
   }
 
