@@ -6,7 +6,7 @@
 
 #include <stdint.h>
 
-extern uint32_t _kernel_end;
+extern uint32_t _kernel_end[];
 extern volatile uint8_t pmm_bitmap[];
 
 static inline void pmm_clear_bit(uint32_t addr) {

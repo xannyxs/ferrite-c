@@ -4,10 +4,8 @@
 #include "drivers/printk.h"
 #include "lib/math.h"
 #include "lib/stdlib.h"
-#include "memory/buddy_allocator/buddy.h"
 #include "memory/consts.h"
 #include "memory/vmm.h"
-#include "string.h"
 
 #include <stdint.h>
 

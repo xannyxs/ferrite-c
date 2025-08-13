@@ -26,4 +26,6 @@ void *buddy_alloc(uint32_t order);
 
 void buddy_dealloc(uintptr_t addr, uint32_t order);
 
+size_t buddy_get_total_memory(void);
+
 #endif /* BUDDY_H */

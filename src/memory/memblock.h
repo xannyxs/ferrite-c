@@ -3,8 +3,6 @@
 
 #include <stddef.h>
 
-#define HEAP_START (void *)0xD0000000
-
 void memblock_init(void);
 
 void *memblock(size_t);

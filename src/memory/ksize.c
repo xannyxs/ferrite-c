@@ -1,5 +1,4 @@
 #include "lib/stdlib.h"
-#include "memory/consts.h"
 #include "memory/kmalloc.h"
 
 size_t ksize(void *ptr) {
@@ -13,6 +12,5 @@ size_t ksize(void *ptr) {
     abort("Corrupt pointer provided to ksize");
   }
 
-  size_t size_in_bytes = (1 << header_ptr->order) * PAGE_SIZE;
-  return size_in_bytes;
+  return header_ptr->size;
 }

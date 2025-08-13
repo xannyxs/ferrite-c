@@ -159,6 +159,8 @@ static void buddy_list_add(uintptr_t addr, int order) {
 
 /* Public */
 
+size_t buddy_get_total_memory(void) { return g_buddy.size; }
+
 void buddy_dealloc(uintptr_t addr, uint32_t order) {
   mark_free(addr, order);
 

@@ -10,32 +10,53 @@
 
 void kfree(void *ptr) {
   if (!ptr) {
-    printk("ptr is null\n");
     return;
   }
 
-  block_header_t *header_ptr = (block_header_t *)ptr - 1;
-  if (header_ptr->magic != MAGIC) {
-    abort("Corrupt pointer provided");
+  block_header_t *header = (block_header_t *)ptr - 1;
+  if (header->magic != MAGIC) {
+    printk("Ptr is corrupt\n");
+    return;
   }
 
-  uintptr_t raw_block_vaddr = (uintptr_t)header_ptr;
-  int32_t order = header_ptr->order;
-  size_t allocation_size = (1 << order) * PAGE_SIZE;
+  uintptr_t block_vaddr = (uintptr_t)header;
+  size_t block_size = header->size;
 
-  uintptr_t first_page_paddr = 0;
+  free_list_t *freed_block = (free_list_t *)block_vaddr;
+  freed_block->size = block_size;
 
-  for (size_t i = 0; i < allocation_size; i += PAGE_SIZE) {
-    uintptr_t paddr = (uintptr_t)vmm_unmap_page((void *)(raw_block_vaddr + i));
+  free_list_t *current = get_free_list_head();
+  free_list_t *prev = NULL;
 
-    if (i == 0) {
-      first_page_paddr = paddr;
+  while (current && (uintptr_t)current < (uintptr_t)freed_block) {
+    prev = current;
+    current = current->next;
+  }
+
+  if (prev && (uintptr_t)prev + prev->size == (uintptr_t)freed_block) {
+    prev->size += freed_block->size;
+    freed_block = prev;
+  } else {
+    if (prev) {
+      prev->next = freed_block;
+    } else {
+      set_free_list_head(freed_block);
     }
   }
 
-  if (first_page_paddr == 0) {
-    abort("Failed to get physical address during unmap!");
+  if (current &&
+      (uintptr_t)freed_block + freed_block->size == (uintptr_t)current) {
+    freed_block->size += current->size;
+    freed_block->next = current->next;
+  } else {
+    freed_block->next = current;
   }
 
-  buddy_dealloc(first_page_paddr, order);
+  for (size_t i = 1; i < block_size / PAGE_SIZE; i++) {
+    uintptr_t current_vaddr = block_vaddr + i * PAGE_SIZE;
+    void *paddr = vmm_unmap_page((void *)current_vaddr);
+    if (paddr) {
+      buddy_dealloc((uintptr_t)paddr, 0);
+    }
+  }
 }
