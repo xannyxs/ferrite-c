@@ -21,6 +21,7 @@
 - [Rust Atomics and Locks](https://marabos.nl/atomics/) - All about mutexes, condition variables, atomics, and memory ordering
 - [Interrupt Handeling](https://baponkar.github.io/Osdev-Notes/02_Architecture/05_InterruptHandling.html)
 - [i386 Interrupts MIT](https://pdos.csail.mit.edu/6.828/2018/readings/i386/c09.htm)
+- [xv6, a simple, Unix-like teaching operating system](https://pdos.csail.mit.edu/6.828/2018/xv6/book-rev10.pdf)
 
 ## Development Tools
 

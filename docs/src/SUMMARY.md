@@ -12,7 +12,8 @@
 
 # Architecture
 
-<!--- [System Overview](architecture/overview.md)-->
+- [Architecture Overview](architecture/overview.md)
+- [Memory Allocation](architecture/memory.md)
 <!-- - [Build Pipeline](architecture/build.md) -->
 <!-- - [Design Decisions](architecture/design.md) -->
 
