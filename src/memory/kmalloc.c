@@ -1,40 +1,109 @@
 #include "memory/kmalloc.h"
+#include "drivers/printk.h"
+#include "lib/math.h"
+#include "lib/stdlib.h"
+#include "memory/buddy_allocator/buddy.h"
+#include "memory/consts.h"
+#include "memory/pmm.h"
+#include "memory/vmm.h"
 
 #include <stddef.h>
 #include <stdint.h>
 
-static void *heap_start_addr = NULL;
-static void *next_free_addr = NULL;
+static free_list_t *virtual_free_list_head = NULL;
 
-void kmalloc_init() {
-  kmem_init();
-  heap_start_addr = HEAP_START;
-  next_free_addr = heap_start_addr;
+/* Public */
+
+free_list_t *get_free_list_head(void) { return virtual_free_list_head; }
+
+void set_free_list_head(free_list_t *list) { virtual_free_list_head = list; }
+
+void kmalloc_init(void) {
+  uintptr_t heap_start_addr = (uintptr_t)HEAP_START;
+
+  void *first_page_phys = buddy_alloc(0);
+  if (!first_page_phys) {
+    abort("Not enough physical memory to start the heap!");
+  }
+
+  vmm_map_page(first_page_phys, (void *)heap_start_addr, 0);
+
+  size_t max_virtual_size = 0xFFFFFFFF - heap_start_addr;
+  size_t total_physical_memory = buddy_get_total_memory();
+
+  size_t heap_size = max_virtual_size;
+  if (total_physical_memory < heap_size) {
+    heap_size = total_physical_memory;
+  }
+
+  if (heap_size < sizeof(free_list_t)) {
+    abort("Not enough memory to allocate a free_list");
+  }
+
+  virtual_free_list_head = (free_list_t *)heap_start_addr;
+  virtual_free_list_head->size = heap_size;
+  virtual_free_list_head->next = NULL;
 }
 
 void *kmalloc(size_t num_bytes) {
-  if (num_bytes == 0) {
+  if (num_bytes == 0 || virtual_free_list_head == NULL) {
     return NULL;
   }
 
-  void *heap_end_addr = get_current_break();
-  void *total_needed_space =
-      (void *)((uint32_t)next_free_addr + num_bytes + sizeof(block_header_t));
+  size_t total_size = ALIGN(num_bytes + sizeof(block_header_t), PAGE_SIZE);
 
-  if (total_needed_space > heap_end_addr) {
-    void *new_end = kbrk(total_needed_space);
-    if (new_end < total_needed_space) {
-      return NULL;
+  free_list_t *current = virtual_free_list_head;
+  free_list_t *prev = NULL;
+  while (current) {
+    if (current->size >= total_size) {
+      break;
+    }
+    prev = current;
+    current = current->next;
+  }
+
+  if (!current) {
+    printk("Not enough mem");
+    return NULL;
+  }
+
+  uintptr_t virt_addr = (uintptr_t)current;
+  if (current->size - total_size > sizeof(free_list_t)) {
+    free_list_t *new_free_node = (free_list_t *)(virt_addr + total_size);
+
+    void *header_phys_page = buddy_alloc(0);
+    if (!header_phys_page) {
+      abort("Out of physical memory while splitting block!");
+    }
+    vmm_map_page(header_phys_page, (void *)new_free_node, 0);
+
+    new_free_node->size = current->size - total_size;
+    new_free_node->next = current->next;
+
+    if (!prev) {
+      virtual_free_list_head = new_free_node;
+    } else {
+      prev->next = new_free_node;
+    }
+  } else {
+    if (!prev) {
+      virtual_free_list_head = current->next;
+    } else {
+      prev->next = current->next;
     }
   }
 
-  void *ptr = next_free_addr;
-  block_header_t *header_ptr = (block_header_t *)ptr;
-  header_ptr->size = num_bytes;
-  header_ptr->magic = MAGIC;
+  for (size_t i = 1; i < total_size / PAGE_SIZE; i++) {
+    void *phys_page = buddy_alloc(0);
+    if (!phys_page) {
+      abort("Out of physical memory during mapping");
+    }
+    vmm_map_page(phys_page, (void *)(virt_addr + i * PAGE_SIZE), 0);
+  }
 
-  next_free_addr =
-      (void *)((uint32_t)next_free_addr + num_bytes + sizeof(block_header_t));
+  block_header_t *header = (block_header_t *)virt_addr;
+  header->magic = MAGIC;
+  header->size = total_size;
 
-  return (void *)((uint32_t)ptr + sizeof(block_header_t));
+  return (void *)(header + 1);
 }

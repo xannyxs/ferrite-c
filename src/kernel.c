@@ -6,7 +6,9 @@
 #include "drivers/printk.h"
 #include "drivers/video/vga.h"
 #include "lib/stdlib.h"
+#include "memory/buddy_allocator/buddy.h"
 #include "memory/kmalloc.h"
+#include "memory/memblock.h"
 #include "memory/pmm.h"
 #include "memory/vmm.h"
 #include "sys/tasks.h"
@@ -22,7 +24,7 @@
 
 __attribute__((noreturn)) void kmain(uint32_t magic, multiboot_info_t *mbd) {
   if (magic != MULTIBOOT_BOOTLOADER_MAGIC) {
-    abort("invalid magic number!");
+    abort("Invalid magic number!");
   }
 
   gdt_init();
@@ -30,11 +32,19 @@ __attribute__((noreturn)) void kmain(uint32_t magic, multiboot_info_t *mbd) {
   pic_remap(0x20, 0x28);
 
   vga_init();
+  rtc_init();
 
   pmm_init_from_map(mbd);
+  memblock_init();
+  buddy_init();
   vmm_init_pages();
+  kmalloc_init();
 
-  rtc_init();
+  char *str = kmalloc(10);
+  memcpy(str, "Hello!", 10);
+  printk("%s\n", str);
+
+  kfree(str);
 
   console_init();
 

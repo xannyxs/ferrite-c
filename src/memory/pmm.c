@@ -4,8 +4,8 @@
 #include "drivers/printk.h"
 #include "lib/math.h"
 #include "lib/stdlib.h"
+#include "memory/consts.h"
 #include "memory/vmm.h"
-#include "string.h"
 
 #include <stdint.h>
 
@@ -45,7 +45,7 @@ void pmm_print_bit(uint32_t addr) {
   }
 }
 
-void pmm_print_bitmap() {
+void pmm_print_bitmap(void) {
   printk("--- PMM Bitmap State ---\n");
   uint32_t i = 0;
 
@@ -70,43 +70,23 @@ void pmm_print_bitmap() {
   printk("Amount of bytes: %d\n", pmm_bitmap_size);
 }
 
-// TODO: Notify error if not found
-// How to know if there was more than 1 page allocated?
-void pmm_free_frame(void *paddr) {
-  if ((uint32_t)paddr % PAGE_SIZE != 0) {
-    abort("pmm_free_frame: Address is not page-aligned.");
-  }
+uint32_t pmm_bitmap_len(void) { return pmm_bitmap_size; }
 
-  uint32_t frame_index = (uint32_t)paddr / PAGE_SIZE;
-  printk("paddr: 0x%x\n", paddr);
-  printk("frame_index: %d\n", frame_index);
-
-  if (frame_index >= (pmm_bitmap_size * 8)) {
-    abort("pmm_free_frame: Address is out of bitmap range.");
-  }
-
-  /* if (!pmm_test_bit(frame_index)) {
-    printk("KERNEL PANIC: Double free detected for paddr 0x%x\n", paddr);
-    abort("Double free or freeing unallocated memory.");
-  } */
-
-  pmm_clear_bit((uint32_t)paddr);
-}
-
-uint32_t pmm_alloc_frame(void) {
-  for (uint32_t i = 0; i < pmm_bitmap_size * 8; i++) {
-    uint32_t byte_index = i / 8;
-    uint32_t bit_index = i % 8;
-
-    if (pmm_bitmap[byte_index] & (1 << bit_index)) {
+uintptr_t pmm_get_first_addr(void) {
+  for (size_t i = 0; i < pmm_bitmap_size; i++) {
+    if (pmm_bitmap[i] == 0xFF) {
       continue;
     }
 
-    uint32_t addr = i * PAGE_SIZE;
-    pmm_set_bit(addr);
-    return addr;
-  }
+    for (int bit = 0; bit < 8; bit++) {
+      if ((pmm_bitmap[i] & (1 << bit)) == 0) {
+        size_t page_number = i * 8 + bit;
 
+        return page_number * PAGE_SIZE;
+      }
+    }
+  }
+  // Indicates out of memory. Should we abort()?
   return 0;
 }
 
@@ -132,13 +112,14 @@ void *pmm_get_physaddr(void *vaddr) {
 
 void pmm_init_from_map(multiboot_info_t *mbd) {
   uint32_t total_memory = get_total_memory(mbd);
-  pmm_bitmap_size = total_memory / PAGE_SIZE / 8;
+
+  pmm_bitmap_size = CEIL_DIV(total_memory / PAGE_SIZE, 8);
   uint32_t bitmap_end_vaddr = (uint32_t)&pmm_bitmap + pmm_bitmap_size;
 
   uint32_t first_free_page_vaddr = ALIGN(bitmap_end_vaddr, PAGE_SIZE);
-  uint32_t first_free_page_paddr = first_free_page_vaddr - KERNBASE;
+  uint32_t first_free_page_paddr = V2P_WO(first_free_page_vaddr);
 
-  uint32_t kernel_end = (uint32_t)&_kernel_end - KERNBASE;
+  uint32_t kernel_end = V2P_WO((uint32_t)&_kernel_end);
   printk("Kernel physical end: 0x%x\n", kernel_end);
   printk("first free page: 0x%x\n", first_free_page_paddr);
 

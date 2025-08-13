@@ -1,20 +1,25 @@
 #include "memory/vmm.h"
 #include "arch/x86/memlayout.h"
+#include "drivers/printk.h"
 #include "lib/stdlib.h"
-#include "memory/pmm.h"
+#include "memory/buddy_allocator/buddy.h"
+#include "memory/consts.h"
 #include "string.h"
 
 #include <stdint.h>
 
-extern void flush_tbl(); /* i386 does not support invld. Using this instead */
+/* i386 does not support invld. Using flush_tlb() instead
+ * https://wiki.osdev.org/TLB
+ */
+extern void flush_tlb(void);
 extern void load_page_directory(uint32_t *);
-extern void enable_paging();
+extern void enable_paging(void);
 
 uint32_t page_directory[1024] __attribute__((aligned(4096)));
 
 /* Public */
 
-void vmm_unmap_page(void *vaddr) {
+void *vmm_unmap_page(void *vaddr) {
   uint32_t pdindex = (uint32_t)vaddr >> 22;
   uint32_t ptindex = (uint32_t)vaddr >> 12 & 0x03FF;
 
@@ -22,14 +27,14 @@ void vmm_unmap_page(void *vaddr) {
   uint32_t *pte = &pt[ptindex];
 
   if (!(*pte & PAGE_FLAG_PRESENT)) {
-    return;
+    return NULL;
   }
 
   void *paddr = (void *)(*pte & ~0xFFF);
-  pmm_free_frame(paddr);
-
   *pte = 0;
-  flush_tbl();
+  flush_tlb();
+
+  return paddr;
 }
 
 void vmm_map_page(void *physaddr, void *virtualaddr, uint32_t flags) {
@@ -40,14 +45,14 @@ void vmm_map_page(void *physaddr, void *virtualaddr, uint32_t flags) {
   uint32_t *pt = (uint32_t *)(0xFFC00000 + (pdindex * PAGE_SIZE));
 
   if (!(pd[pdindex] & PAGE_FLAG_PRESENT)) {
-    uint32_t paddr = pmm_alloc_frame();
+    uintptr_t paddr = (uintptr_t)buddy_alloc(0);
     if (paddr == 0) {
       abort("Out of physical memory");
     }
 
     pd[pdindex] =
         paddr | PAGE_FLAG_SUPERVISOR | PAGE_FLAG_WRITABLE | PAGE_FLAG_PRESENT;
-    flush_tbl();
+    flush_tlb();
 
     memset(pt, 0, PAGE_SIZE);
   }
@@ -58,7 +63,7 @@ void vmm_map_page(void *physaddr, void *virtualaddr, uint32_t flags) {
 
   pt[ptindex] = ((uint32_t)physaddr) | (flags & 0xFFF) | PAGE_FLAG_PRESENT;
 
-  flush_tbl();
+  flush_tlb();
 }
 
 void vmm_init_pages(void) {
@@ -66,7 +71,7 @@ void vmm_init_pages(void) {
     page_directory[i] = PAGE_FLAG_SUPERVISOR | PAGE_FLAG_WRITABLE;
   }
 
-  uint32_t pt_phys_addr = pmm_alloc_frame();
+  uintptr_t pt_phys_addr = (uintptr_t)buddy_alloc(0);
   if (pt_phys_addr == 0) {
     abort("Out of physical memory when allocating initial page table");
   }
