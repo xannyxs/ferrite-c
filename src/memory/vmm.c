@@ -2,8 +2,8 @@
 #include "arch/x86/memlayout.h"
 #include "drivers/printk.h"
 #include "lib/stdlib.h"
+#include "memory/buddy_allocator/buddy.h"
 #include "memory/consts.h"
-#include "memory/pmm.h"
 #include "string.h"
 
 #include <stdint.h>
@@ -20,8 +20,6 @@ uint32_t page_directory[1024] __attribute__((aligned(4096)));
 /* Public */
 
 void *vmm_unmap_page(void *vaddr) {
-  printk("Vaddr: 0x%x\n", (uint32_t)vaddr);
-
   uint32_t pdindex = (uint32_t)vaddr >> 22;
   uint32_t ptindex = (uint32_t)vaddr >> 12 & 0x03FF;
 
@@ -47,7 +45,7 @@ void vmm_map_page(void *physaddr, void *virtualaddr, uint32_t flags) {
   uint32_t *pt = (uint32_t *)(0xFFC00000 + (pdindex * PAGE_SIZE));
 
   if (!(pd[pdindex] & PAGE_FLAG_PRESENT)) {
-    uint32_t paddr = pmm_alloc_frame();
+    uintptr_t paddr = (uintptr_t)buddy_alloc(0);
     if (paddr == 0) {
       abort("Out of physical memory");
     }
@@ -73,7 +71,7 @@ void vmm_init_pages(void) {
     page_directory[i] = PAGE_FLAG_SUPERVISOR | PAGE_FLAG_WRITABLE;
   }
 
-  uintptr_t pt_phys_addr = pmm_alloc_frame();
+  uintptr_t pt_phys_addr = (uintptr_t)buddy_alloc(0);
   if (pt_phys_addr == 0) {
     abort("Out of physical memory when allocating initial page table");
   }

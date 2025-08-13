@@ -23,8 +23,6 @@ void pmm_init_from_map(multiboot_info_t *);
 
 void pmm_print_bitmap(void);
 
-uint32_t pmm_alloc_frame(void);
-
 void pmm_print_bit(uint32_t addr);
 
 void pmm_free_frame(void *paddr);

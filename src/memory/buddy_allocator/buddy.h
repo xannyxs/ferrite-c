@@ -22,7 +22,7 @@ typedef struct {
 
 void buddy_init(void);
 
-void *buddy_alloc(uint32_t);
+void *buddy_alloc(uint32_t order);
 
 void buddy_dealloc(uintptr_t addr, uint32_t order);
 

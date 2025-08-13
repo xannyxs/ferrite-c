@@ -72,8 +72,6 @@ void pmm_print_bitmap(void) {
   printk("Amount of bytes: %d\n", pmm_bitmap_size);
 }
 
-inline uintptr_t pmm_alloc_frame(void) { return (uintptr_t)buddy_alloc(0); }
-
 uint32_t pmm_bitmap_len(void) { return pmm_bitmap_size; }
 
 uintptr_t pmm_get_first_addr(void) {
