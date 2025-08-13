@@ -51,8 +51,10 @@ static void print_time(void) {
   gettime(&t);
 
   // print the time in a standard format (e.g., hh:mm:ss dd/mm/yy)
-  printk("current time: %u:%u:%u %u/%u/%u\n", t.hour, t.minute, t.second, t.day,
-         t.month, t.year);
+  printk("current time: %u%u:%u%u:%u%u %u%u/%u%u/%u\n", t.hour / 10,
+         t.hour % 10, t.minute / 10, t.minute % 10, t.second / 10,
+         t.second % 10, t.day / 10, t.day % 10, t.month / 10, t.month % 10,
+         t.year);
 }
 
 static void print_epoch(void) {

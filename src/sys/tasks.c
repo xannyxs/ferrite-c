@@ -17,9 +17,9 @@ void schedule_task(interrupt_callback_t task) {
 }
 
 void run_scheduled_tasks(void) {
-  __asm__ volatile("cli");
 
   while (task_count > 0) {
+    __asm__ volatile("cli");
     interrupt_callback_t task = task_queue[0];
 
     for (int32_t i = 0; i < task_count - 1; i++) {
@@ -28,11 +28,6 @@ void run_scheduled_tasks(void) {
     task_count -= 1;
 
     __asm__ volatile("sti");
-
     task(NULL);
-
-    __asm__ volatile("cli");
   }
-
-  __asm__ volatile("sti");
 }
