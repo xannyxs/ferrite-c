@@ -26,7 +26,7 @@ static int buddy_get_bit(int bit_index) {
   return (g_buddy.map[byte_index] & (1 << bit_in_byte)) ? 1 : 0;
 }
 
-static void buddy_visualize(void) {
+void buddy_visualize(void) {
   printk("\n--- Buddy Allocator Visualization ---\n");
   printk("  Base Address: 0x%x | Total Size: %u KB | Max Order: %u\n",
          (void *)g_buddy.base, g_buddy.size / 1024, g_buddy.max_order);
@@ -182,7 +182,7 @@ void buddy_dealloc(uintptr_t addr, uint32_t order) {
   }
 
   buddy_list_add(current_addr, current_order);
-  buddy_visualize();
+  // buddy_visualize();
 }
 
 void *buddy_alloc(uint32_t order) {
@@ -215,7 +215,7 @@ void *buddy_alloc(uint32_t order) {
 
   mark_allocated(block_addr, required_order);
 
-  buddy_visualize();
+  // buddy_visualize();
 
   return (void *)block_addr;
 }
