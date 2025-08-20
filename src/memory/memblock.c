@@ -2,9 +2,11 @@
 #include "memory/consts.h"
 #include "memory/pmm.h"
 
+#include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
 
+static bool bumpalloc_is_active = false;
 static void *next_free_addr = NULL;
 static void *heap_end_addr = NULL;
 
@@ -13,6 +15,10 @@ static void *heap_end_addr = NULL;
 void *get_next_free_addr(void) { return next_free_addr; }
 
 void *get_heap_end_addr(void) { return heap_end_addr; }
+
+void memblock_deactivate(void) { bumpalloc_is_active = false; }
+
+bool memblock_is_active(void) { return bumpalloc_is_active; }
 
 /*
  * FIXME: This implementation only uses the first available memory region and
@@ -29,6 +35,7 @@ void *get_heap_end_addr(void) { return heap_end_addr; }
 void memblock_init(void) {
   next_free_addr = (void *)pmm_get_first_addr();
   heap_end_addr = (void *)(pmm_bitmap_len() * PAGE_SIZE * 8);
+  bumpalloc_is_active = true;
 }
 
 /*
