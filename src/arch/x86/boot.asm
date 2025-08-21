@@ -33,6 +33,7 @@
 
 	;       Second section: Stack setup
 	section .bss
+	global  stack_top
 
 	align 16; Ensure proper alignment for the stack
 
