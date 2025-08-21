@@ -210,8 +210,6 @@ void *buddy_alloc(uint32_t order) {
   uintptr_t block_addr = (uintptr_t)block_node;
 
   g_buddy.free_lists[k] = block_node->next;
-  printk("Block Addr: 0x%x\n", block_addr);
-  printk("Next: 0x%x\n", g_buddy.free_lists[k]);
   while (k > required_order) {
     uintptr_t buddy_addr = block_addr + (PAGE_SIZE * (1 << (k - 1)));
 
@@ -220,8 +218,6 @@ void *buddy_alloc(uint32_t order) {
   }
 
   mark_allocated(block_addr, required_order);
-
-  buddy_visualize();
 
   return (void *)block_addr;
 }

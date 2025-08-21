@@ -1,7 +1,6 @@
 #include "memory/vmm.h"
 #include "arch/x86/memlayout.h"
 #include "debug/debug.h"
-#include "drivers/printk.h"
 #include "lib/stdlib.h"
 #include "memory/buddy_allocator/buddy.h"
 #include "memory/consts.h"
@@ -90,13 +89,11 @@ void vmm_init_pages(void) {
   }
 
   void *pt_phys_addr = memblock(PAGE_SIZE);
-  printk("Ptr: 0x%x\n", pt_phys_addr);
   if (!pt_phys_addr) {
     abort("Out of physical memory when allocating initial page table");
   }
 
-  uint32_t pt_virt_addr = P2V_WO((uintptr_t)pt_phys_addr);
-  uint32_t *pt = (uint32_t *)pt_virt_addr;
+  uint32_t *pt = (uint32_t *)P2V_WO((uintptr_t)pt_phys_addr);
   for (uint32_t i = 0; i < 1024; i++) {
     uint32_t page_phys_addr = i * PAGE_SIZE;
     pt[i] = page_phys_addr | PAGE_FLAG_PRESENT | PAGE_FLAG_WRITABLE |
