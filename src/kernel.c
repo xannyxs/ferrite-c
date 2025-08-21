@@ -36,8 +36,10 @@ __attribute__((noreturn)) void kmain(uint32_t magic, multiboot_info_t *mbd) {
 
   pmm_init_from_map(mbd);
   memblock_init();
-  buddy_init();
+
   vmm_init_pages();
+  buddy_init();
+  memblock_deactivate();
   kmalloc_init();
 
   char *str = kmalloc(10);

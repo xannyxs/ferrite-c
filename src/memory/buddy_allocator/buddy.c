@@ -1,10 +1,12 @@
 #include "memory/buddy_allocator/buddy.h"
+#include "arch/x86/memlayout.h"
+#include "debug/debug.h"
 #include "drivers/printk.h"
 #include "lib/math.h"
 #include "lib/stdlib.h"
 #include "memory/consts.h"
-#include "memory/kmalloc.h"
 #include "memory/memblock.h"
+#include "memory/vmm.h"
 
 #include <stdbool.h>
 #include <stddef.h>
@@ -150,11 +152,13 @@ static void mark_allocated(uintptr_t block_addr, int32_t order) {
   }
 }
 
-static void buddy_list_add(uintptr_t addr, int order) {
-  buddy_node_t *block = (buddy_node_t *)addr;
+static void buddy_list_add(uintptr_t paddr, int order) {
+  vmm_remap_page(SCRATCH_VADDR, (void *)paddr,
+                 PAGE_FLAG_WRITABLE | PAGE_FLAG_SUPERVISOR);
+  buddy_node_t *block = (buddy_node_t *)SCRATCH_VADDR;
 
   block->next = g_buddy.free_lists[order];
-  g_buddy.free_lists[order] = block;
+  g_buddy.free_lists[order] = (buddy_node_t *)paddr;
 }
 
 /* Public */
@@ -197,7 +201,7 @@ void *buddy_alloc(uint32_t order) {
     k += 1;
   }
 
-  if (g_buddy.free_lists[k] == NULL) {
+  if (!g_buddy.free_lists[k]) {
     printk("Out of memory. No suitable block found.\n");
     return NULL;
   }
@@ -214,8 +218,6 @@ void *buddy_alloc(uint32_t order) {
   }
 
   mark_allocated(block_addr, required_order);
-
-  buddy_visualize();
 
   return (void *)block_addr;
 }

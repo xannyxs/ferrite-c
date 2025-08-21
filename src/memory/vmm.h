@@ -15,4 +15,6 @@ void vmm_init_pages(void);
 
 void *vmm_unmap_page(void *);
 
+void vmm_remap_page(void *vaddr, void *paddr, int32_t flags);
+
 #endif /* VMM_H */
