@@ -7,10 +7,11 @@ NAME = ferrite-c.elf
 SDIR = ./src
 ODIR = ./build
 
-CFLAGS = -I$(SDIR) -m32 -ffreestanding -g -O2 -Wall -Wextra -Werror \
-         -fno-stack-protector -D__is_libk -D__print_serial -D__bochs -pedantic -std=c99 -march=i386
 ASFLAGS = -felf32
 LDFLAGS = -T $(SDIR)/arch/x86/x86.ld -ffreestanding -nostdlib -lgcc -march=i386
+CFLAGS = -I$(SDIR) -m32 -ffreestanding -g -O2 -Wall -Wextra -Werror \
+				 -fno-stack-protector -D__IS_LIBK -D__PRINT_SERIAL \
+				 -pedantic -std=c99 -march=i386
 
 C_SOURCES = $(shell find $(SDIR) -type f -name '*.c')
 ASM_SOURCES = $(shell find $(SDIR) -type f -name '*.asm')
@@ -45,8 +46,11 @@ iso: all
 run: iso 
 	qemu-system-i386 -cdrom kernel.iso $(QEMUFLAGS)
 
-debug_bochs: QEMUFLAGS += -s -S
-debug_bochs: CFLAGS += -D__bochs
+run_bochs: CFLAGS += -D__BOCHS
+run_bochs: iso 
+	bochs -f .bochsrc -q
+
+debug_bochs: CFLAGS += -D__BOCHS -D__DEBUG
 debug_bochs: iso 
 	bochs -f .bochsrc -q
 

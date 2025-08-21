@@ -3,6 +3,7 @@
 ## Official Documentation
 
 - [Intel® 64 and IA-32 Architectures Manual](https://www.intel.com/content/www/us/en/architecture-and-technology/64-ia-32-architectures-software-developer-vol-3a-part-1-manual.html) - Primary CPU architecture reference
+- [INTEL 80386 PROGRAMMER'S REFERENCE MANUAL 1986](https://pdos.csail.mit.edu/6.828/2018/readings/i386.pdf)
 
 ## OSDev and Community Resources
 
@@ -22,6 +23,7 @@
 - [Interrupt Handeling](https://baponkar.github.io/Osdev-Notes/02_Architecture/05_InterruptHandling.html)
 - [i386 Interrupts MIT](https://pdos.csail.mit.edu/6.828/2018/readings/i386/c09.htm)
 - [xv6, a simple, Unix-like teaching operating system](https://pdos.csail.mit.edu/6.828/2018/xv6/book-rev10.pdf)
+- [Linux 1.0](https://elixir.bootlin.com/linux/1.0/source)
 
 ## Development Tools
 

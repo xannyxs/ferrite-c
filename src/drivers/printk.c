@@ -7,7 +7,7 @@
 #include <stdint.h>
 #include <string.h>
 
-#if defined(__print_serial)
+#if defined(__PRINT_SERIAL)
 #include "drivers/serial.h"
 #endif
 
@@ -116,10 +116,10 @@ int32_t printk(const char *fmt, ...) {
 
   vga_writestring(buf);
 
-#if defined(__print_serial)
+#if defined(__PRINT_SERIAL)
   serial_write_string(buf);
 #endif
-#if defined(__bochs)
+#if defined(__BOCHS)
   bochs_print_string(buf);
 #endif
 
