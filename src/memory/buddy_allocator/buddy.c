@@ -28,7 +28,7 @@ static int buddy_get_bit(int bit_index) {
   return (g_buddy.map[byte_index] & (1 << bit_in_byte)) ? 1 : 0;
 }
 
-static void buddy_visualize(void) {
+void buddy_visualize(void) {
   printk("\n--- Buddy Allocator Visualization ---\n");
   printk("  Base Address: 0x%x | Total Size: %u KB | Max Order: %u\n",
          (void *)g_buddy.base, g_buddy.size / 1024, g_buddy.max_order);
@@ -38,9 +38,12 @@ static void buddy_visualize(void) {
   for (int i = 0; i <= g_buddy.max_order; i++) {
     buddy_node_t *node = g_buddy.free_lists[i];
     int free_block_count = 0;
-    while (node != NULL) {
+    while (node) {
       free_block_count++;
-      node = node->next;
+      vmm_remap_page(SCRATCH_VADDR, node, 0);
+
+      buddy_node_t *mapped_node = (buddy_node_t *)SCRATCH_VADDR;
+      node = mapped_node->next;
     }
     int pages_per_block = 1 << i;
     printk("    Order %d (%d pages): %d free blocks\n", i, pages_per_block,
@@ -49,10 +52,10 @@ static void buddy_visualize(void) {
   printk("-------------------------------------\n");
 
   printk("  Allocation Bitmap ('X' = allocated, '.' = free):\n");
-  int managed_blocks = 1 << g_buddy.max_order;
-  int bits_per_line = 64;
+  size_t total_pages = g_buddy.size / PAGE_SIZE;
+  int bits_per_line = 32;
 
-  for (int i = 0; i < managed_blocks; i++) {
+  for (size_t i = 0; i < total_pages; i++) {
     if (i % bits_per_line == 0) {
       if (i > 0) {
         printk("\n");
@@ -62,6 +65,7 @@ static void buddy_visualize(void) {
 
     printk("%c", buddy_get_bit(i) ? 'X' : '.');
   }
+
   printk("\n-------------------------------------\n");
 }
 
@@ -152,13 +156,12 @@ static void mark_allocated(uintptr_t block_addr, int32_t order) {
   }
 }
 
-static void buddy_list_add(uintptr_t paddr, int order) {
-  vmm_remap_page(SCRATCH_VADDR, (void *)paddr,
-                 PAGE_FLAG_WRITABLE | PAGE_FLAG_SUPERVISOR);
-  buddy_node_t *block = (buddy_node_t *)SCRATCH_VADDR;
+static void buddy_list_add(uintptr_t paddr, uint32_t k) {
+  vmm_remap_page(SCRATCH_VADDR, (void *)paddr, 0);
+  buddy_node_t *mapped_buddy = (buddy_node_t *)SCRATCH_VADDR;
 
-  block->next = g_buddy.free_lists[order];
-  g_buddy.free_lists[order] = (buddy_node_t *)paddr;
+  mapped_buddy->next = g_buddy.free_lists[k];
+  g_buddy.free_lists[k] = (buddy_node_t *)paddr;
 }
 
 /* Public */
@@ -186,7 +189,7 @@ void buddy_dealloc(uintptr_t addr, uint32_t order) {
   }
 
   buddy_list_add(current_addr, current_order);
-  buddy_visualize();
+  // buddy_visualize();
 }
 
 void *buddy_alloc(uint32_t order) {
@@ -196,7 +199,6 @@ void *buddy_alloc(uint32_t order) {
     return NULL;
   }
 
-  uint32_t required_order = k;
   while (k < g_buddy.max_order && !g_buddy.free_lists[k]) {
     k += 1;
   }
@@ -206,18 +208,22 @@ void *buddy_alloc(uint32_t order) {
     return NULL;
   }
 
-  buddy_node_t *block_node = g_buddy.free_lists[k];
-  uintptr_t block_addr = (uintptr_t)block_node;
+  buddy_node_t *node = g_buddy.free_lists[k];
+  uintptr_t block_addr = (uintptr_t)node;
 
-  g_buddy.free_lists[k] = block_node->next;
-  while (k > required_order) {
-    uintptr_t buddy_addr = block_addr + (PAGE_SIZE * (1 << (k - 1)));
+  vmm_remap_page(SCRATCH_VADDR, (void *)node, 0);
+  buddy_node_t *mapped_node = (buddy_node_t *)SCRATCH_VADDR;
+  g_buddy.free_lists[k] = mapped_node->next;
 
-    buddy_list_add(buddy_addr, k - 1);
+  while (k > order) {
     k -= 1;
+    uintptr_t buddy_addr = block_addr + (PAGE_SIZE * (1 << k));
+
+    buddy_list_add(buddy_addr, k);
   }
 
-  mark_allocated(block_addr, required_order);
+  mark_allocated(block_addr, order);
+  buddy_visualize();
 
   return (void *)block_addr;
 }
@@ -225,38 +231,40 @@ void *buddy_alloc(uint32_t order) {
 void buddy_init(void) {
   uintptr_t start_addr = (uintptr_t)get_next_free_addr();
   uintptr_t end_addr = (uintptr_t)get_heap_end_addr();
-  uintptr_t aligned_addr = ALIGN(start_addr, PAGE_SIZE);
 
-  g_buddy.base = aligned_addr;
-  g_buddy.size = end_addr - aligned_addr;
+  g_buddy.base = ALIGN(start_addr, PAGE_SIZE);
+  uintptr_t total_size = end_addr - g_buddy.base;
 
-  int32_t block_count = g_buddy.size / PAGE_SIZE;
+  int32_t bitmap_bytes = CEIL_DIV(total_size / PAGE_SIZE, 8);
+  g_buddy.map_size = CEIL_DIV(bitmap_bytes, sizeof(size_t)) * sizeof(size_t);
 
-  if (block_count == 0) {
-    abort("No blocks!");
-  }
-
-  g_buddy.max_order = 0;
-  int32_t tmp = block_count;
-  while (tmp > 1) {
-    tmp >>= 1;
-    g_buddy.max_order += 1;
-  }
-
-  int32_t managed_blocks = 1 << g_buddy.max_order;
-  int32_t bitmap_bytes = CEIL_DIV(managed_blocks, 8);
-  int32_t bitmap_size = CEIL_DIV(bitmap_bytes, sizeof(size_t)) * sizeof(size_t);
-  g_buddy.map_size = bitmap_size;
+  g_buddy.size = total_size - g_buddy.map_size;
+  g_buddy.max_order = log2(g_buddy.size / PAGE_SIZE);
 
   g_buddy.map = (uint8_t *)g_buddy.base;
   memset(g_buddy.map, 0, g_buddy.map_size);
 
-  uintptr_t allocatable_base = ALIGN(g_buddy.base + bitmap_size, PAGE_SIZE);
-  buddy_node_t *initial_block = (buddy_node_t *)allocatable_base;
-  initial_block->next = NULL;
-  g_buddy.free_lists[g_buddy.max_order] = initial_block;
-
-  for (int i = 0; i < g_buddy.max_order; i++) {
+  for (int i = 0; i <= g_buddy.max_order; i++) {
     g_buddy.free_lists[i] = NULL;
   }
+
+  size_t remaining = g_buddy.size;
+  uintptr_t current_addr = ALIGN(g_buddy.base + g_buddy.map_size, PAGE_SIZE);
+  while (remaining >= PAGE_SIZE) {
+    uint32_t order = log2(remaining / PAGE_SIZE);
+    if (order > g_buddy.max_order) {
+      order = g_buddy.max_order;
+    }
+
+    size_t block_size = (1 << order) * PAGE_SIZE;
+    vmm_remap_page(SCRATCH_VADDR, (void *)current_addr, 0);
+    buddy_node_t *block = (buddy_node_t *)SCRATCH_VADDR;
+    block->next = g_buddy.free_lists[order];
+    g_buddy.free_lists[order] = (buddy_node_t *)current_addr;
+
+    current_addr += block_size;
+    remaining -= block_size;
+  }
+
+  buddy_visualize();
 }

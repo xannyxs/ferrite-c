@@ -1,6 +1,7 @@
 #include "memory/vmm.h"
 #include "arch/x86/memlayout.h"
 #include "debug/debug.h"
+#include "drivers/printk.h"
 #include "lib/stdlib.h"
 #include "memory/buddy_allocator/buddy.h"
 #include "memory/consts.h"
@@ -38,7 +39,18 @@ void *vmm_unmap_page(void *vaddr) {
   return paddr;
 }
 
-void vmm_map_page(void *physaddr, void *virtualaddr, uint32_t flags) {
+/**
+ * FIXME: Need to create a logger instead of using printk
+ * FIXME: Create wrapper for memblock / buddy Alloc
+ *
+ * @brief Maps a physical address to a virtual address.
+ *
+ * @return 0 on success.
+ * @return -1 if the mapping already exists.
+ */
+__attribute__((warn_unused_result)) int32_t vmm_map_page(void *physaddr,
+                                                         void *virtualaddr,
+                                                         uint32_t flags) {
   uint32_t pdindex = (uint32_t)virtualaddr >> 22;
   uint32_t ptindex = (uint32_t)virtualaddr >> 12 & 0x03FF;
 
@@ -65,12 +77,14 @@ void vmm_map_page(void *physaddr, void *virtualaddr, uint32_t flags) {
   }
 
   if (pt[ptindex] & PAGE_FLAG_PRESENT) {
-    abort("Virtual Address is already taken");
+    printk("Mapping already exists\n");
+    return -1;
   }
 
   pt[ptindex] = ((uint32_t)physaddr) | (flags & 0xFFF) | PAGE_FLAG_PRESENT;
 
   flush_tlb();
+  return 0;
 }
 
 void vmm_remap_page(void *vaddr, void *paddr, int32_t flags) {
@@ -117,5 +131,9 @@ void vmm_init_pages(void) {
     abort("Something went wrong");
   }
 
-  vmm_map_page(paddr, SCRATCH_VADDR, PAGE_FLAG_WRITABLE | PAGE_FLAG_SUPERVISOR);
+  int32_t ret = vmm_map_page(paddr, SCRATCH_VADDR,
+                             PAGE_FLAG_WRITABLE | PAGE_FLAG_SUPERVISOR);
+  if (ret < 0) {
+    abort("Scratch Page is already taken\n");
+  }
 }
