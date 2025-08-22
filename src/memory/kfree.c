@@ -4,10 +4,12 @@
 #include "memory/buddy_allocator/buddy.h"
 #include "memory/consts.h"
 #include "memory/kmalloc.h"
+#include "memory/memory.h"
 #include "memory/vmm.h"
 
 #include <stdint.h>
 
+// FIXME: FIXME
 void kfree(void *ptr) {
   if (!ptr) {
     printk("ptr is null\n");
@@ -26,7 +28,8 @@ void kfree(void *ptr) {
   free_list_t *freed_block = (free_list_t *)block_vaddr;
   freed_block->size = block_size;
 
-  free_list_t *current = get_free_list_head();
+  free_list_t *current = NULL;
+  // free_list_t *current = get_free_list_head();
   free_list_t *prev = NULL;
 
   while (current && (uintptr_t)current < (uintptr_t)freed_block) {
@@ -41,7 +44,8 @@ void kfree(void *ptr) {
     if (prev) {
       prev->next = freed_block;
     } else {
-      set_free_list_head(freed_block);
+
+      // set_free_list_head(freed_block);
     }
   }
 

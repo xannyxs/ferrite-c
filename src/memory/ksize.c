@@ -1,5 +1,5 @@
 #include "lib/stdlib.h"
-#include "memory/kmalloc.h"
+#include "memory/memory.h"
 
 size_t ksize(void *ptr) {
   if (!ptr) {

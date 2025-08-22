@@ -4,6 +4,7 @@
 #include "lib/stdlib.h"
 #include "memory/buddy_allocator/buddy.h"
 #include "memory/consts.h"
+#include "memory/memory.h"
 #include "memory/vmm.h"
 
 #include <stddef.h>
@@ -57,7 +58,7 @@ void vmalloc_init(void) {
  * @return A pointer to the allocated memory, or NULL on failure.
  */
 void *vmalloc(size_t num_bytes) {
-  if (num_bytes == 0 || virtual_free_list_head == NULL) {
+  if (num_bytes == 0 || !virtual_free_list_head) {
     return NULL;
   }
 
@@ -74,18 +75,19 @@ void *vmalloc(size_t num_bytes) {
   }
 
   if (!current) {
-    printk("Not enough mem");
+    printk("Not enough Memory");
     return NULL;
   }
 
-  uintptr_t virt_addr = (uintptr_t)current;
+  uintptr_t vaddr = (uintptr_t)current;
   if (current->size - total_size > sizeof(free_list_t)) {
-    free_list_t *new_free_node = (free_list_t *)(virt_addr + total_size);
+    free_list_t *new_free_node = (free_list_t *)(vaddr + total_size);
 
     void *header_phys_page = buddy_alloc(0);
     if (!header_phys_page) {
       abort("Out of physical memory while splitting block!");
     }
+
     int32_t ret = vmm_map_page(header_phys_page, (void *)new_free_node, 0);
     if (ret < 0) {
       printk("Page already exists\n");
@@ -112,10 +114,10 @@ void *vmalloc(size_t num_bytes) {
     if (!phys_page) {
       abort("Out of physical memory during mapping");
     }
-    vmm_map_page(phys_page, (void *)(virt_addr + i * PAGE_SIZE), 0);
+    vmm_map_page(phys_page, (void *)(vaddr + i * PAGE_SIZE), 0);
   }
 
-  block_header_t *header = (block_header_t *)virt_addr;
+  block_header_t *header = (block_header_t *)vaddr;
   header->magic = MAGIC;
   header->size = total_size;
 

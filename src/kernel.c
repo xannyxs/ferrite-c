@@ -7,6 +7,7 @@
 #include "drivers/video/vga.h"
 #include "lib/stdlib.h"
 #include "memory/buddy_allocator/buddy.h"
+#include "memory/kmalloc.h"
 #include "memory/memblock.h"
 #include "memory/pmm.h"
 #include "memory/vmalloc.h"
@@ -40,19 +41,18 @@ __attribute__((noreturn)) void kmain(uint32_t magic, multiboot_info_t *mbd) {
   vmm_init_pages();
   buddy_init();
   memblock_deactivate();
-  vmalloc_init();
+  // vmalloc_init();
+  kmalloc_init();
 
-  char *str = vmalloc(10);
+  char *str = kmalloc(10);
   memcpy(str, "Hello!", 10);
   printk("%s\n", str);
 
-  vfree(str);
-
-  char *ptr = vmalloc(100);
-  memcpy(ptr, "Hello!", 10);
-  printk("%s\n", ptr);
-
-  vfree(ptr);
+  // char *str = vmalloc(10);
+  // memcpy(str, "Hello!", 10);
+  // printk("%s\n", str);
+  //
+  // vfree(str);
 
   console_init();
 

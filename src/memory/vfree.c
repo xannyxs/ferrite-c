@@ -3,6 +3,7 @@
 #include "lib/stdlib.h"
 #include "memory/buddy_allocator/buddy.h"
 #include "memory/consts.h"
+#include "memory/memory.h"
 #include "memory/vmalloc.h"
 #include "memory/vmm.h"
 
