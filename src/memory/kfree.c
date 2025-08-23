@@ -20,6 +20,10 @@ void kfree(void *ptr) {
     abort("The given pointer is corrupt\n");
   }
 
+  if ((header->flags & MEM_ALLOCATOR_MASK) != MEM_TYPE_KMALLOC) {
+    abort("kfree() is used on a vmalloc() pointer\n");
+  }
+
   uintptr_t vaddr = (uintptr_t)header;
   size_t size = header->size;
   uint32_t pages = CEIL_DIV(size, PAGE_SIZE);

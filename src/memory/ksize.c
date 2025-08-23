@@ -1,6 +1,10 @@
 #include "lib/stdlib.h"
 #include "memory/memory.h"
 
+void kbrk(void) {
+  abort("cannot find a valid break. We are using buddy_allocator");
+}
+
 size_t ksize(void *ptr) {
   if (!ptr) {
     return 0;

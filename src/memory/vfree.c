@@ -21,6 +21,10 @@ void vfree(void *ptr) {
     return;
   }
 
+  if ((header->flags & MEM_ALLOCATOR_MASK) != MEM_TYPE_VMALLOC) {
+    abort("vfree() is used on a kmalloc() pointer\n");
+  }
+
   uintptr_t block_vaddr = (uintptr_t)header;
   size_t block_size = header->size;
 

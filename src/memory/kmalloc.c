@@ -37,6 +37,7 @@ void *kmalloc(size_t n) {
   block_header_t *header = (block_header_t *)vaddr;
   header->magic = MAGIC;
   header->size = total_size;
+  header->flags = MEM_TYPE_KMALLOC;
 
   return (void *)(header + 1);
 }
