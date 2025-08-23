@@ -143,7 +143,7 @@ void vmm_init_pages(void) {
   memset(page_directory, 0, sizeof(uint32_t) * 1024);
 
   size_t memory_to_map = ZONE_NORMAL;
-  size_t total_ram = (pmm_bitmap_len() * PAGE_SIZE * 8) - pmm_get_first_addr();
+  size_t total_ram = (pmm_bitmap_len() * PAGE_SIZE * 8);
   if (ZONE_NORMAL > total_ram) {
     memory_to_map = total_ram;
   }
@@ -195,5 +195,5 @@ void vmm_init_pages(void) {
     abort("Scratch Page is already taken\n");
   }
 
-  visualize_paging(32, 32);
+  visualize_paging(8, 8);
 }

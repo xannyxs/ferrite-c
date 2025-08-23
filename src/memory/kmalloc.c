@@ -36,13 +36,9 @@ void *kmalloc(size_t n) {
   }
 
   uintptr_t vaddr = P2V_WO((uintptr_t)paddr);
-  printk("paddr: 0x%x\n", paddr);
-  printk("vaddr: 0x%x\n", vaddr);
-  BOCHS_MAGICBREAK();
   block_header_t *header = (block_header_t *)vaddr;
   header->magic = MAGIC;
   header->size = total_size;
-  BOCHS_MAGICBREAK();
 
   return (void *)(header + 1);
 }

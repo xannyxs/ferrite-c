@@ -35,6 +35,7 @@ bool memblock_is_active(void) { return bumpalloc_is_active; }
 void memblock_init(void) {
   next_free_addr = (void *)pmm_get_first_addr();
   heap_end_addr = (void *)(pmm_bitmap_len() * PAGE_SIZE * 8);
+
   bumpalloc_is_active = true;
 }
 
