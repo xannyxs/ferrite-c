@@ -3,9 +3,6 @@
 
 #include <stddef.h>
 
-#define MAXIMUM_SLAB_ALLOCATION 16384
-#define MAGIC 0xDEADBEEF
-
 void kfree(void *ptr);
 
 void *kbrk(void *addr);

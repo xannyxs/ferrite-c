@@ -12,8 +12,6 @@
 
 /* Public */
 
-void kmalloc_init(void) {}
-
 /**
  * @brief Allocates a physically contiguous memory block.
  *
@@ -23,12 +21,12 @@ void kmalloc_init(void) {}
  * @param size The number of bytes to allocate.
  * @return A pointer to the allocated memory, or NULL on failure.
  */
-void *kmalloc(size_t num_bytes) {
-  if (num_bytes == 0 || num_bytes >= MAXIMUM_SLAB_ALLOCATION) {
+void *kmalloc(size_t n) {
+  if (n == 0 || n >= MAXIMUM_SLAB_ALLOCATION) {
     return NULL;
   }
 
-  size_t total_size = ALIGN(num_bytes + sizeof(block_header_t), PAGE_SIZE);
+  size_t total_size = ALIGN(n + sizeof(block_header_t), PAGE_SIZE);
 
   uint32_t num_pages = CEIL_DIV(total_size, PAGE_SIZE);
   uint32_t order = log2(num_pages);
@@ -38,9 +36,13 @@ void *kmalloc(size_t num_bytes) {
   }
 
   uintptr_t vaddr = P2V_WO((uintptr_t)paddr);
+  printk("paddr: 0x%x\n", paddr);
+  printk("vaddr: 0x%x\n", vaddr);
+  BOCHS_MAGICBREAK();
   block_header_t *header = (block_header_t *)vaddr;
   header->magic = MAGIC;
   header->size = total_size;
+  BOCHS_MAGICBREAK();
 
   return (void *)(header + 1);
 }

@@ -42,7 +42,6 @@ __attribute__((noreturn)) void kmain(uint32_t magic, multiboot_info_t *mbd) {
   buddy_init();
   memblock_deactivate();
   // vmalloc_init();
-  kmalloc_init();
 
   char *str = kmalloc(10);
   memcpy(str, "Hello!", 10);
