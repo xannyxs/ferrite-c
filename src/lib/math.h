@@ -18,4 +18,12 @@ static inline uint32_t log2(uint32_t n) {
   return (sizeof(uint32_t) * 8 - 1) - __builtin_clz(n);
 }
 
+static inline uint32_t log2_rounded_up(uint32_t n) {
+  if (unlikely(n == 0)) {
+    __builtin_trap();
+  }
+
+  return (sizeof(uint32_t) * 8) - __builtin_clz(n - 1);
+}
+
 #endif /* MATH_H */
