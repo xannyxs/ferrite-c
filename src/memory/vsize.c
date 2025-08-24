@@ -1,7 +1,7 @@
 #include "lib/stdlib.h"
 #include "memory/memory.h"
 
-size_t ksize(void *ptr) {
+size_t vsize(void *ptr) {
   if (!ptr) {
     return 0;
   }

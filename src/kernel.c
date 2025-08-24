@@ -10,6 +10,7 @@
 #include "memory/kmalloc.h"
 #include "memory/memblock.h"
 #include "memory/pmm.h"
+#include "memory/vmalloc.h"
 #include "memory/vmm.h"
 #include "sys/tasks.h"
 
@@ -40,13 +41,7 @@ __attribute__((noreturn)) void kmain(uint32_t magic, multiboot_info_t *mbd) {
   vmm_init_pages();
   buddy_init();
   memblock_deactivate();
-  kmalloc_init();
-
-  char *str = kmalloc(10);
-  memcpy(str, "Hello!", 10);
-  printk("%s\n", str);
-
-  kfree(str);
+  vmalloc_init();
 
   console_init();
 

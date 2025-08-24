@@ -7,11 +7,13 @@
 #define PAGE_FLAG_WRITABLE (1 << 1)
 #define PAGE_FLAG_SUPERVISOR (1 << 2)
 
+#define ZONE_NORMAL 896 * 1024 * 1024
+
 void *vmm_find_free_region(uint32_t);
 
-void vmm_map_page(void *physaddr, void *virtualaddr, uint32_t flags);
-
 void vmm_init_pages(void);
+
+int32_t vmm_map_page(void *physaddr, void *virtualaddr, uint32_t flags);
 
 void *vmm_unmap_page(void *);
 
