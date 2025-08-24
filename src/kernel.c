@@ -41,17 +41,7 @@ __attribute__((noreturn)) void kmain(uint32_t magic, multiboot_info_t *mbd) {
   vmm_init_pages();
   buddy_init();
   memblock_deactivate();
-  // vmalloc_init();
-
-  char *str = kmalloc(10);
-  memcpy(str, "Hello!", 10);
-  printk("%s\n", str);
-
-  // char *str = vmalloc(10);
-  // memcpy(str, "Hello!", 10);
-  // printk("%s\n", str);
-  //
-  // vfree(str);
+  vmalloc_init();
 
   console_init();
 

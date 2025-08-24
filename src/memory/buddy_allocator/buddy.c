@@ -217,14 +217,13 @@ void *buddy_alloc(uint32_t order) {
 
   while (k > order) {
     k -= 1;
-    uintptr_t buddy_addr = block_addr + (PAGE_SIZE * (1 << k));
+    uintptr_t buddy_addr = block_addr + (PAGE_SIZE << k);
 
     buddy_list_add(buddy_addr, k);
   }
 
   mark_allocated(block_addr, order);
-  buddy_visualize();
-
+  // buddy_visualize();
   return (void *)block_addr;
 }
 

@@ -6,8 +6,6 @@
 
 void vfree(void *ptr);
 
-void *vbrk(void *addr);
-
 void *vmalloc(size_t);
 
 void vmalloc_init(void);
