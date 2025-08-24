@@ -4,6 +4,8 @@
 #include "memory/memory.h"
 #include <stddef.h>
 
+size_t vsize(void *ptr);
+
 void vfree(void *ptr);
 
 void *vmalloc(size_t);
