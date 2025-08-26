@@ -9,11 +9,13 @@
 - [KFS 02](project/kfs_02.md)
 <!-- - [KFS 03](project/kfs_03.md) -->
 - [KFS 04](project/kfs_04.md)
+- [To Do](project/todo.md)
 
 # Architecture
 
-- [Architecture Overview](architecture/overview.md)
+- [Overview](architecture/overview.md)
 - [Memory Allocation](architecture/memory.md)
+- [Buddy Allocator](architecture/buddy.md)
 <!-- - [Build Pipeline](architecture/build.md) -->
 <!-- - [Design Decisions](architecture/design.md) -->
 

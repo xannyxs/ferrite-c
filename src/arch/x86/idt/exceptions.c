@@ -9,9 +9,12 @@
 
 #include <stdint.h>
 
+#define USER_SPACE 1
+#define KERNEL_SPACE 3
+
 __attribute__((target("general-regs-only"), interrupt)) void
 divide_by_zero_handler(registers_t *regs) {
-  if ((regs->cs & 3) == 0) {
+  if ((regs->cs & KERNEL_SPACE) == 0) {
     panic(regs, "Division by Zero");
   }
 
@@ -127,10 +130,17 @@ general_protection_fault(registers_t *regs, uint32_t error_code) {
 __attribute__((target("general-regs-only"), interrupt)) void
 page_fault(registers_t *regs, uint32_t error_code) {
   (void)error_code;
-  if ((regs->cs & 3) == 0) {
+  if ((regs->cs & KERNEL_SPACE) == 0) {
     panic(regs, "Page Fault");
   }
 
+  /* TODO:
+   * Implement On-Demand Paging (lazy loading) for the user space.
+   *
+   * To make the kernel more effecient, we do not map anything in the user
+   * space, until there is a page fault. It will then ensure the physical
+   * address is being mapped with a virtual address.
+   */
   __asm__ volatile("cli; hlt");
 }
 

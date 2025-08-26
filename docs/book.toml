@@ -6,3 +6,6 @@ language = "en"
 
 [output.html.playground]
 line-numbers = true
+
+[output.html]
+mathjax-support = true
