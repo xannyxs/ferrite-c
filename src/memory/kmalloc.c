@@ -27,7 +27,7 @@ void *kmalloc(size_t n) {
   size_t total_size = ALIGN(n + sizeof(block_header_t), PAGE_SIZE);
 
   uint32_t num_pages = CEIL_DIV(total_size, PAGE_SIZE);
-  uint32_t order = floor_log2(num_pages);
+  uint32_t order = ceil_log2(num_pages);
   void *paddr = buddy_alloc(order);
   if (!paddr) {
     return NULL;
