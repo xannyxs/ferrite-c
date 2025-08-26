@@ -10,7 +10,10 @@
 #define ALIGN(x, a) (((x) + ((a) - 1)) & ~((a) - 1))
 #define CEIL_DIV(a, b) (((a + b - 1) / b))
 
-static inline uint32_t log2(uint32_t n) {
+/*
+ * @brief  Calculates the base-2 logarithm of n, rounded down (floor).
+ */
+static inline uint32_t ceil_log2(uint32_t n) {
   if (unlikely(n == 0)) {
     __builtin_trap();
   }
@@ -18,7 +21,10 @@ static inline uint32_t log2(uint32_t n) {
   return (sizeof(uint32_t) * 8 - 1) - __builtin_clz(n);
 }
 
-static inline uint32_t log2_rounded_up(uint32_t n) {
+/*
+ * @brief  Calculates the base-2 logarithm of n, rounded up (ceiling).
+ */
+static inline uint32_t floor_log2(uint32_t n) {
   if (unlikely(n == 0)) {
     __builtin_trap();
   }

@@ -238,7 +238,7 @@ void buddy_init(void) {
     abort("Not enough memory for the buddy pool");
   }
 
-  g_buddy.max_order = log2(g_buddy.size / PAGE_SIZE);
+  g_buddy.max_order = floor_log2(g_buddy.size / PAGE_SIZE);
 
   for (int32_t i = 0; i <= MAX_ORDER; i++) {
     g_buddy.free_lists[i] = NULL;
@@ -248,7 +248,7 @@ void buddy_init(void) {
   uintptr_t current_addr = g_buddy.base;
 
   while (remaining >= PAGE_SIZE) {
-    uint32_t order = log2(remaining / PAGE_SIZE);
+    uint32_t order = floor_log2(remaining / PAGE_SIZE);
     if (order > g_buddy.max_order) {
       order = g_buddy.max_order;
     }
