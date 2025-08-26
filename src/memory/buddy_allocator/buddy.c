@@ -69,7 +69,7 @@ void buddy_visualize(void) {
   printk("\n-------------------------------------\n");
 }
 
-static bool is_block_free(size_t i, size_t order) {
+static bool is_block_free(uint32_t i, uint32_t order) {
   uint32_t blocks_to_check = 1 << order;
 
   for (uint32_t j = 0; j < blocks_to_check; j++) {
@@ -89,14 +89,14 @@ static bool is_block_free(size_t i, size_t order) {
   return true;
 }
 
-void remove_from_free_list(uintptr_t addr, size_t order) {
+void remove_from_free_list(uintptr_t paddr, uint32_t order) {
   if (order > g_buddy.max_order) {
     abort("Invalid order provided to remove_from_free_list");
   }
 
   buddy_node_t *head = g_buddy.free_lists[order];
 
-  if ((uintptr_t)head == addr) {
+  if ((uintptr_t)head == paddr) {
     g_buddy.free_lists[order] = head->next;
     return;
   }
@@ -105,7 +105,7 @@ void remove_from_free_list(uintptr_t addr, size_t order) {
   buddy_node_t *current = head->next;
 
   while (current) {
-    if ((uintptr_t)current == addr) {
+    if ((uintptr_t)current == paddr) {
       prev->next = current->next;
       return;
     }
@@ -116,7 +116,7 @@ void remove_from_free_list(uintptr_t addr, size_t order) {
   abort("Failed to remove address from free list: address not found!");
 }
 
-static void mark_free(uintptr_t paddr, int32_t order) {
+static void mark_free(uintptr_t paddr, uint32_t order) {
   uint32_t i = (paddr - g_buddy.base) / PAGE_SIZE;
   uint32_t blocks_to_mark = 1 << order;
 
@@ -169,7 +169,7 @@ void buddy_dealloc(uintptr_t addr, uint32_t order) {
   uint32_t current_order = order;
 
   while (current_order < g_buddy.max_order) {
-    uintptr_t block_size = PAGE_SIZE * (1 << current_order);
+    size_t block_size = PAGE_SIZE << current_order;
     uintptr_t buddy_addr = current_addr ^ block_size;
 
     if (!is_block_free(buddy_addr, current_order)) {
@@ -183,7 +183,6 @@ void buddy_dealloc(uintptr_t addr, uint32_t order) {
   }
 
   buddy_list_add(current_addr, current_order);
-  // buddy_visualize();
 }
 
 void *buddy_alloc(uint32_t order) {
@@ -216,7 +215,6 @@ void *buddy_alloc(uint32_t order) {
   }
 
   mark_allocated(block_addr, order);
-  // buddy_visualize();
   return (void *)block_addr;
 }
 
@@ -242,7 +240,7 @@ void buddy_init(void) {
 
   g_buddy.max_order = log2(g_buddy.size / PAGE_SIZE);
 
-  for (int i = 0; i <= MAX_ORDER; i++) {
+  for (int32_t i = 0; i <= MAX_ORDER; i++) {
     g_buddy.free_lists[i] = NULL;
   }
 
@@ -261,7 +259,7 @@ void buddy_init(void) {
     block->next = g_buddy.free_lists[order];
     g_buddy.free_lists[order] = (buddy_node_t *)current_addr;
 
-    size_t block_size = (1 << order) * PAGE_SIZE;
+    size_t block_size = PAGE_SIZE << order;
     current_addr += block_size;
     remaining -= block_size;
   }
