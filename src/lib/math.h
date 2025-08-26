@@ -13,7 +13,7 @@
 /*
  * @brief  Calculates the base-2 logarithm of n, rounded down (floor).
  */
-static inline uint32_t ceil_log2(uint32_t n) {
+static inline uint32_t floor_log2(uint32_t n) {
   if (unlikely(n == 0)) {
     __builtin_trap();
   }
@@ -24,7 +24,7 @@ static inline uint32_t ceil_log2(uint32_t n) {
 /*
  * @brief  Calculates the base-2 logarithm of n, rounded up (ceiling).
  */
-static inline uint32_t floor_log2(uint32_t n) {
+static inline uint32_t ceil_log2(uint32_t n) {
   if (unlikely(n == 0)) {
     __builtin_trap();
   }
