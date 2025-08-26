@@ -27,7 +27,7 @@ void kfree(void *ptr) {
   uintptr_t vaddr = (uintptr_t)header;
   size_t size = header->size;
   uint32_t pages = CEIL_DIV(size, PAGE_SIZE);
-  uint32_t order = ceil_log2(pages);
+  uint32_t order = log2_rounded_up(pages);
 
   uintptr_t paddr = V2P_WO(vaddr);
   buddy_dealloc(paddr, order);
