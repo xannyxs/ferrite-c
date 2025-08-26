@@ -51,12 +51,12 @@ The buddy allocator doesn't work with page counts directly.
 Instead, it uses a concept called **order** to manage block sizes.
 The order is simply the exponent in a power-of-two calculation.
 
-The number of pages in a block is calculated as $2^{\text{order}}$.
+The number of pages in a block is calculated as \\(2^{\text{order}}\\).
 
-* **Order 0:** $2^0 = 1$ page
-* **Order 1:** $2^1 = 2$ pages
-* **Order 2:** $2^2 = 4$ pages
-* **Order 3:** $2^3 = 8$ pages
+* **Order 0:** \\(2^0 = 1\\) page
+* **Order 1:** \\(2^1 = 2\\) pages
+* **Order 2:** \\(2^2 = 4\\) pages
+* **Order 3:** \\(2^3 = 8\\) pages
 
 To find the maximum order for a given amount of memory,
 we use the inverse of this formula: the base-2 logarithm.
@@ -224,7 +224,7 @@ requiring no extra memory.
 **An example**
 
 Imagine our system has just started, and all the memory is in one giant, free block.
-If our maximum size is an order 9 block (`2^9 = 512` pages), our `free_list` looks like this:
+If our maximum size is an order 9 block (\\(2^9 = 512\\) pages), our `free_list` looks like this:
 
 ```
 Free List: [0, 0, 0, 0, 0, 0, 0, 0, 0, 1]
@@ -283,21 +283,21 @@ Let's trace it with an example of **7 pages** of available memory:
       * `remaining` is 7 pages (28 672 bytes)
       * The largest power-of-two block that fits is 4 pages (order 2).
       * We create a 4-page block and add it to `free_list[2]`.
-      * `remaining` is now `7 - 4 = 3` pages.
+      * `remaining` is now \\(7 - 4 = 3\\) pages.
 
 2. **Second Iteration:**
 
       * `remaining` is 3 pages (12 288 bytes)
       * The largest power-of-two block that fits is 2 pages (order 1).
       * We create a 2-page block and add it to `free_list[1]`.
-      * `remaining` is now `3 - 2 = 1` page.
+      * `remaining` is now \\(3 - 2 = 1\\) page.
 
 3. **Third Iteration:**
 
       * `remaining` is 1 page (4096 bytes)
       * The largest power-of-two block that fits is 1 page (order 0).
       * We create a 1-page block and add it to `free_list[0]`.
-      * `remaining` is now `1 - 1 = 0` pages. The loop stops here.
+      * `remaining` is now \\(1 - 1 = 0\\) pages. The loop stops here.
 
 After the loop, our free lists will contain one block of order 2, one of order 1,
 and one of order 0, perfectly accounting for our 7 pages of memory.
