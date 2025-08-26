@@ -5,6 +5,7 @@
 #include "arch/x86/time/time.h"
 #include "drivers/printk.h"
 #include "drivers/video/vga.h"
+#include "memory/buddy_allocator/buddy.h"
 #include "stdlib.h"
 
 #include <stdint.h>
@@ -34,6 +35,8 @@ static void print_help(void) {
   printk("  clear   - Clear the screen\n");
   printk("  time    - See the current time\n");
   printk("  epoch   - See the current time since Epoch\n");
+  printk("  memory  - Show the current memory allocation of the buddy "
+         "allocator\n");
   printk("  help    - Show this help message\n");
 }
 
@@ -72,11 +75,14 @@ static void print_gdt(void) {
   printk("GDT Limit: 0x%x\n", gdtr.limit);
 }
 
+static void print_buddy(void) { buddy_visualize(); }
+
 static void execute_buffer(void) {
   static const exec_t command_table[] = {
-      {"reboot", reboot},   {"gdt", print_gdt},     {"clear", vga_init},
-      {"help", print_help}, {"panic", abort},       {"idt", print_idt},
-      {"time", print_time}, {"epoch", print_epoch}, {NULL, NULL}};
+      {"reboot", reboot},  {"gdt", print_gdt},   {"memory", print_buddy},
+      {"clear", vga_init}, {"help", print_help}, {"panic", abort},
+      {"idt", print_idt},  {"time", print_time}, {"epoch", print_epoch},
+      {NULL, NULL}};
 
   printk("\n");
 
