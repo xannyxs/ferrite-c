@@ -12,12 +12,6 @@
 
 static free_list_t *virtual_free_list_head = NULL;
 
-static void vbrk(size_t heap_size) {
-  virtual_free_list_head = (free_list_t *)HEAP_START;
-  virtual_free_list_head->size = heap_size;
-  virtual_free_list_head->next = NULL;
-}
-
 /* Public */
 
 free_list_t *get_free_list_head(void) { return virtual_free_list_head; }
@@ -49,7 +43,9 @@ void vmalloc_init(void) {
     abort("Not enough memory to allocate a free_list");
   }
 
-  vbrk(heap_size);
+  virtual_free_list_head = (free_list_t *)HEAP_START;
+  virtual_free_list_head->size = heap_size;
+  virtual_free_list_head->next = NULL;
 }
 
 /**
