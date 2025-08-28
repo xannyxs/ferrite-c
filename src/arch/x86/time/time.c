@@ -12,7 +12,7 @@ __attribute__((warn_unused_result)) inline time_t getepoch(void) {
   return seconds_since_epoch;
 }
 
-void setepoch(time_t new) { seconds_since_epoch = new; }
+inline void setepoch(time_t new) { seconds_since_epoch = new; }
 
 static inline int32_t is_leap(uint32_t year) {
   return (year % 4 == 0 && year % 100 != 0) || (year % 400 == 0);

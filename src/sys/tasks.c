@@ -17,7 +17,6 @@ void schedule_task(interrupt_callback_t task) {
 }
 
 void run_scheduled_tasks(void) {
-
   while (task_count > 0) {
     __asm__ volatile("cli");
     interrupt_callback_t task = task_queue[0];

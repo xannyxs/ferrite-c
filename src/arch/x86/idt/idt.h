@@ -66,7 +66,6 @@ void page_fault(registers_t *, uint32_t error_code);
 // --- Hardware Interrupts ---
 void timer_handler(registers_t *);
 void keyboard_handler(registers_t *);
-void rtc_handler(registers_t *);
 
 void idt_init(void);
 

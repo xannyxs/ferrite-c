@@ -29,5 +29,5 @@ void pic_remap(int32_t offset1, int32_t offset2) {
 
   // Unmask both PICs.
   outb(PIC1_DATA, 0xF8);
-  outb(PIC2_DATA, 0xFE);
+  outb(PIC2_DATA, 0xFF);
 }
