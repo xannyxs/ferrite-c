@@ -147,6 +147,13 @@ page_fault(registers_t *regs, uint32_t error_code) {
 /* Hardware Interrupts */
 
 __attribute__((target("general-regs-only"), interrupt)) void
+timer_handler(registers_t *regs) {
+  (void)regs;
+
+  pic_send_eoi(0);
+}
+
+__attribute__((target("general-regs-only"), interrupt)) void
 keyboard_handler(registers_t *regs) {
   (void)regs;
 

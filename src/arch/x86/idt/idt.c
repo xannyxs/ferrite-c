@@ -3,12 +3,15 @@
 
 #include <stdint.h>
 
+#define NUM_EXCEPTION_HANDLERS 17
+#define NUM_HARDWARE_HANDLERS 3
+
 extern void syscall_handler(registers_t *);
 
 interrupt_descriptor_t idt_entries[IDT_ENTRY_COUNT];
 descriptor_pointer_t idt_ptr;
 
-const interrupt_handler_entry_t EXCEPTION_HANDLERS[17] = {
+const interrupt_handler_entry_t EXCEPTION_HANDLERS[NUM_EXCEPTION_HANDLERS] = {
     {REGULAR, .handler.regular = divide_by_zero_handler},
     {REGULAR, .handler.regular = debug_interrupt_handler},
     {REGULAR, .handler.regular = non_maskable_interrupt_handler},
@@ -27,8 +30,8 @@ const interrupt_handler_entry_t EXCEPTION_HANDLERS[17] = {
     {REGULAR, .handler.regular = reserved_by_cpu},
     {REGULAR, .handler.regular = x87_fpu_exception},
 };
-const interrupt_hardware_t HARDWARE_HANDLERS[2] = {{0x21, keyboard_handler},
-                                                   {0x28, rtc_handler}};
+const interrupt_hardware_t HARDWARE_HANDLERS[NUM_HARDWARE_HANDLERS] = {
+    {0x20, timer_handler}, {0x21, keyboard_handler}, {0x28, rtc_handler}};
 
 static void idt_set_gate(uint32_t num, uint32_t handler) {
   idt_entries[num].pointer_low = (handler & 0xffff);
@@ -40,7 +43,7 @@ static void idt_set_gate(uint32_t num, uint32_t handler) {
 
 void idt_init(void) {
   // Exceptions
-  for (int32_t i = 0; i < 17; i += 1) {
+  for (int32_t i = 0; i < NUM_EXCEPTION_HANDLERS; i += 1) {
     uint32_t handler = 0;
 
     if (EXCEPTION_HANDLERS[i].type == REGULAR) {
@@ -53,7 +56,7 @@ void idt_init(void) {
   }
 
   // Hardware Interrupts
-  for (int32_t i = 0; i < 2; i += 1) {
+  for (int32_t i = 0; i < NUM_HARDWARE_HANDLERS; i += 1) {
     idt_set_gate(HARDWARE_HANDLERS[i].hex, (uint32_t)HARDWARE_HANDLERS[i].func);
   }
 
