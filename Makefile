@@ -18,7 +18,7 @@ ASM_SOURCES = $(shell find $(SDIR) -type f -name '*.asm')
 C_OBJECTS = $(patsubst $(SDIR)/%.c,$(ODIR)/%.o,$(C_SOURCES))
 ASM_OBJECTS = $(patsubst $(SDIR)/%.asm,$(ODIR)/%.o,$(ASM_SOURCES))
 
-QEMUFLAGS = -serial stdio -m 8
+QEMUFLAGS = -serial stdio -m 8 -cpu 486
 
 all: $(NAME)
 
