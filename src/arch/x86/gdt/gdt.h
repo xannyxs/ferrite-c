@@ -3,6 +3,8 @@
 
 #include <stdint.h>
 
+#define NUM_ENTRIES 6
+
 typedef struct {
   uint32_t prev_tss;
   uint32_t esp0, ss0;
