@@ -19,7 +19,7 @@ divide_by_zero_handler(registers_t *regs) {
 __attribute__((target("general-regs-only"), interrupt)) void
 debug_interrupt_handler(registers_t *regs) {
   (void)regs;
-  BOCHS_BREAK();
+  BOCHS_MAGICBREAK();
 }
 
 __attribute__((target("general-regs-only"), interrupt)) void
@@ -30,7 +30,7 @@ non_maskable_interrupt_handler(registers_t *regs) {
 __attribute__((target("general-regs-only"), interrupt)) void
 breakpoint_handler(registers_t *regs) {
   (void)regs;
-  BOCHS_BREAK();
+  BOCHS_MAGICBREAK();
 }
 
 __attribute__((target("general-regs-only"), interrupt)) void

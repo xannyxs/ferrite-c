@@ -5,9 +5,6 @@
 
 #include "arch/x86/io.h"
 
-#define BOCHS_BREAK()                                                          \
-  outw(0x8A00, 0x8A00);                                                        \
-  outw(0x8A00, 0x08AE0);
 #define BOCHS_MAGICBREAK() __asm__ __volatile__("xchg %bx, %bx");
 
 static inline void bochs_print_string(const char *str) {
