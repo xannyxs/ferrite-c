@@ -8,6 +8,8 @@
 #include <stddef.h>
 #include <stdint.h>
 
+bool KMALLOC_INIT = false;
+
 /* Public */
 
 /**
@@ -20,7 +22,7 @@
  * @return A pointer to the allocated memory, or NULL on failure.
  */
 void *kmalloc(size_t n) {
-  if (n == 0 || n >= MAXIMUM_SLAB_ALLOCATION) {
+  if (n == 0 || n >= MAXIMUM_SLAB_ALLOCATION || KMALLOC_INIT == false) {
     return NULL;
   }
 
