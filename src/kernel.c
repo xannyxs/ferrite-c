@@ -1,4 +1,5 @@
 #include "arch/x86/gdt/gdt.h"
+#include "arch/x86/idt/idt.h"
 #include "arch/x86/pic.h"
 #include "arch/x86/pit.h"
 #include "arch/x86/time/rtc.h"
@@ -14,7 +15,6 @@
 #include "memory/vmm.h"
 #include "sys/cpu.h"
 #include "sys/process.h"
-#include "sys/tasks.h"
 
 #include <stdbool.h>
 #include <stddef.h>

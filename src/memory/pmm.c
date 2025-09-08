@@ -96,12 +96,12 @@ void *pmm_get_physaddr(void *vaddr) {
   uint32_t offset = (uint32_t)vaddr & 0xFFF;
   uint32_t *pd = (uint32_t *)0xFFFFF000;
 
-  if (!(pd[pdindex] & PAGE_FLAG_PRESENT)) {
+  if (!(pd[pdindex] & PTE_P)) {
     return 0;
   }
 
   uint32_t *pt = (uint32_t *)(0xFFC00000 + (pdindex * PAGE_SIZE));
-  if (!(pt[ptindex] & PAGE_FLAG_PRESENT)) {
+  if (!(pt[ptindex] & PTE_P)) {
     return 0;
   }
 

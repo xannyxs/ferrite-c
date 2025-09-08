@@ -8,11 +8,7 @@
 typedef int32_t pid_t;
 
 typedef struct {
-  uint32_t edi;
-  uint32_t esi;
-  uint32_t ebx;
-  uint32_t ebp;
-  uint32_t eip;
+  uint32_t edi, esi, ebx, ebp, eip;
 } context_t;
 
 typedef enum {
@@ -51,6 +47,7 @@ typedef struct trapframe {
 typedef struct proc {
   pid_t pid;             // Process ID
   proc_state_e state;    // Process state
+  uint32_t *pgdir;       // Page table
   char *kstack;          // Bottom of kernel stack
   trapframe_t *trap;     // Trap frame for current syscall
   struct proc *parent;   // Parent process
