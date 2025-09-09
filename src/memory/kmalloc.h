@@ -11,4 +11,6 @@ void *kmalloc(size_t);
 
 void kmalloc_init(void);
 
+void *kalloc(size_t);
+
 #endif /* KMALLOC_H */

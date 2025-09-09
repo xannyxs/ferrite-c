@@ -15,9 +15,9 @@ swtch:
 	mov [eax], esp
 	mov esp, edx
 
-	pop ebp
-	pop ebx
-	pop esi
 	pop edi
+	pop esi
+	pop ebx
+	pop ebp
 
 	ret

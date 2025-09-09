@@ -49,12 +49,15 @@ bound_range_exceeded_handler(registers_t *regs) {
   __asm__ volatile("cli; hlt");
 }
 
+#include "drivers/printk.h"
+
 __attribute__((target("general-regs-only"), interrupt)) void
 invalid_opcode(registers_t *regs) {
-  if ((regs->cs & 3) == 0) {
+  if ((regs->cs & KERNEL_SPACE) == 0) {
     panic(regs, "Invalid Opcode");
   }
 
+  printk("INVALID OPCODE AS USER\n");
   __asm__ volatile("cli; hlt");
 }
 
@@ -119,13 +122,24 @@ general_protection_fault(registers_t *regs, uint32_t error_code) {
     panic(regs, "General Protection Fault");
   }
 
+  printk("General Fault Protection");
   __asm__ volatile("cli; hlt");
 }
+
+#include "drivers/printk.h"
 
 __attribute__((target("general-regs-only"), interrupt)) void
 page_fault(registers_t *regs, uint32_t error_code) {
   (void)error_code;
   if ((regs->cs & KERNEL_SPACE) == 0) {
+    uint32_t faulting_address;
+    __asm__ volatile("mov %%cr2, %0" : "=r"(faulting_address));
+
+    printk("Page Fault!\n");
+    printk("Address: 0x%x\n", faulting_address);
+    printk("EIP: 0x%x\n", regs->eip);
+    printk("Error Code: 0x%x\n", error_code);
+
     panic(regs, "Page Fault");
   }
 

@@ -7,15 +7,6 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-typedef struct cpu {
-  context_t scheduler_context;
-  context_t *scheduler; // swtch() here to enter scheduler
-  tss_entry_t ts;       // Used by x86 to find stack for interrupt
-  proc_t *proc;         // The process running on this cpu or null
-  int32_t ncli;         // Depth of cli nesting.
-  int32_t intena;       // Were interrupts enabled before cli?
-} cpu_t;
-
 // TODO: In xv6 there struct looks like this:
 // struct cpu {
 //   uchar apicid;                // Local APIC ID
@@ -30,6 +21,15 @@ typedef struct cpu {
 //
 // We might need to look into the other variables in the future
 // for multithreading
+
+typedef struct cpu {
+  context_t scheduler_context;
+  context_t *scheduler; // swtch() here to enter scheduler
+  tss_entry_t ts;       // Used by x86 to find stack for interrupt
+  proc_t *proc;         // The process running on this cpu or null
+  int32_t ncli;         // Depth of cli nesting.
+  int32_t intena;       // Were interrupts enabled before cli?
+} cpu_t;
 
 void cpu_init(void);
 
