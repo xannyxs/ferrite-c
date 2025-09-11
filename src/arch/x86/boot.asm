@@ -63,9 +63,6 @@ _start:
 	or  ecx, 0x80000000
 	mov cr0, ecx
 
-	jmp higher_half
-
-higher_half:
 	mov esp, stack_top
 
 	;    Add magic number and mutliboot header into stack

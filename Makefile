@@ -7,7 +7,7 @@ NAME = ferrite-c.elf
 SDIR = ./src
 ODIR = ./build
 
-CFLAGS = -I$(SDIR) -m32 -ffreestanding -g -O2 -Wall -Wextra -Werror \
+CFLAGS = -I$(SDIR) -m32 -ffreestanding -ggdb3 -O2 -Wall -Wextra -Werror \
          -fno-stack-protector -D__is_libk -D__print_serial -D__bochs -pedantic -std=c17 -march=i386
 ASFLAGS = -felf32
 LDFLAGS = -T $(SDIR)/arch/x86/x86.ld -ffreestanding -nostdlib -lgcc -march=i386
@@ -18,7 +18,7 @@ ASM_SOURCES = $(shell find $(SDIR) -type f -name '*.asm')
 C_OBJECTS = $(patsubst $(SDIR)/%.c,$(ODIR)/%.o,$(C_SOURCES))
 ASM_OBJECTS = $(patsubst $(SDIR)/%.asm,$(ODIR)/%.o,$(ASM_SOURCES))
 
-QEMUFLAGS = -serial stdio -m 8
+QEMUFLAGS = -serial stdio -m 16 -cpu 486
 
 all: $(NAME)
 

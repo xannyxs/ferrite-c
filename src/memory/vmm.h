@@ -3,9 +3,9 @@
 
 #include <stdint.h>
 
-#define PAGE_FLAG_PRESENT (1 << 0)
-#define PAGE_FLAG_WRITABLE (1 << 1)
-#define PAGE_FLAG_SUPERVISOR (1 << 2)
+#define PTE_P (1 << 0)
+#define PTE_W (1 << 1)
+#define PTE_U (1 << 2)
 
 #define ZONE_NORMAL 896 * 1024 * 1024
 

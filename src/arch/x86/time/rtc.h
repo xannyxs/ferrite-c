@@ -1,7 +1,5 @@
-#ifndef _RTC_H_
-#define _RTC_H_
-
-#include "arch/x86/idt/idt.h"
+#ifndef RTC_H
+#define RTC_H
 
 #include <stdint.h>
 
@@ -14,10 +12,6 @@ typedef struct {
   uint8_t year;
 } rtc_time_t;
 
-uint32_t getfrequency(void);
-
 void rtc_init(void);
 
-void rtc_task(registers_t *);
-
-#endif
+#endif /* RTC_H */
