@@ -4,6 +4,7 @@
 #include "lib/stdlib.h"
 #include "memory/buddy_allocator/buddy.h"
 #include "memory/consts.h"
+#include "memory/kmalloc.h"
 #include "memory/memblock.h"
 #include "memory/pmm.h"
 #include "string.h"
@@ -16,8 +17,50 @@
 extern void flush_tlb(void);
 extern void load_page_directory(uint32_t *);
 extern void enable_paging(void);
+extern bool KMALLOC_INIT;
 
-static uint32_t page_directory[1024] __attribute__((aligned(4096)));
+uint32_t page_directory[1024] __attribute__((aligned(4096)));
+
+void print_mapping_info(uint32_t vaddr) {
+  printk("--- Checking mapping for virtual address: 0x%x ---\n", vaddr);
+  uint32_t pd_index = vaddr >> 22;
+  uint32_t pt_index = (vaddr >> 12) & 0x03FF;
+
+  uint32_t pde = page_directory[pd_index];
+  printk("  -> Page Directory Index: %d (0x%x)\n", pd_index, pd_index);
+  printk("     PDE Contents: 0x%x\n", pde);
+
+  if (!(pde & PTE_P)) {
+    printk("     [FAIL] Page Directory Entry is not present.\n");
+    printk("--- End of mapping check ---\n");
+    return;
+  }
+  printk("     [OK]   PDE is present.\n");
+
+  uint32_t pt_paddr = pde & ~0xFFF;
+
+  uint32_t *page_table = (uint32_t *)P2V_WO(pt_paddr);
+  printk("  -> Page Table Index: %d (0x%x)\n", pt_index, pt_index);
+  printk("     Page Table is at physical addr 0x%x, virtual addr 0x%x\n",
+         pt_paddr, page_table);
+
+  uint32_t pte = page_table[pt_index];
+  printk("     PTE Contents: 0x%x\n", pte);
+
+  if (!(pte & PTE_P)) {
+    printk("     [FAIL] Page Table Entry is not present.\n");
+    printk("--- End of mapping check ---\n");
+    return;
+  }
+  printk("     [OK]   PTE is present.\n");
+
+  uint32_t final_paddr = pte & ~0xFFF;
+
+  printk(
+      "  [SUCCESS] Virtual address 0x%x is mapped to physical address 0x%x\n",
+      vaddr, final_paddr);
+  printk("--- End of mapping check ---\n");
+}
 
 void visualize_paging(uint32_t limit_mb, uint32_t detailed_mb) {
   printk("--- Paging Visualization ---\n");
@@ -81,19 +124,96 @@ void *vmm_unmap_page(void *vaddr) {
 }
 
 /**
+ * FIXME: Need to make more sense out of this
+ */
+static void *wrapped_alloc(void) {
+  if (memblock_is_active() == true) {
+    return memblock(PAGE_SIZE);
+  }
+
+  return buddy_alloc(0);
+}
+
+/**
+ * @brief  Finds the address of the Page Table Entry (PTE) for a given virtual
+ * address.
+ *
+ * @param  pgdir The page directory to walk.
+ * @param  vaddr The virtual address to look up.
+ * @param  alloc If non-zero, a new page table will be allocated if one is not
+ * found.
+ *
+ * @return A pointer to the PTE on success, or NULL on failure.
+ */
+uint32_t *vmm_walkpgdir(uint32_t *pgdir, const void *vaddr, bool alloc) {
+  uint32_t *pgtab;
+  uint32_t pde_index = ((uint32_t)(vaddr) >> 22) & 0x3FF;
+  uint32_t pte_index = ((uint32_t)(vaddr) >> 12) & 0x3FF;
+
+  uint32_t *pde = &pgdir[pde_index];
+  if (*pde & PTE_P) {
+    pgtab = (uint32_t *)P2V_WO(((uint32_t)(*pde) & ~0xFFF));
+
+    return &pgtab[pte_index];
+  }
+
+  if (alloc == false) {
+    return NULL;
+  }
+
+  pgtab = (uint32_t *)kmalloc(PAGE_SIZE);
+  if (!pgtab) {
+    return NULL;
+  }
+
+  memset(pgtab, 0, PAGE_SIZE);
+  // The permissions here are overly generous, but they can
+  // be further restricted by the permissions in the page table
+  // entries, if necessary.
+  *pde = V2P_WO((uintptr_t)pgtab) | PTE_P | PTE_W | PTE_U;
+  return &pgtab[pte_index];
+}
+
+/**
+ * @brief Maps a physical address to a virtual address on a specified pdir.
+ *
+ * @return 0 on success.
+ * @return -1 if the mapping already exists.
+ */
+__attribute__((warn_unused_result)) int32_t vmm_map_page_dir(void *pdir,
+                                                             void *paddr,
+                                                             void *vaddr,
+                                                             uint32_t flags) {
+  uint32_t *pte = vmm_walkpgdir(pdir, vaddr, true);
+  if (!pte) {
+    return -1;
+  }
+
+  if (*pte & PTE_P) {
+    printk("vmm_map_page: Error, mapping already exists for this virtual "
+           "address.\n");
+    return -1;
+  }
+
+  *pte = ((uint32_t)paddr) | flags | PTE_P;
+
+  flush_tlb();
+  return 0;
+}
+
+/**
  * FIXME: Need to create a logger instead of using printk
- * FIXME: Create wrapper for memblock / buddy Alloc
  *
  * @brief Maps a physical address to a virtual address.
  *
  * @return 0 on success.
  * @return -1 if the mapping already exists.
  */
-__attribute__((warn_unused_result)) int32_t vmm_map_page(void *physaddr,
-                                                         void *virtualaddr,
+__attribute__((warn_unused_result)) int32_t vmm_map_page(void *paddr,
+                                                         void *vaddr,
                                                          uint32_t flags) {
-  uint32_t pdindex = (uint32_t)virtualaddr >> 22;
-  uint32_t ptindex = (uint32_t)virtualaddr >> 12 & 0x03FF;
+  uint32_t pdindex = (uint32_t)vaddr >> 22;
+  uint32_t ptindex = (uint32_t)vaddr >> 12 & 0x03FF;
 
   uint32_t *pd = (uint32_t *)0xFFFFF000;
   uint32_t *pt = (uint32_t *)(0xFFC00000 + (pdindex * PAGE_SIZE));

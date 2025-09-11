@@ -10,11 +10,6 @@ static bool bumpalloc_is_active = false;
 static void *next_free_addr = NULL;
 static void *heap_end_addr = NULL;
 
-static void kbrk(size_t heap_size) {
-  next_free_addr = (void *)pmm_get_first_addr();
-  heap_end_addr = (void *)heap_size;
-}
-
 /* Public */
 
 void *get_next_free_addr(void) { return next_free_addr; }
@@ -38,7 +33,8 @@ bool memblock_is_active(void) { return bumpalloc_is_active; }
  * memblock()
  */
 void memblock_init(void) {
-  kbrk(pmm_bitmap_len() * PAGE_SIZE * 8);
+  next_free_addr = (void *)pmm_get_first_addr();
+  heap_end_addr = (void *)(pmm_bitmap_len() * PAGE_SIZE * 8);
 
   bumpalloc_is_active = true;
 }

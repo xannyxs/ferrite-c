@@ -8,7 +8,27 @@
 #include <stddef.h>
 #include <stdint.h>
 
+bool KMALLOC_INIT = false;
+
 /* Public */
+
+void *kalloc(size_t n) {
+  if (n == 0 || n >= MAXIMUM_SLAB_ALLOCATION || KMALLOC_INIT == false) {
+    return NULL;
+  }
+
+  size_t aligned = ALIGN(n, PAGE_SIZE);
+  uint32_t num_pages = CEIL_DIV(aligned, PAGE_SIZE);
+  uint32_t order = ceil_log2(num_pages);
+  void *paddr = buddy_alloc(order);
+  if (!paddr) {
+    return NULL;
+  }
+
+  void *vaddr = (void *)P2V_WO((uintptr_t)paddr);
+
+  return vaddr;
+}
 
 /**
  * @brief Allocates a physically contiguous memory block.
@@ -20,7 +40,7 @@
  * @return A pointer to the allocated memory, or NULL on failure.
  */
 void *kmalloc(size_t n) {
-  if (n == 0 || n >= MAXIMUM_SLAB_ALLOCATION) {
+  if (n == 0 || n >= MAXIMUM_SLAB_ALLOCATION || KMALLOC_INIT == false) {
     return NULL;
   }
 
