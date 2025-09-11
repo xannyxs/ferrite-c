@@ -1,5 +1,6 @@
 #include "arch/x86/gdt/gdt.h"
 #include "arch/x86/pic.h"
+#include "arch/x86/pit.h"
 #include "arch/x86/time/rtc.h"
 #include "debug/debug.h"
 #include "drivers/console.h"
@@ -31,6 +32,7 @@ __attribute__((noreturn)) void kmain(uint32_t magic, multiboot_info_t *mbd) {
   gdt_init();
   idt_init();
   pic_remap(0x20, 0x28);
+  set_pit_count(LATCH);
 
   vga_init();
   rtc_init();

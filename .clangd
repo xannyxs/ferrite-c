@@ -5,6 +5,7 @@ If:
   PathMatch:
     - 'src/arch/x86/idt/exceptions.c'
     - 'src/arch/x86/idt/syscalls.c'
+    - 'src/arch/x86/idt/irq.c'
 
 Diagnostics:
   Suppress:
