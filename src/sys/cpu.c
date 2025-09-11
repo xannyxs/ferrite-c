@@ -23,34 +23,29 @@ cpu_t cpus[NCPU];
 void scheduler(void) {
   proc_t *p = NULL;
   cpu_t *c = &cpus[0];
-
   while (true) {
-    // The entire process-finding loop should be atomic.
-    // We assume interrupts are disabled upon entering this loop.
-
     for (p = ptable; p < &ptable[MAX_PROCS]; p += 1) {
       if (p->state != RUNNABLE) {
         continue;
       }
-
       c->proc = p;
       p->state = RUNNING;
+      cpus[0].ts.esp0 = (uint32_t)p->kstack + KSTACKSIZE;
 
-      // The switch itself happens with interrupts OFF.
-      // The process's context will resume after its own swtch,
-      // and it is responsible for re-enabling interrupts.
+      BOCHS_MAGICBREAK();
+      printk("BEFORE swtch in scheduler: p->context = 0x%x\n", p->context);
+
+      // Let's see what's actually on the stack at p->context
+      uint32_t *stack_ptr = (uint32_t *)p->context;
+      printk("Stack contents at context (5 words):\n");
+      for (int i = 0; i < 5; i++) {
+        printk("  [ESP+%d]: 0x%x\n", i * 4, stack_ptr[i]);
+      }
+
       swtch(&c->scheduler, p->context);
-
-      // We return here from a process yielding, with interrupts disabled.
+      BOCHS_MAGICBREAK();
       c->proc = NULL;
     }
-
-    // If we found no processes to run, idle safely.
-    __asm__ volatile("sti");
-    __asm__ volatile("hlt");
-    // The interrupt handler that woke us up will have run, and then
-    // execution resumes here. We disable interrupts before looping again.
-    __asm__ volatile("cli");
   }
 }
 
@@ -71,7 +66,9 @@ void yield(void) {
 
   __asm__ volatile("cli");
   p->state = RUNNABLE;
+  printk("BEFORE swtch in yield: p->context = 0x%x\n", p->context);
   swtch(&p->context, cpus[0].scheduler);
+  printk("AFTER swtch in yield: p->context = 0x%x\n", p->context);
   __asm__ volatile("sti");
 }
 

@@ -4,7 +4,7 @@
 #include <stdint.h>
 
 #define NUM_EXCEPTION_HANDLERS 17
-#define NUM_HARDWARE_HANDLERS 2
+#define NUM_HARDWARE_HANDLERS 3
 
 extern void syscall_handler(registers_t *);
 
@@ -31,7 +31,7 @@ const interrupt_handler_entry_t EXCEPTION_HANDLERS[NUM_EXCEPTION_HANDLERS] = {
     {REGULAR, .handler.regular = x87_fpu_exception},
 };
 const interrupt_hardware_t HARDWARE_HANDLERS[NUM_HARDWARE_HANDLERS] = {
-    {0x20, timer_handler}, {0x21, keyboard_handler}};
+    {0x20, timer_handler}, {0x21, keyboard_handler}, {0x27, spurious_handler}};
 
 static void idt_set_gate(uint32_t num, uint32_t handler) {
   idt_entries[num].pointer_low = (handler & 0xffff);

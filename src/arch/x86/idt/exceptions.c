@@ -118,11 +118,29 @@ stack_segment_fault(registers_t *regs, uint32_t error_code) {
 __attribute__((target("general-regs-only"), interrupt)) void
 general_protection_fault(registers_t *regs, uint32_t error_code) {
   (void)error_code;
-  if ((regs->cs & 3) == 0) {
+  if ((regs->cs & KERNEL_SPACE) == 0) {
+    printk("--- KERNEL PANIC: GENERAL PROTECTION FAULT ---\n");
+    printk("Error Code: 0x%x\n", regs->err_code);
+    printk("  -> EIP: 0x%x  CS: 0x%x  EFLAGS: 0x%x\n", regs->eip, regs->cs,
+           regs->eflags);
+    printk("  -> EAX: 0x%x  EBX: 0x%x  ECX: 0x%x  EDX: 0x%x\n", regs->eax,
+           regs->ebx, regs->ecx, regs->edx);
+    printk("  -> EDI: 0x%x  ESI: 0x%x  EBP: 0x%x  ESP: 0x%x\n", regs->edi,
+           regs->esi, regs->ebp, regs->useresp);
+    printk("System Halted.\n");
+
     panic(regs, "General Protection Fault");
   }
 
-  printk("General Fault Protection");
+  printk("--- USER PANIC: GENERAL PROTECTION FAULT ---\n");
+  printk("Error Code: 0x%x\n", regs->err_code);
+  printk("  -> EIP: 0x%x  CS: 0x%x  EFLAGS: 0x%x\n", regs->eip, regs->cs,
+         regs->eflags);
+  printk("  -> EAX: 0x%x  EBX: 0x%x  ECX: 0x%x  EDX: 0x%x\n", regs->eax,
+         regs->ebx, regs->ecx, regs->edx);
+  printk("  -> EDI: 0x%x  ESI: 0x%x  EBP: 0x%x  ESP: 0x%x\n", regs->edi,
+         regs->esi, regs->ebp, regs->useresp);
+  printk("System Halted.\n");
   __asm__ volatile("cli; hlt");
 }
 

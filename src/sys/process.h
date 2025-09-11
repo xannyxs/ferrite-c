@@ -8,7 +8,11 @@
 typedef int32_t pid_t;
 
 typedef struct {
-  uint32_t edi, esi, ebx, ebp, eip;
+  uint32_t edi;
+  uint32_t esi;
+  uint32_t ebx;
+  uint32_t ebp;
+  uint32_t eip;
 } context_t;
 
 typedef enum {

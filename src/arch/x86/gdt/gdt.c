@@ -32,7 +32,7 @@ static void tss_init(int32_t num, tss_entry_t *entry) {
   memset(entry, 0, sizeof(tss_entry_t));
 
   entry->ss0 = 0x10;
-  entry->esp0 = (uintptr_t)&stack_top;
+  entry->esp0 = 0;
 
   gdt_set_gate(num, (uint32_t)entry, sizeof(tss_entry_t) - 1, 0x89, 0x00);
 }

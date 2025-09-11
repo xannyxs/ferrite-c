@@ -50,48 +50,37 @@ void kernel_thread_test(void) {
 extern void trapret(void);
 
 void create_first_process(void) {
-  proc_t *p;
-
-  p = proc_alloc();
+  proc_t *p = proc_alloc();
   if (!p) {
     abort("Fatal: Could not allocate first process.");
   }
 
-  p->kstack = kalloc(KSTACKSIZE * 2);
+  p->kstack = kalloc(KSTACKSIZE);
   if (!p->kstack) {
     abort("Fatal: Could not allocate kstack for first process.");
   }
 
-  // --- DIAGNOSTIC PRINTS ADDED ---
-  printk("--- Creating first process ---\n");
-  printk("  -> Kernel thread function is at address: 0x%x\n",
-         (uint32_t)kernel_thread_test);
-  printk("  -> sizeof(context_t) is: %d bytes\n", sizeof(context_t));
-  printk("  -> kstack is at: 0x%x\n", p->kstack);
-
   char *sp = p->kstack + KSTACKSIZE;
-  printk("  -> Top of kstack (sp) is at: 0x%x\n", sp);
 
-  // --- THE CORRECTED STACK SETUP ---
+  // Leave room for trapframe
+  sp -= sizeof(trapframe_t);
+  p->trap = (trapframe_t *)sp;
 
-  // 1. Allocate space for the *entire* context struct on the stack at once.
-  sp -= sizeof(context_t);
-  printk("  -> sp after context allocation is at: 0x%x\n", sp);
+  // Push a fake return address (we'll never actually return here)
+  sp -= 4;
+  *(uint32_t *)sp = 0; // Null return address
 
-  // 2. The context pointer now points to this 20-byte block.
+  // Now push a context that will "return" to kernel_thread_test
+  sp -= 4;
+  *(uint32_t *)sp =
+      (uint32_t)kernel_thread_test; // This becomes the return address for swtch
+
+  // Push dummy values for the saved registers
+  sp -= 16; // Space for ebp, ebx, esi, edi
+  memset(sp, 0, 16);
+
   p->context = (context_t *)sp;
-
-  // 3. Zero out the registers.
-  memset(p->context, 0, sizeof(context_t));
-
-  // 4. Explicitly set the 'eip' field.
-  p->context->eip = (uint32_t)kernel_thread_test;
-
   p->state = RUNNABLE;
-
-  printk("  -> Final context pointer p->context is: 0x%x\n", p->context);
-  printk("  -> Value of p->context->eip is: 0x%x\n", p->context->eip);
-  printk("--- End of process creation ---\n");
 }
 
 extern void swtch(context_t **, context_t *);
@@ -127,7 +116,7 @@ __attribute__((noreturn)) void kmain(uint32_t magic, multiboot_info_t *mbd) {
   console_init();
   __asm__ volatile("sti");
 
-  context_t *dummy_context;
+  context_t *dummy_context = NULL;
   swtch(&dummy_context, cpus[0].scheduler);
 
   printk("kmain: ERROR! Returned from scheduler swtch!\n");

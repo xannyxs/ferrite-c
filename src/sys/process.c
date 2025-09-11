@@ -107,11 +107,10 @@ pid_t sys_fork(void) {
     return -1;
   }
   proc_t *curproc = myproc();
+  __asm__ volatile("sti");
 
   p->kstack = kalloc(KSTACKSIZE);
   if (!p->kstack) {
-    // Keeping the process allocated to be reused to reduce the
-    // CPU overhead of memory allocation.
     p->state = UNUSED;
     return -1;
   }
@@ -119,15 +118,11 @@ pid_t sys_fork(void) {
   char *sp = p->kstack + KSTACKSIZE;
   sp -= sizeof(*p->trap);
   p->trap = (trapframe_t *)sp;
-
-  sp -= 4;
-  *(uint32_t *)sp = (uint32_t)trapret;
-
   sp -= sizeof(*p->context);
   p->context = (context_t *)sp;
   memset(p->context, 0, sizeof(*p->context));
-  p->context->eip = (uint32_t)forkret;
 
+  p->context->eip = (uint32_t)forkret;
   p->pgdir = copyuvm(curproc->pgdir, curproc->memory_limit);
   if (!p->pgdir) {
     kfree(p->kstack);
@@ -135,14 +130,11 @@ pid_t sys_fork(void) {
     p->state = UNUSED;
     return -1;
   }
-
   *p->trap = *curproc->trap;
   p->memory_limit = curproc->memory_limit;
   p->parent = curproc;
   p->trap->eax = 0;
-  p->pid = pid_counter;
-  pid_counter += 1;
-
+  p->pid = pid_counter++;
   p->state = RUNNABLE;
 
   return p->pid;
