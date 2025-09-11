@@ -1,6 +1,5 @@
 #include "memory/vmm.h"
 #include "arch/x86/memlayout.h"
-#include "debug/debug.h"
 #include "drivers/printk.h"
 #include "lib/stdlib.h"
 #include "memory/buddy_allocator/buddy.h"
@@ -220,7 +219,13 @@ __attribute__((warn_unused_result)) int32_t vmm_map_page(void *paddr,
   uint32_t *pt = (uint32_t *)(0xFFC00000 + (pdindex * PAGE_SIZE));
 
   if (!(pd[pdindex] & PTE_P)) {
-    uintptr_t paddr = (uintptr_t)wrapped_alloc();
+    uintptr_t paddr = 0;
+    if (memblock_is_active() == true) {
+      paddr = (uintptr_t)memblock(PAGE_SIZE);
+    } else {
+      paddr = (uintptr_t)buddy_alloc(0);
+    }
+
     if (paddr == 0) {
       abort("Out of physical memory");
     }
@@ -236,7 +241,7 @@ __attribute__((warn_unused_result)) int32_t vmm_map_page(void *paddr,
     return -1;
   }
 
-  pt[ptindex] = ((uint32_t)paddr) | (flags & 0xFFF) | PTE_P;
+  pt[ptindex] = ((uint32_t)physaddr) | (flags & 0xFFF) | PTE_P;
 
   flush_tlb();
   return 0;

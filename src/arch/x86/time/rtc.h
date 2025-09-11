@@ -1,5 +1,5 @@
-#ifndef _RTC_H_
-#define _RTC_H_
+#ifndef RTC_H
+#define RTC_H
 
 #include <stdint.h>
 
@@ -14,4 +14,4 @@ typedef struct {
 
 void rtc_init(void);
 
-#endif
+#endif /* RTC_H */
