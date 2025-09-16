@@ -1,3 +1,4 @@
+#include "drivers/console.h"
 #include "drivers/keyboard.h"
 #include "drivers/printk.h"
 #include "lib/stdlib.h"
@@ -15,12 +16,12 @@
 extern uint32_t page_directory[1024];
 extern uint32_t pid_counter;
 extern proc_t ptables[NUM_PROC];
-extern void swtch(context_t **old, context_t *new);
 
-proc_t *current_proc = NULL;
+int32_t ticks_remaining;
 context_t *scheduler_context;
+proc_t *current_proc = NULL;
 
-proc_t *myproc(void) { return current_proc; }
+inline proc_t *myproc(void) { return current_proc; }
 
 void yield(void) {
   proc_t *p = myproc();
@@ -29,33 +30,45 @@ void yield(void) {
   swtch(&p->context, scheduler_context);
 }
 
-void init_kernel_thread(void) {
-#if defined(__DEBUG)
-  printk("First kernel thread is running!\n");
-#endif
+void shell_init(void) {
+  console_init();
 
-  pid_t pid = fork();
-  if (pid < 0) {
-    abort("Error");
-  } else if (pid > 0) {
-    printk("I am PID %d! I am a child\n", pid);
+  for (;;) {
+    run_scheduled_tasks();
 
-    int counter = 0;
-    while (true) {
-      counter++;
-      if (counter % 10000000 == 0) {
-        printk("Init thread: counter = %d\n", counter);
-        yield();
-      }
-    }
-  } else {
-    printk("I am PID %d! I am a parent\n", pid);
+    yield();
   }
-
-  yield();
 }
 
-void create_first_process(void) {
+void init_process(void) {
+  if (current_proc->pid != 1) {
+    abort("Init process should be PID 1!");
+  }
+
+  printk("Initial process started...!\n");
+
+  pid_t pid = fork("shell", shell_init);
+  if (pid < 0) {
+    abort("Init: could not create a new process");
+  }
+
+  printk("Init: Created child with PID %d with PID %d\n", pid,
+         current_proc->pid);
+
+  while (true) {
+    for (int32_t i = 0; i < NUM_PROC; i++) {
+      proc_t *p = &ptables[i];
+      if (p->state == ZOMBIE && p->parent == current_proc) {
+        p->state = UNUSED;
+        printk("Init: reaped zombie PID %d\n", p->pid);
+      }
+    }
+
+    yield();
+  }
+}
+
+void create_initial_process(void) {
   proc_t *init = &ptables[0];
   memset(init, 0, sizeof(proc_t));
 
@@ -65,10 +78,7 @@ void create_first_process(void) {
   init->pid = pid_counter;
   pid_counter++;
 
-#ifndef __DEBUG
   memcpy(init->name, "init", 5);
-#endif
-
   init->kstack = kmalloc(PAGE_SIZE);
   if (!init->kstack) {
     abort("create_first_process: initial process could not create a stack");
@@ -77,11 +87,11 @@ void create_first_process(void) {
   init->pgdir = page_directory;
 
   uint32_t *sp = (uint32_t *)((char *)init->kstack + PAGE_SIZE);
-  *--sp = (uint32_t)init_kernel_thread; // Function to execute
-  *--sp = 0;                            // ebp
-  *--sp = 0;                            // ebx
-  *--sp = 0;                            // esi
-  *--sp = 0;                            // edi
+  *--sp = (uint32_t)init_process; // Function to execute
+  *--sp = 0;                      // ebp
+  *--sp = 0;                      // ebx
+  *--sp = 0;                      // esi
+  *--sp = 0;                      // edi
   init->context = (context_t *)sp;
 
   init->state = READY;
@@ -99,22 +109,21 @@ void schedule(void) {
 
   // FIFO
   while (true) {
-    run_scheduled_tasks();
-
     for (int32_t i = 0; i < NUM_PROC; i += 1) {
       if (ptables[i].state != READY) {
         continue;
       }
       proc_t *p = &ptables[i];
 
-      printk("Scheduler: switching to process %d\n", p->pid);
+      // printk("Scheduler: switching to process %d\n", p->pid);
 
       p->state = RUNNING;
       current_proc = p;
+      ticks_remaining = TIME_QUANTUM;
 
       swtch(&scheduler_context, p->context);
 
-      printk("Scheduler: back from process %d\n", p->pid);
+      // printk("Scheduler: back from process %d\n", p->pid);
       current_proc = NULL;
     }
 

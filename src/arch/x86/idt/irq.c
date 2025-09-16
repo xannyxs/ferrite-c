@@ -3,23 +3,37 @@
 #include "arch/x86/pit.h"
 #include "arch/x86/time/time.h"
 #include "drivers/keyboard.h"
+#include "drivers/printk.h"
+#include "sys/process.h"
 #include "sys/tasks.h"
 
 #include <stdint.h>
 
+extern int32_t ticks_remaining;
+extern context_t *scheduler_context;
 volatile uint64_t ticks = 0;
 
 __attribute__((target("general-regs-only"), interrupt)) void
 timer_handler(registers_t *regs) {
   (void)regs;
 
+  pic_send_eoi(0);
+
   ticks += 1;
   if (ticks % HZ == 0) {
     time_t new_epoch = getepoch() + 1;
     setepoch(new_epoch);
-  }
 
-  pic_send_eoi(0);
+    proc_t *current_proc = myproc();
+    printk("Tick remaining %d in PID %d\n", ticks_remaining, current_proc->pid);
+    if (current_proc && current_proc->state == RUNNING) {
+      ticks_remaining -= 1;
+      if (ticks_remaining <= 0) {
+        current_proc->state = READY;
+        swtch(&current_proc->context, scheduler_context);
+      }
+    }
+  }
 }
 
 __attribute__((target("general-regs-only"), interrupt)) void
