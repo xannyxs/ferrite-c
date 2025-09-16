@@ -1,6 +1,8 @@
 #ifndef PROCESS_H
 #define PROCESS_H
 
+#define NUM_PROC 64
+
 #include <stdint.h>
 
 typedef uint32_t pid_t;
@@ -14,10 +16,10 @@ typedef struct {
   uint32_t cr3;
 } context_t;
 
-typedef struct {
+typedef struct process {
   pid_t pid;
   procstate_e state;
-  context_t context;
+  context_t *context;
 
   void *pgdir;
   uint32_t sz;
@@ -30,5 +32,11 @@ typedef struct {
   char name[16];
 #endif
 } proc_t;
+
+void schedule(void);
+
+void create_first_process(void);
+
+void init_ptables(void);
 
 #endif /* PROCESS_H */

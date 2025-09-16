@@ -13,6 +13,7 @@
 #include "memory/pmm.h"
 #include "memory/vmalloc.h"
 #include "memory/vmm.h"
+#include "sys/process.h"
 #include "sys/tasks.h"
 
 #include <stdbool.h>
@@ -23,6 +24,8 @@
 #if !defined(__i386__)
 #error "This tutorial needs to be compiled with a ix86-elf compiler"
 #endif
+
+extern context_t *scheduler_context;
 
 __attribute__((noreturn)) void kmain(uint32_t magic, multiboot_info_t *mbd) {
   if (magic != MULTIBOOT_BOOTLOADER_MAGIC) {
@@ -46,14 +49,19 @@ __attribute__((noreturn)) void kmain(uint32_t magic, multiboot_info_t *mbd) {
   vmalloc_init();
 
   console_init();
+  init_ptables();
 
   __asm__ volatile("sti");
 
-  while (true) {
-    run_scheduled_tasks();
+  scheduler_context = kmalloc(PAGE_SIZE);
 
-    __asm__ volatile("hlt");
-  }
-
+  create_first_process();
+  schedule();
   __builtin_unreachable();
+
+  // while (true) {
+  //   run_scheduled_tasks();
+  //
+  //   __asm__ volatile("hlt");
+  // }
 }
