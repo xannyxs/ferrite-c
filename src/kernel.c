@@ -58,10 +58,4 @@ __attribute__((noreturn)) void kmain(uint32_t magic, multiboot_info_t *mbd) {
   create_first_process();
   schedule();
   __builtin_unreachable();
-
-  // while (true) {
-  //   run_scheduled_tasks();
-  //
-  //   __asm__ volatile("hlt");
-  // }
 }

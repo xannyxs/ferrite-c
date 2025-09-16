@@ -6,6 +6,7 @@
 #include "memory/kmalloc.h"
 #include "memory/vmm.h"
 #include "sys/process.h"
+#include "sys/tasks.h"
 
 #include <stdbool.h>
 #include <stddef.h>
@@ -36,7 +37,7 @@ void init_kernel_thread(void) {
   int counter = 0;
   while (true) {
     counter++;
-    if (counter % 1000000 == 0) {
+    if (counter % 10000000 == 0) {
       printk("Init thread: counter = %d\n", counter);
       yield();
     }
@@ -87,6 +88,8 @@ void schedule(void) {
 
   // FIFO
   while (true) {
+    run_scheduled_tasks();
+
     for (int32_t i = 0; i < NUM_PROC; i += 1) {
       if (ptables[i].state != READY) {
         continue;
@@ -103,5 +106,8 @@ void schedule(void) {
       printk("Scheduler: back from process %d\n", p->pid);
       current_proc = NULL;
     }
+
+    __asm__ volatile("sti");
+    __asm__ volatile("hlt");
   }
 }
