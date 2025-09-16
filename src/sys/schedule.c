@@ -34,14 +34,25 @@ void init_kernel_thread(void) {
   printk("First kernel thread is running!\n");
 #endif
 
-  int counter = 0;
-  while (true) {
-    counter++;
-    if (counter % 10000000 == 0) {
-      printk("Init thread: counter = %d\n", counter);
-      yield();
+  pid_t pid = fork();
+  if (pid < 0) {
+    abort("Error");
+  } else if (pid > 0) {
+    printk("I am PID %d! I am a child\n", pid);
+
+    int counter = 0;
+    while (true) {
+      counter++;
+      if (counter % 10000000 == 0) {
+        printk("Init thread: counter = %d\n", counter);
+        yield();
+      }
     }
+  } else {
+    printk("I am PID %d! I am a parent\n", pid);
   }
+
+  yield();
 }
 
 void create_first_process(void) {

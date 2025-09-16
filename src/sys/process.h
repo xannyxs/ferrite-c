@@ -5,7 +5,7 @@
 
 #include <stdint.h>
 
-typedef uint32_t pid_t;
+typedef int32_t pid_t;
 typedef enum { UNUSED, EMBRYO, SLEEPING, READY, RUNNING, ZOMBIE } procstate_e;
 typedef struct {
   uint32_t eax, ebx, ecx, edx;
@@ -38,5 +38,9 @@ void schedule(void);
 void create_first_process(void);
 
 void init_ptables(void);
+
+void yield(void);
+
+pid_t fork(void);
 
 #endif /* PROCESS_H */

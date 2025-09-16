@@ -25,8 +25,6 @@
 #error "This tutorial needs to be compiled with a ix86-elf compiler"
 #endif
 
-extern context_t *scheduler_context;
-
 __attribute__((noreturn)) void kmain(uint32_t magic, multiboot_info_t *mbd) {
   if (magic != MULTIBOOT_BOOTLOADER_MAGIC) {
     abort("Invalid magic number!");
@@ -52,8 +50,6 @@ __attribute__((noreturn)) void kmain(uint32_t magic, multiboot_info_t *mbd) {
   init_ptables();
 
   __asm__ volatile("sti");
-
-  scheduler_context = kmalloc(PAGE_SIZE);
 
   create_first_process();
   schedule();
