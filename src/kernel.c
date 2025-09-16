@@ -46,12 +46,11 @@ __attribute__((noreturn)) void kmain(uint32_t magic, multiboot_info_t *mbd) {
   memblock_deactivate();
   vmalloc_init();
 
-  console_init();
   init_ptables();
 
   __asm__ volatile("sti");
 
-  create_first_process();
+  create_initial_process();
   schedule();
   __builtin_unreachable();
 }
