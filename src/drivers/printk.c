@@ -1,3 +1,4 @@
+#include "arch/x86/io.h"
 #include "debug/debug.h"
 #include "video/vga.h"
 
@@ -28,9 +29,9 @@ static char *simple_number(char *str, long num, int32_t base, bool is_signed) {
     tmp[i++] = '0';
   } else {
     while (num != 0) {
-      unsigned long rem = (unsigned long)num % base;
+      uint64_t rem = (uint64_t)num % base;
       tmp[i++] = (rem > 9) ? (rem - 10) + 'a' : rem + '0';
-      num = (unsigned long)num / base;
+      num = (uint64_t)num / base;
     }
   }
 
@@ -41,7 +42,7 @@ static char *simple_number(char *str, long num, int32_t base, bool is_signed) {
   return str;
 }
 
-static int kfmt(char *buf, const char *fmt, va_list args) {
+static int32_t kfmt(char *buf, const char *fmt, va_list args) {
   char *str = buf;
 
   for (; *fmt; ++fmt) {
@@ -54,7 +55,7 @@ static int kfmt(char *buf, const char *fmt, va_list args) {
 
     switch (*fmt) {
     case 'c': {
-      *str++ = (unsigned char)va_arg(args, int);
+      *str++ = (uint8_t)va_arg(args, int);
       break;
     }
     case 's': {
@@ -108,6 +109,7 @@ static int kfmt(char *buf, const char *fmt, va_list args) {
 /* Public */
 
 int32_t printk(const char *fmt, ...) {
+  cli();
   va_list args;
 
   va_start(args, fmt);
@@ -123,5 +125,6 @@ int32_t printk(const char *fmt, ...) {
   bochs_print_string(buf);
 #endif
 
+  sti();
   return len;
 }
