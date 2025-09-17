@@ -1,4 +1,3 @@
-#include "arch/x86/io.h"
 #include "debug/debug.h"
 #include "video/vga.h"
 
@@ -29,9 +28,9 @@ static char *simple_number(char *str, long num, int32_t base, bool is_signed) {
     tmp[i++] = '0';
   } else {
     while (num != 0) {
-      uint64_t rem = (uint64_t)num % base;
+      unsigned long rem = (unsigned long)num % base;
       tmp[i++] = (rem > 9) ? (rem - 10) + 'a' : rem + '0';
-      num = (uint64_t)num / base;
+      num = (unsigned long)num / base;
     }
   }
 
@@ -42,7 +41,7 @@ static char *simple_number(char *str, long num, int32_t base, bool is_signed) {
   return str;
 }
 
-static int32_t kfmt(char *buf, const char *fmt, va_list args) {
+static int kfmt(char *buf, const char *fmt, va_list args) {
   char *str = buf;
 
   for (; *fmt; ++fmt) {
@@ -55,7 +54,7 @@ static int32_t kfmt(char *buf, const char *fmt, va_list args) {
 
     switch (*fmt) {
     case 'c': {
-      *str++ = (uint8_t)va_arg(args, int);
+      *str++ = (unsigned char)va_arg(args, int);
       break;
     }
     case 's': {

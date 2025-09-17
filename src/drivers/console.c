@@ -12,9 +12,13 @@
 #include <stdint.h>
 #include <string.h>
 
+// TODO: Might change this to CPP for easily incapculating each console
+
 static const char *prompt = "[42]$ ";
 static char buffer[VGA_WIDTH];
 static int32_t i = 0;
+
+tty_t tty;
 
 /* Private */
 
@@ -103,7 +107,14 @@ static void execute_buffer(void) {
 
 /* Public */
 
-void console_init(void) { printk("%s", prompt); }
+void console_init(void) {
+  tty.head = 0;
+  tty.tail = 0;
+  tty.shell_pid = myproc()->pid;
+  memset(tty.buf, 0, 256);
+
+  printk("%s", prompt);
+}
 
 void console_add_buffer(char c) {
   switch (c) {
