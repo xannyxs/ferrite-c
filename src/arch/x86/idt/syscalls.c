@@ -1,9 +1,13 @@
 #include "syscalls.h"
 #include "arch/x86/idt/idt.h"
 #include "drivers/printk.h"
+#include "sys/process.h"
 
+#include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
+
+extern volatile bool need_resched;
 
 // TODO: Make sys_exit function
 __attribute__((target("general-regs-only"))) static uint32_t
@@ -15,7 +19,6 @@ sys_exit(int32_t status) {
 }
 
 // TODO: Make _read function
-
 __attribute__((target("general-regs-only"), warn_unused_result)) static int32_t
 sys_read(int32_t fd, void *buf, size_t count) {
   (void)fd;
@@ -54,6 +57,8 @@ syscall_dispatcher_c(registers_t *reg) {
 
   default:
     printk("Nothing...?\n");
-    return;
+    break;
   }
+
+  check_resched();
 }

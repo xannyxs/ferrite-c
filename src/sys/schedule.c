@@ -20,23 +20,53 @@ extern proc_t ptables[NUM_PROC];
 int32_t ticks_remaining;
 context_t *scheduler_context;
 proc_t *current_proc = NULL;
+volatile bool need_resched = false;
 
 inline proc_t *myproc(void) { return current_proc; }
 
-void yield(void) {
+inline void yield(void) {
   proc_t *p = myproc();
+  if (!p) {
+    return;
+  }
 
+  need_resched = false;
   p->state = READY;
   swtch(&p->context, scheduler_context);
+}
+
+inline void check_resched(void) {
+  proc_t *p = myproc();
+  if (!p || need_resched == false) {
+    return;
+  }
+
+  printk("Preempting PID %d\n", current_proc->pid);
+  need_resched = false;
+  yield();
+}
+
+void process_a(void) {
+  uint32_t counter = 0;
+  for (;;) {
+    counter++;
+    if (counter % 100000000 == 0) { // Print occasionally, not every loop!
+      printk("Process A: %d\n", counter);
+    }
+  }
 }
 
 void shell_init(void) {
   console_init();
 
+  pid_t pid = fork("process_a", process_a);
+  if (pid < 0) {
+    abort("Init: could not create a new process");
+  }
   for (;;) {
     run_scheduled_tasks();
 
-    yield();
+    // yield();
   }
 }
 
@@ -52,8 +82,7 @@ void init_process(void) {
     abort("Init: could not create a new process");
   }
 
-  printk("Init: Created child with PID %d with PID %d\n", pid,
-         current_proc->pid);
+  printk("Init: Created child PID %d with PID %d\n", pid, current_proc->pid);
 
   while (true) {
     for (int32_t i = 0; i < NUM_PROC; i++) {

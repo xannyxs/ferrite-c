@@ -11,12 +11,13 @@
 
 extern int32_t ticks_remaining;
 extern context_t *scheduler_context;
+extern volatile bool need_resched;
+
 volatile uint64_t ticks = 0;
 
 __attribute__((target("general-regs-only"), interrupt)) void
 timer_handler(registers_t *regs) {
   (void)regs;
-
   pic_send_eoi(0);
 
   ticks += 1;
@@ -24,31 +25,32 @@ timer_handler(registers_t *regs) {
     time_t new_epoch = getepoch() + 1;
     setepoch(new_epoch);
 
-    proc_t *current_proc = myproc();
-    printk("Tick remaining %d in PID %d\n", ticks_remaining, current_proc->pid);
-    if (current_proc && current_proc->state == RUNNING) {
+    proc_t *proc = myproc();
+    if (proc && proc->state == RUNNING) {
+      printk("current_proc in timer 0x%x\n", proc);
+      printk("Tick remaining %d in PID %d\n", ticks_remaining, proc->pid);
       ticks_remaining -= 1;
       if (ticks_remaining <= 0) {
-        current_proc->state = READY;
-        swtch(&current_proc->context, scheduler_context);
+        need_resched = true;
+        printk("Timer: scheduling needed for PID %d\n", proc->pid);
       }
     }
   }
+
+  check_resched();
 }
 
 __attribute__((target("general-regs-only"), interrupt)) void
 keyboard_handler(registers_t *regs) {
   (void)regs;
+  pic_send_eoi(1);
 
   int32_t scancode = inb(KEYBOARD_DATA_PORT);
   setscancode(scancode);
 
   schedule_task(keyboard_input);
-
-  pic_send_eoi(1);
+  check_resched();
 }
-
-#include "drivers/printk.h"
 
 __attribute__((target("general-regs-only"), interrupt)) void
 spurious_handler(registers_t *regs) {
@@ -63,4 +65,5 @@ spurious_handler(registers_t *regs) {
 
   printk("Real IRQ 7 received. Sending EOI.\n");
   pic_send_eoi(0);
+  check_resched();
 }
