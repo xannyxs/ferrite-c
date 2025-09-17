@@ -4,6 +4,7 @@
 #include "lib/stdlib.h"
 #include "memory/buddy_allocator/buddy.h"
 #include "memory/consts.h"
+#include "memory/kmalloc.h"
 #include "memory/memblock.h"
 #include "memory/pmm.h"
 #include "string.h"
@@ -17,7 +18,7 @@ extern void flush_tlb(void);
 extern void load_page_directory(uint32_t *);
 extern void enable_paging(void);
 
-static uint32_t page_directory[1024] __attribute__((aligned(4096)));
+uint32_t page_directory[1024] __attribute__((aligned(4096)));
 
 void visualize_paging(uint32_t limit_mb, uint32_t detailed_mb) {
   printk("--- Paging Visualization ---\n");
@@ -61,6 +62,16 @@ void visualize_paging(uint32_t limit_mb, uint32_t detailed_mb) {
 }
 
 /* Public */
+
+void *vmm_setup_process(void) {
+  void *pgdir = kmalloc(PAGE_SIZE);
+  if (!pgdir) {
+    return NULL;
+  }
+
+  memset(&pgdir, 0, PAGE_SIZE);
+  return pgdir;
+}
 
 void *vmm_unmap_page(void *vaddr) {
   uint32_t pdindex = (uint32_t)vaddr >> 22;

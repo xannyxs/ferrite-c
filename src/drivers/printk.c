@@ -108,6 +108,7 @@ static int kfmt(char *buf, const char *fmt, va_list args) {
 /* Public */
 
 int32_t printk(const char *fmt, ...) {
+  cli();
   va_list args;
 
   va_start(args, fmt);
@@ -123,5 +124,6 @@ int32_t printk(const char *fmt, ...) {
   bochs_print_string(buf);
 #endif
 
+  sti();
   return len;
 }

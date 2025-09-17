@@ -1,13 +1,18 @@
 #include "drivers/keyboard.h"
 #include "arch/x86/idt/idt.h"
 #include "drivers/console.h"
-#include <drivers/printk.h>
+#include "drivers/printk.h"
+#include "sys/process.h"
 
 #include <stdbool.h>
 #include <stdint.h>
 
-static int32_t g_last_scancode = 0;
-static bool SHIFT_PRESSED = false;
+extern struct {
+  uint8_t buf[256];
+  int32_t head; // Read position
+  int32_t tail; // Write position
+  pid_t shell_pid;
+} tty;
 
 /* Private */
 
@@ -43,27 +48,21 @@ char scancode_to_ascii(uint8_t scan_code, bool shift_pressed) {
 
 /* Public */
 
-void setscancode(int32_t scancode) { g_last_scancode = scancode; }
+void keyboard_put(uint8_t scancode) {
+  static bool SHIFT_PRESSED = false;
 
-void keyboard_input(registers_t *regs) {
-  (void)regs;
-
-  // Shift Pressed
-  if (g_last_scancode == 42) {
+  switch (scancode) {
+  case 42:
     SHIFT_PRESSED = true;
     return;
-  }
-
-  // Shift Released
-  if (g_last_scancode == 170) {
+  case 170:
     SHIFT_PRESSED = false;
     return;
   }
 
-  char c = scancode_to_ascii(g_last_scancode, SHIFT_PRESSED);
-  if (c == 0) {
+  char c = scancode_to_ascii(scancode, SHIFT_PRESSED);
+  if (!c)
     return;
-  }
 
   console_add_buffer(c);
 }

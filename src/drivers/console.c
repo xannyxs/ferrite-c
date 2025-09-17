@@ -7,13 +7,18 @@
 #include "drivers/video/vga.h"
 #include "memory/buddy_allocator/buddy.h"
 #include "stdlib.h"
+#include "sys/process.h"
 
 #include <stdint.h>
 #include <string.h>
 
+// TODO: Might change this to CPP for easily incapculating each console
+
 static const char *prompt = "[42]$ ";
 static char buffer[VGA_WIDTH];
 static int32_t i = 0;
+
+tty_t tty;
 
 /* Private */
 
@@ -37,6 +42,7 @@ static void print_help(void) {
   printk("  epoch   - See the current time since Epoch\n");
   printk("  memory  - Show the current memory allocation of the buddy "
          "allocator\n");
+  printk("  top     - Show all active processes\n");
   printk("  help    - Show this help message\n");
 }
 
@@ -79,10 +85,10 @@ static void print_buddy(void) { buddy_visualize(); }
 
 static void execute_buffer(void) {
   static const exec_t command_table[] = {
-      {"reboot", reboot},  {"gdt", print_gdt},   {"memory", print_buddy},
-      {"clear", vga_init}, {"help", print_help}, {"panic", abort},
-      {"idt", print_idt},  {"time", print_time}, {"epoch", print_epoch},
-      {NULL, NULL}};
+      {"reboot", reboot},    {"gdt", print_gdt},   {"memory", print_buddy},
+      {"clear", vga_init},   {"help", print_help}, {"panic", abort},
+      {"idt", print_idt},    {"time", print_time}, {"epoch", print_epoch},
+      {"top", process_list}, {NULL, NULL}};
 
   printk("\n");
 
@@ -101,7 +107,14 @@ static void execute_buffer(void) {
 
 /* Public */
 
-void console_init(void) { printk("%s", prompt); }
+void console_init(void) {
+  tty.head = 0;
+  tty.tail = 0;
+  tty.shell_pid = myproc()->pid;
+  memset(tty.buf, 0, 256);
+
+  printk("%s", prompt);
+}
 
 void console_add_buffer(char c) {
   switch (c) {
