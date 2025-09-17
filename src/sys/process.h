@@ -1,11 +1,12 @@
 #ifndef PROCESS_H
 #define PROCESS_H
 
-#define NUM_PROC 64
-// #define TIME_QUANTUM 5
-#define TIME_QUANTUM 3
+#include "arch/x86/pit.h"
 
 #include <stdint.h>
+
+#define NUM_PROC 64
+#define TIME_QUANTUM (100 * HZ / 1000)
 
 typedef int32_t pid_t;
 typedef enum { UNUSED, EMBRYO, SLEEPING, READY, RUNNING, ZOMBIE } procstate_e;
@@ -82,5 +83,11 @@ proc_t *myproc(void);
 void process_list(void);
 
 void check_resched(void);
+
+/* Main process */
+
+void shell_process(void);
+
+void init_process(void);
 
 #endif /* PROCESS_H */
