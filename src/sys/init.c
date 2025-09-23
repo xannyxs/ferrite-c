@@ -22,8 +22,10 @@ void init_process(void) {
 
   pid_t pid = do_fork("shell");
   if (pid < 0) {
-    printk("Init: error in %d\n", current_proc->pid);
     abort("Init: could not create a new process");
+  } else if (pid == 0) {
+    shell_process();
+    __builtin_unreachable();
   }
 
   printk("Init: Created child PID %d with PID %d\n", pid, current_proc->pid);

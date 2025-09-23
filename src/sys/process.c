@@ -68,6 +68,13 @@ inline void check_resched(void) {
   yield();
 }
 
+__attribute__((naked)) void fork_ret(void) {
+  __asm__ volatile("movl $0, %%eax\n\t"
+                   "popl %%ecx\n\t"
+                   "jmp *%%ecx" ::
+                       : "eax", "ecx");
+}
+
 pid_t do_fork(char *name) {
   proc_t *p = alloc_proc();
   if (!p) {
@@ -84,14 +91,15 @@ pid_t do_fork(char *name) {
 
   uint32_t *ctx = (uint32_t *)((char *)p->kstack + PAGE_SIZE);
 
-  uint32_t caller_return_addr;
-  __asm__ volatile("movl 4(%%ebp), %0" : "=r"(caller_return_addr));
+  uint32_t caller_return;
+  __asm__ volatile("movl 4(%%ebp), %0" : "=r"(caller_return));
 
-  printk("Resume: 0x%x\n", caller_return_addr);
+  printk("Resume: 0x%x\n", caller_return);
 
-  *(--ctx) = caller_return_addr; // EIP - where to resume (after fork logic)
+  *(--ctx) = caller_return;      // EIP - where to resume (after fork logic)
+  *(--ctx) = (uint32_t)fork_ret; // EIP - wrapper
   *(--ctx) = 0;                  // EBP
-  *(--ctx) = 0;                  // EBX - child's return value (0)
+  *(--ctx) = 0;                  // EBX
   *(--ctx) = 0;                  // ESI
   *(--ctx) = 0;                  // EDI
 
@@ -138,7 +146,7 @@ void schedule(void) {
       }
       proc_t *p = &ptables[i];
 
-      printk("Scheduler: switching to process %d\n", p->pid);
+      // printk("Scheduler: switching to process %d\n", p->pid);
 
       p->state = RUNNING;
       current_proc = p;
@@ -146,7 +154,7 @@ void schedule(void) {
 
       swtch(&scheduler_context, p->context);
 
-      printk("Scheduler: back from process %d\n", p->pid);
+      // printk("Scheduler: back from process %d\n", p->pid);
       current_proc = NULL;
     }
 
