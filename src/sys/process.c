@@ -27,8 +27,6 @@ static proc_t *alloc_proc(void) {
   for (int32_t i = 0; i < NUM_PROC; i += 1) {
     if (ptables[i].state == UNUSED) {
       ptables[i].state = EMBRYO;
-      ptables[i].pid = pid_counter;
-      pid_counter++;
 
       return &ptables[i];
     }
