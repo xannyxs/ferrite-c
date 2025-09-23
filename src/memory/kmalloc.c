@@ -16,7 +16,7 @@
  * Fast and suitable for most kernel allocations, especially for hardware/DMA
  * buffers that require physical contiguity.
  *
- * @param size The number of bytes to allocate.
+ * @param n The number of bytes to allocate.
  * @return A pointer to the allocated memory, or NULL on failure.
  */
 void *kmalloc(size_t n) {
