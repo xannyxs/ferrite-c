@@ -20,8 +20,9 @@ void init_process(void) {
 
   printk("Initial process started...!\n");
 
-  pid_t pid = fork("shell", shell_process);
+  pid_t pid = do_fork("shell");
   if (pid < 0) {
+    printk("Init: error in %d\n", current_proc->pid);
     abort("Init: could not create a new process");
   }
 
