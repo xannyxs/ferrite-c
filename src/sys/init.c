@@ -12,7 +12,7 @@ extern uint32_t pid_counter;
 extern uint32_t page_directory[1024];
 
 void init_process(void) {
-  proc_t *current_proc = myproc();
+  const proc_t *current_proc = myproc();
 
   if (current_proc->pid != 1) {
     abort("Init process should be PID 1!");
