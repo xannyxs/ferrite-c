@@ -13,4 +13,6 @@ void memset(void *s, int c, size_t n);
 
 void strcmp(const char *s1, const char *s2);
 
+size_t strlcpy(char *dest, const char *src, size_t n);
+
 #endif /* STRING_H */

@@ -5,6 +5,7 @@
 #include "memory/consts.h"
 #include "memory/kmalloc.h"
 #include "memory/memory.h"
+#include "memory/page.h"
 
 #include <stdbool.h>
 #include <stddef.h>
@@ -26,8 +27,6 @@ static proc_t *alloc_proc(void) {
   for (int32_t i = 0; i < NUM_PROC; i += 1) {
     if (ptables[i].state == UNUSED) {
       ptables[i].state = EMBRYO;
-      ptables[i].pid = pid_counter;
-      pid_counter++;
 
       return &ptables[i];
     }
@@ -67,33 +66,52 @@ inline void check_resched(void) {
   yield();
 }
 
-pid_t fork(char *name, void (*f)(void)) {
+__attribute__((naked)) void fork_ret(void) {
+  __asm__ volatile("movl $0, %%eax\n\t"
+                   "popl %%ecx\n\t"
+                   "jmp *%%ecx" ::
+                       : "eax", "ecx");
+}
+
+pid_t do_fork(char *name) {
   proc_t *p = alloc_proc();
   if (!p) {
     return -1;
   }
 
-  p->kstack = kmalloc(PAGE_SIZE);
+  *p = *current_proc;
+
+  p->kstack = get_free_page();
   if (!p->kstack) {
     p->state = UNUSED;
     return -1;
   }
 
-  uint32_t *sp =
-      (uint32_t *)((char *)p->kstack + PAGE_SIZE - sizeof(block_header_t));
-  *--sp = 0;
-  *--sp = (uint32_t)f;
-  *--sp = 0; // ebp
-  *--sp = 0; // ebx
-  *--sp = 0; // esi
-  *--sp = 0; // edi
+  uint32_t *ctx = (uint32_t *)((char *)p->kstack + PAGE_SIZE);
 
-  p->context = (context_t *)sp;
+  uint32_t caller_return;
+  __asm__ volatile("movl 4(%%ebp), %0" : "=r"(caller_return));
+
+  printk("Resume: 0x%x\n", caller_return);
+
+  *(--ctx) = caller_return;      // EIP - where to resume (after fork logic)
+  *(--ctx) = (uint32_t)fork_ret; // EIP - wrapper
+  *(--ctx) = 0;                  // EBP
+  *(--ctx) = 0;                  // EBX
+  *(--ctx) = 0;                  // ESI
+  *(--ctx) = 0;                  // EDI
+
+  p->pid = pid_counter;
+  pid_counter += 1;
+  p->context = (context_t *)ctx;
   p->pgdir = page_directory;
   p->parent = current_proc;
-  memcpy(p->name, name, strlen(name)); // FIXME: Take care for overflows
+  strlcpy(p->name, name, sizeof(p->name));
 
   p->state = READY;
+
+  printk("PID: %d\n", p->pid);
+
   return p->pid;
 }
 

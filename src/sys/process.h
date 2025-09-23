@@ -53,7 +53,6 @@ typedef struct process {
   pid_t pid;
   procstate_e state;
 
-  trapframe_t *tf;
   context_t *context;
 
   void *pgdir;
@@ -74,9 +73,7 @@ void init_ptables(void);
 
 void yield(void);
 
-pid_t fork(char *name, void (*f)(void));
-
-// pid_t fork(void);
+pid_t do_fork(char *name);
 
 proc_t *myproc(void);
 
