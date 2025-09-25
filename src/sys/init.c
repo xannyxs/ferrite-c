@@ -13,19 +13,15 @@ extern uint32_t page_directory[1024];
 
 void init_process(void) {
   const proc_t *current_proc = myproc();
-
   if (current_proc->pid != 1) {
     abort("Init process should be PID 1!");
   }
 
   printk("Initial process started...!\n");
 
-  pid_t pid = do_fork("shell");
+  pid_t pid = do_exec("shell", shell_process);
   if (pid < 0) {
     abort("Init: could not create a new process");
-  } else if (pid == 0) {
-    shell_process();
-    __builtin_unreachable();
   }
 
   printk("Init: Created child PID %d with PID %d\n", pid, current_proc->pid);
