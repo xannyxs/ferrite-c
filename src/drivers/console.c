@@ -8,11 +8,12 @@
 #include "memory/buddy_allocator/buddy.h"
 #include "stdlib.h"
 #include "sys/process.h"
+#include "sys/signal/signal.h"
 
 #include <stdint.h>
 #include <string.h>
 
-// TODO: Might change this to CPP for easily incapculating each console
+extern proc_t *current_proc;
 
 static const char *prompt = "[42]$ ";
 static char buffer[VGA_WIDTH];
@@ -118,6 +119,10 @@ void console_init(void) {
 
 void console_add_buffer(char c) {
   switch (c) {
+  case '\x03':
+    printk("^C\n");
+    do_kill(current_proc->pid, SIGINT);
+    break;
   case '\n':
     execute_buffer();
     break;
