@@ -7,6 +7,7 @@
 #include "memory/memory.h"
 #include "memory/page.h"
 #include "sys/signal/signal.h"
+#include "sys/timer.h"
 
 #include <stdbool.h>
 #include <stddef.h>
@@ -82,6 +83,26 @@ __attribute__((naked)) void fork_ret(void) {
                    "popl %%ecx\n\t"
                    "jmp *%%ecx" ::
                        : "eax", "ecx");
+}
+
+// WIP
+int32_t do_wait(void) {
+  proc_t *p = NULL;
+  while (true) {
+    for (int32_t i = 0; i < NUM_PROC; i += 1) {
+      p = &ptables[i];
+
+      if (p == current_proc) {
+        continue;
+      }
+      if (p->state == ZOMBIE) {
+        p->state = UNUSED;
+        return p->pid;
+      }
+    }
+
+    sleep(10);
+  }
 }
 
 pid_t do_exec(const char *name, void (*f)(void)) {

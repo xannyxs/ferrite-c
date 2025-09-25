@@ -1,6 +1,6 @@
 #include "sys/timer.h"
 #include "arch/x86/pit.h"
-#include "debug/panic.h"
+#include "drivers/printk.h"
 #include "sys/process.h"
 
 #include <stddef.h>
@@ -8,6 +8,7 @@
 
 #define NUM_TIMERS 16
 
+extern context_t *scheduler_context;
 extern volatile uint64_t ticks;
 extern proc_t *current_proc;
 static timer_t timers[NUM_TIMERS];
@@ -17,15 +18,15 @@ void wake_up_process(void *data) {
   p->state = READY;
 }
 
-void add_timer(timer_t *timer) {
+int32_t add_timer(timer_t *timer) {
   for (int32_t i = 0; i < NUM_TIMERS; i++) {
     if (!timers[i].function) {
       timers[i] = *timer;
-      return;
+      return 0;
     }
   }
 
-  panic("No free timer slots");
+  return -1;
 }
 
 void check_timers(void) {
@@ -37,6 +38,13 @@ void check_timers(void) {
   }
 }
 
+/*
+ * Sleep for specified seconds by blocking current process.
+ * Current implementation: Direct timer callback wakes process
+ *
+ * POSIX approach would use: alarm(seconds) + pause() + SIGALRM handler
+ * TODO: Implement SIGALRM-based sleep for full POSIX compliance
+ */
 int32_t sleep(int32_t seconds) {
   timer_t timer;
 
@@ -44,10 +52,14 @@ int32_t sleep(int32_t seconds) {
   timer.function = wake_up_process;
   timer.data = (void *)current_proc;
 
-  add_timer(&timer);
+  int32_t r = add_timer(&timer);
+  if (r < 0) {
+    printk("sleep: Timer array is full");
+    return -1;
+  }
 
   current_proc->state = SLEEPING;
-  schedule();
+  swtch(&current_proc->context, scheduler_context);
 
   return 0;
 }

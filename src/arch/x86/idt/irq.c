@@ -6,6 +6,7 @@
 #include "drivers/keyboard.h"
 #include "drivers/printk.h"
 #include "sys/process.h"
+#include "sys/timer.h"
 
 #include <stdint.h>
 
@@ -22,6 +23,8 @@ timer_handler(registers_t *regs) {
   pic_send_eoi(0);
 
   ticks += 1;
+  check_timers();
+
   if (ticks % HZ == 0) {
     time_t new_epoch = getepoch() + 1;
     setepoch(new_epoch);
