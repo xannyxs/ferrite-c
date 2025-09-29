@@ -14,41 +14,6 @@ typedef struct {
   uint32_t edi, esi, ebx, ebp, eip;
 } context_t;
 
-typedef struct {
-  // registers as pushed by pusha
-  uint32_t edi;
-  uint32_t esi;
-  uint32_t ebp;
-  uint32_t oesp; // useless & ignored
-  uint32_t ebx;
-  uint32_t edx;
-  uint32_t ecx;
-  uint32_t eax;
-
-  // rest of trap frame
-  uint16_t gs;
-  uint16_t padding1;
-  uint16_t fs;
-  uint16_t padding2;
-  uint16_t es;
-  uint16_t padding3;
-  uint16_t ds;
-  uint16_t padding4;
-  uint32_t trapno;
-
-  // below here defined by x86 hardware
-  uint32_t err;
-  uint32_t eip;
-  uint16_t cs;
-  uint16_t padding5;
-  uint32_t eflags;
-
-  // below here only when crossing rings, such as from user to kernel
-  uint32_t esp;
-  uint16_t ss;
-  uint16_t padding6;
-} trapframe_t;
-
 typedef struct process {
   pid_t pid;
   procstate_e state;
@@ -58,8 +23,12 @@ typedef struct process {
   void *pgdir;
   uint32_t sz;
 
+  uint32_t pending_signals;
+
   char *kstack;
   struct process *parent;
+  void *channel;
+  int32_t status;
   char name[16];
 } proc_t;
 
@@ -73,11 +42,35 @@ void init_ptables(void);
 
 void yield(void);
 
-pid_t do_fork(char *name);
+/**
+ * Creates a child process that is an exact copy of the current process.
+ * Both parent and child resume execution from the point where do_fork() was
+ * called.
+ *
+ * @param name  Process name for the child process
+ * @return      Child PID in parent process, 0 in child process, -1 on error
+ */
+pid_t do_fork(const char *name);
+
+/**
+ * Creates a new process that starts executing the specified function.
+ * The new process begins execution at function f, not at the call site.
+ *
+ * @param name  Process name for the new process
+ * @param f     Function pointer where the new process should start executing
+ * @return      New process PID in calling process, -1 on error
+ */
+pid_t do_exec(const char *name, void (*f)(void));
+
+void do_exit(int32_t status);
+
+pid_t do_wait(int32_t *status);
 
 proc_t *myproc(void);
 
 void process_list(void);
+
+proc_t *find_process(pid_t pid);
 
 void check_resched(void);
 

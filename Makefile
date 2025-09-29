@@ -54,6 +54,7 @@ debug: QEMUFLAGS += -s -S
 debug: run 
 
 test: QEMUFLAGS += -device isa-debug-exit,iobase=0xf4,iosize=0x04 -display none
+test: CFLAGS += -D__TEST
 test: run
 
 clean:

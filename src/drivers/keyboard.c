@@ -7,6 +7,9 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+static bool SHIFT_PRESSED = false;
+static bool CTRL_PRESSED = false;
+
 extern struct {
   uint8_t buf[256];
   int32_t head; // Read position
@@ -16,7 +19,7 @@ extern struct {
 
 /* Private */
 
-char scancode_to_ascii(uint8_t scan_code, bool shift_pressed) {
+char scancode_to_ascii(uint8_t scan_code) {
   static const char scancode_map_no_shift[] = {
       0,   0,   '1',  '2',  '3',  '4', '5', '6',  '7', '8', '9', '0',
       '-', '=', '\b', '\t', 'q',  'w', 'e', 'r',  't', 'y', 'u', 'i',
@@ -31,6 +34,12 @@ char scancode_to_ascii(uint8_t scan_code, bool shift_pressed) {
       'J', 'K', 'L',  ':',  '"',  '~', 0,   '|', 'Z', 'X', 'C', 'V',
       'B', 'N', 'M',  '<',  '>',  '?', 0,   '*', 0,   ' ', 0};
 
+  static const char scancode_map_ctrl[] = {
+      0,    0,  0,  0, 0,  0,  0,  0,  0,  0,  0,  0,  0,  0,    '\b',
+      '\t', 17, 23, 5, 18, 20, 25, 21, 9,  15, 16, 27, 29, '\n', 0,
+      1,    19, 4,  6, 7,  8,  10, 11, 12, 0,  0,  0,  0,  28,   26,
+      24,   3,  22, 2, 14, 13, 0,  0,  0,  0,  0,  0,  0,  0};
+
   if (scan_code & 0x80) {
     return 0;
   }
@@ -39,7 +48,11 @@ char scancode_to_ascii(uint8_t scan_code, bool shift_pressed) {
     return 0;
   }
 
-  if (shift_pressed) {
+  if (CTRL_PRESSED) {
+    return scancode_map_ctrl[scan_code];
+  }
+
+  if (SHIFT_PRESSED) {
     return scancode_map_shift[scan_code];
   }
 
@@ -49,18 +62,22 @@ char scancode_to_ascii(uint8_t scan_code, bool shift_pressed) {
 /* Public */
 
 void keyboard_put(uint8_t scancode) {
-  static bool SHIFT_PRESSED = false;
-
   switch (scancode) {
+  case 29:
+    CTRL_PRESSED = true;
+    return;
   case 42:
     SHIFT_PRESSED = true;
+    return;
+  case 156:
+    CTRL_PRESSED = false;
     return;
   case 170:
     SHIFT_PRESSED = false;
     return;
   }
 
-  char c = scancode_to_ascii(scancode, SHIFT_PRESSED);
+  char c = scancode_to_ascii(scancode);
   if (!c)
     return;
 

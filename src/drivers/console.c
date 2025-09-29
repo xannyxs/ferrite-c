@@ -8,11 +8,13 @@
 #include "memory/buddy_allocator/buddy.h"
 #include "stdlib.h"
 #include "sys/process.h"
+#include "sys/signal/signal.h"
+#include "sys/timer.h"
 
 #include <stdint.h>
 #include <string.h>
 
-// TODO: Might change this to CPP for easily incapculating each console
+extern proc_t *current_proc;
 
 static const char *prompt = "[42]$ ";
 static char buffer[VGA_WIDTH];
@@ -83,12 +85,14 @@ static void print_gdt(void) {
 
 static void print_buddy(void) { buddy_visualize(); }
 
+static void exec_sleep(void) { sleep(3); }
+
 static void execute_buffer(void) {
   static const exec_t command_table[] = {
-      {"reboot", reboot},    {"gdt", print_gdt},   {"memory", print_buddy},
-      {"clear", vga_init},   {"help", print_help}, {"panic", abort},
-      {"idt", print_idt},    {"time", print_time}, {"epoch", print_epoch},
-      {"top", process_list}, {NULL, NULL}};
+      {"reboot", reboot},    {"gdt", print_gdt},    {"memory", print_buddy},
+      {"clear", vga_init},   {"help", print_help},  {"panic", abort},
+      {"idt", print_idt},    {"time", print_time},  {"epoch", print_epoch},
+      {"top", process_list}, {"sleep", exec_sleep}, {NULL, NULL}};
 
   printk("\n");
 
@@ -118,6 +122,10 @@ void console_init(void) {
 
 void console_add_buffer(char c) {
   switch (c) {
+  case '\x03':
+    printk("^C\n");
+    do_kill(current_proc->pid, SIGINT);
+    break;
   case '\n':
     execute_buffer();
     break;

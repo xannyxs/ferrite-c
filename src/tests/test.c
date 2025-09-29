@@ -1,0 +1,27 @@
+#ifdef __TEST
+
+#include "arch/x86/io.h"
+#include "tests.h"
+
+uint32_t tests_passed = 0;
+uint32_t tests_failed = 0;
+
+void main_tests(void) {
+  idt_tests();
+  process_tests();
+
+  printk("\n========== TEST RESULTS ==========\n");
+  printk("Passed: %u\n", tests_passed);
+  printk("Failed: %u\n", tests_failed);
+
+  if (tests_failed > 0) {
+    printk("STATUS: FAILED ❌\n");
+  } else {
+    printk("STATUS: ALL TESTS PASSED ✅\n");
+  }
+  printk("====================================\n\n");
+
+  qemu_exit(0);
+}
+
+#endif /* __TEST */
