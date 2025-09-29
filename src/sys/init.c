@@ -28,6 +28,9 @@ void init_process(void) {
   pid_t pid = do_exec("shell", shell_process);
   if (pid < 0) {
     abort("Init: could not create a new process");
+  } else if (pid == 0) {
+    shell_process();
+    __builtin_unreachable();
   }
 
 #ifdef __TEST

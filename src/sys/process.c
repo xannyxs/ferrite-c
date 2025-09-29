@@ -225,6 +225,9 @@ pid_t do_fork(const char *name) {
   strlcpy(p->name, name, sizeof(p->name));
 
   p->state = READY;
+
+  printk("PID: %d\n", p->pid);
+
   return p->pid;
 }
 
