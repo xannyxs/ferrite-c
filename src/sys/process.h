@@ -27,6 +27,8 @@ typedef struct process {
 
   char *kstack;
   struct process *parent;
+  void *channel;
+  int32_t status;
   char name[16];
 } proc_t;
 
@@ -59,6 +61,10 @@ pid_t do_fork(const char *name);
  * @return      New process PID in calling process, -1 on error
  */
 pid_t do_exec(const char *name, void (*f)(void));
+
+void do_exit(int32_t status);
+
+pid_t do_wait(int32_t *status);
 
 proc_t *myproc(void);
 

@@ -85,23 +85,77 @@ __attribute__((naked)) void fork_ret(void) {
                        : "eax", "ecx");
 }
 
-// WIP
-int32_t do_wait(void) {
-  proc_t *p = NULL;
+void wakeup(void *channel) {
+  for (proc_t *p = &ptables[0]; p < &ptables[NUM_PROC]; p += 1) {
+    if (p->channel == channel && p->state == SLEEPING) {
+      p->state = READY;
+    }
+  }
+}
+
+void do_exit(int32_t status) {
+  proc_t *p = myproc();
+  proc_t *init = &ptables[0];
+
+  // TODO: free page dir once implemented
+
+  for (int32_t i = 0; i < NUM_PROC; i++) {
+    if (ptables[i].parent != p) {
+      continue;
+    }
+
+    ptables[i].parent = init;
+    if (ptables[i].state == ZOMBIE) {
+      wakeup(init);
+    }
+  }
+
+  cli();
+
+  p->status = status;
+  wakeup(p->parent);
+  p->state = ZOMBIE;
+
+  swtch(&p->context, scheduler_context);
+  __builtin_unreachable();
+}
+
+pid_t do_wait(int32_t *status) {
   while (true) {
+    proc_t *p;
+    bool have_kids = false;
+
     for (int32_t i = 0; i < NUM_PROC; i += 1) {
       p = &ptables[i];
 
-      if (p == current_proc) {
+      if (p->parent != myproc()) {
         continue;
       }
+
+      have_kids = true;
+
       if (p->state == ZOMBIE) {
+        pid_t pid = p->pid;
+        if (status) {
+          *status = p->status;
+        }
+
         p->state = UNUSED;
-        return p->pid;
+        p->pid = 0;
+        p->parent = NULL;
+        free_page(p->kstack);
+
+        // TODO: Page table free once implemented
+
+        return pid;
       }
     }
 
-    sleep(10);
+    if (!have_kids) {
+      return -1;
+    }
+
+    sleeppid(myproc());
   }
 }
 

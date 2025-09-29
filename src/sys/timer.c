@@ -1,4 +1,5 @@
 #include "sys/timer.h"
+#include "arch/x86/io.h"
 #include "arch/x86/pit.h"
 #include "drivers/printk.h"
 #include "sys/process.h"
@@ -62,4 +63,17 @@ int32_t sleep(int32_t seconds) {
   swtch(&current_proc->context, scheduler_context);
 
   return 0;
+}
+
+void sleeppid(void *channel) {
+  proc_t *p = myproc();
+  cli();
+
+  p->channel = channel;
+  p->state = SLEEPING;
+
+  swtch(&p->context, scheduler_context);
+
+  p->channel = NULL;
+  sti();
 }
