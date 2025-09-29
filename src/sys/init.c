@@ -3,9 +3,15 @@
 #include "lib/string.h"
 #include "memory/consts.h"
 #include "memory/kmalloc.h"
+#include "memory/page.h"
 #include "sys/process.h"
 
+#ifdef __TEST
+#include "tests/tests.h"
+#endif
+
 #include <stdbool.h>
+#include <stdint.h>
 
 extern proc_t ptables[NUM_PROC];
 extern uint32_t pid_counter;
@@ -24,6 +30,13 @@ void init_process(void) {
     abort("Init: could not create a new process");
   }
 
+#ifdef __TEST
+  pid = do_exec("test", main_tests);
+  if (pid < 0) {
+    abort("Init: could not create a new process");
+  }
+#endif
+
   printk("Init: Created child PID %d with PID %d\n", pid, current_proc->pid);
 
   while (true) {
@@ -31,7 +44,7 @@ void init_process(void) {
       proc_t *p = &ptables[i];
       if (p->state == ZOMBIE && p->parent == current_proc) {
         p->state = UNUSED;
-        kfree(p->kstack);
+        free_page(p->kstack);
         printk("Init: reaped zombie PID %d\n", p->pid);
       }
     }

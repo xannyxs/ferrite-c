@@ -133,7 +133,6 @@ pid_t do_wait(int32_t *status) {
       }
 
       have_kids = true;
-
       if (p->state == ZOMBIE) {
         pid_t pid = p->pid;
         if (status) {

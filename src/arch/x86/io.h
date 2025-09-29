@@ -39,4 +39,6 @@ static inline void cli(void) { __asm__ volatile("cli"); }
 
 static inline void sti(void) { __asm__ volatile("sti"); }
 
+static inline void qemu_exit(int status) { outl(0xf4, status); }
+
 #endif /* IO_H */
