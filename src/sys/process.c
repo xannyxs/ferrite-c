@@ -245,11 +245,11 @@ inline void yield(void) {
 void schedule(void) {
   static char *scheduler_stack = NULL;
   if (!scheduler_stack) {
-    scheduler_stack = kmalloc(PAGE_SIZE);
+    scheduler_stack = get_free_page();
     if (!scheduler_stack) {
       abort("Cannot allocate scheduler stack");
     }
-    scheduler_context = (context_t *)(scheduler_stack + PAGE_SIZE - 64);
+    scheduler_context = (context_t *)(scheduler_stack + PAGE_SIZE);
   }
 
   // FIFO

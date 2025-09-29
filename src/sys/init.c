@@ -66,8 +66,8 @@ void create_initial_process(void) {
   init->pid = pid_counter;
   pid_counter++;
 
-  memcpy(init->name, "init", 5);
-  init->kstack = kmalloc(PAGE_SIZE);
+  strlcpy(init->name, "init", sizeof(init->name));
+  init->kstack = get_free_page();
   if (!init->kstack) {
     abort("create_first_process: initial process could not create a stack");
   }
