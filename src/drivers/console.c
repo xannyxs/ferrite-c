@@ -85,14 +85,14 @@ static void print_gdt(void) {
 
 static void print_buddy(void) { buddy_visualize(); }
 
-static void exec_print(void) { sleep(3); }
+static void exec_sleep(void) { sleep(3); }
 
 static void execute_buffer(void) {
   static const exec_t command_table[] = {
       {"reboot", reboot},    {"gdt", print_gdt},    {"memory", print_buddy},
       {"clear", vga_init},   {"help", print_help},  {"panic", abort},
       {"idt", print_idt},    {"time", print_time},  {"epoch", print_epoch},
-      {"top", process_list}, {"sleep", exec_print}, {NULL, NULL}};
+      {"top", process_list}, {"sleep", exec_sleep}, {NULL, NULL}};
 
   printk("\n");
 
