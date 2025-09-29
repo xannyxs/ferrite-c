@@ -1,8 +1,6 @@
-// tests/test_idt.c
 #ifdef __TEST
 
 #include "tests/tests.h"
-#include <stdbool.h>
 
 extern volatile uint64_t ticks;
 extern uint32_t tests_passed;
@@ -35,3 +33,5 @@ void idt_tests(void) {
 }
 
 #endif
+
+typedef int _test_translation_unit_not_empty;

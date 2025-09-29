@@ -198,4 +198,7 @@ void process_tests(void) {
   RUN_TEST(wait_for_child_that_does_work);
   RUN_TEST(wait_for_sleeping_child);
 }
+
 #endif /* __TEST */
+
+typedef int _test_translation_unit_not_empty;

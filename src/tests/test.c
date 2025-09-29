@@ -25,3 +25,5 @@ void main_tests(void) {
 }
 
 #endif /* __TEST */
+
+typedef int _test_translation_unit_not_empty;
