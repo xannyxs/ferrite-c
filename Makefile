@@ -69,4 +69,12 @@ re:
 	@$(MAKE) fclean
 	@$(MAKE) all
 
-.PHONY: all run test clean fclean re debug iso
+lint:
+	@echo "Running clang-tidy..."
+	@find $(SDIR) -name '*.c' | while read file; do \
+		echo "Checking $$file..."; \
+		clang-tidy "$$file"; \
+	done
+	@echo "Lint complete!"
+
+.PHONY: all run test clean fclean re debug iso lint

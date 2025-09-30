@@ -8,7 +8,7 @@ memmove(void* dest, void const* src, size_t len)
 
     str_dest = (char*)dest;
     str_src = (char*)src;
-    if (dest != NULL || src != NULL) {
+    if (dest && src) {
         if (str_dest > str_src) {
             while (len--) {
                 str_dest[len] = str_src[len];

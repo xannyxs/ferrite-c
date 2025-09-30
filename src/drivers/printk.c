@@ -61,7 +61,7 @@ simple_number(char* str, long num, s32 base, bool is_signed, s32 width,
 }
 
 __attribute__((target("general-regs-only"))) static s32
-kfmt(char* buf, char const* fmt, va_list args)
+kfmt(char* buf, char const* fmt, va_list const args)
 {
     char* str = buf;
     for (; *fmt; ++fmt) {
@@ -107,7 +107,6 @@ kfmt(char* buf, char const* fmt, va_list args)
             if (precision >= 0 && (size_t)precision < len) {
                 len = precision;
             }
-            // Apply padding (strings are left-padded)
             if (width > (s32)len) {
                 s32 pad = width - len;
                 while (pad-- > 0) {

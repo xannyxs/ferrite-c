@@ -12,7 +12,7 @@ typedef struct timer {
     void (*function)(void*);
 } timer_t;
 
-s32 sleep(s32 seconds);
+s32 ksleep(s32 seconds);
 
 void sleeppid(void* channel);
 

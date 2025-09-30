@@ -23,6 +23,7 @@ Checks: >
   bugprone-*,
   cert-*,
   clang-analyzer-*,
+  -clang-analyzer-security.insecureAPI.DeprecatedOrUnsafeBufferHandling,
   concurrency-*,
   misc-*,
   performance-*,

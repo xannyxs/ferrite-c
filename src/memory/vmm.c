@@ -189,7 +189,7 @@ void vmm_init_pages(void)
     }
 
     u32 page_directory_paddr = V2P_WO((u32)page_directory);
-    page_directory[1023] = (u32)page_directory_paddr | PTE_P | PTE_W | PTE_U;
+    page_directory[1023] = page_directory_paddr | PTE_P | PTE_W | PTE_U;
 
     load_page_directory((u32*)page_directory_paddr);
     enable_paging();

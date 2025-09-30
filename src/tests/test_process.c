@@ -41,7 +41,7 @@ void test_child_with_work(void)
 void test_child_sleeps(void)
 {
     printk("  [child %d] Sleeping for 2 seconds\n", myproc()->pid);
-    sleep(2);
+    ksleep(2);
     printk("  [child %d] Woke up, exiting\n", myproc()->pid);
     do_exit(99);
 }

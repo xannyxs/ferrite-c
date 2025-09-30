@@ -46,11 +46,11 @@ void check_timers(void)
  * POSIX approach would use: alarm(seconds) + pause() + SIGALRM handler
  * TODO: Implement SIGALRM-based sleep for full POSIX compliance
  */
-s32 sleep(s32 seconds)
+s32 ksleep(s32 seconds)
 {
     timer_t timer;
 
-    timer.expires = ticks + seconds * HZ;
+    timer.expires = ticks + (unsigned long long)seconds * HZ;
     timer.function = wake_up_process;
     timer.data = (void*)current_proc;
 

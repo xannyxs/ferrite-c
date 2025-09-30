@@ -90,7 +90,7 @@ static void print_gdt(void)
 
 static void print_buddy(void) { buddy_visualize(); }
 
-static void exec_sleep(void) { sleep(3); }
+static void exec_sleep(void) { ksleep(3); }
 
 static void exec_abort(void) { abort("Test abort"); }
 

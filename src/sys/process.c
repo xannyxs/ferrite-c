@@ -19,7 +19,7 @@ extern u32 page_directory[1024];
 proc_t ptables[NUM_PROC];
 proc_t* current_proc = NULL;
 context_t* scheduler_context;
-u32 pid_counter = 1;
+s32 pid_counter = 1;
 
 s32 ticks_remaining;
 bool volatile need_resched = false;
