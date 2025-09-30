@@ -1,4 +1,4 @@
-#include <stddef.h>
+#include "types.h"
 
 __attribute__((target("general-regs-only"))) size_t strlen(char const* s)
 {

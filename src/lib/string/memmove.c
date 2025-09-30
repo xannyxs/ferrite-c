@@ -1,4 +1,4 @@
-#include <stddef.h>
+#include "types.h"
 
 __attribute__((target("general-regs-only"))) void*
 memmove(void* dest, void const* src, size_t len)

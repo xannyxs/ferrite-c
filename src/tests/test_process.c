@@ -4,8 +4,6 @@
 #    include "tests/tests.h"
 
 #    include <stdbool.h>
-#    include <stddef.h>
-#    include <stdint.h>
 
 extern uint32_t tests_passed;
 extern uint32_t tests_failed;
