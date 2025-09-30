@@ -5,8 +5,11 @@
 
 #include <stddef.h>
 
-enum syscalls_e { EXIT, WRITE, READ, SYSCALL_COUNT };
+enum syscalls_e { EXIT,
+    WRITE,
+    READ,
+    SYSCALL_COUNT };
 
-void syscall_dispatcher_c(registers_t *);
+void syscall_dispatcher_c(registers_t*);
 
 #endif /* SYSCALLS_H */

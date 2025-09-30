@@ -3,6 +3,6 @@
 
 #include <stdint.h>
 
-int32_t printk(const char *fmt, ...);
+int32_t printk(char const* fmt, ...);
 
 #endif /* PRINTK_H */

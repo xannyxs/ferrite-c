@@ -57,10 +57,10 @@ typedef void (*__sighandler_t)(int32_t);
 #define SIG_ERR ((__sighandler_t) - 1) /* error return from signal */
 
 typedef struct {
-  __sighandler_t sa_handler;
-  sigset_t sa_mask;
-  int32_t sa_flags;
-  void (*sa_restorer)(void);
+    __sighandler_t sa_handler;
+    sigset_t sa_mask;
+    int32_t sa_flags;
+    void (*sa_restorer)(void);
 } sigaction_t;
 
 int32_t do_kill(pid_t pid, int32_t sig);

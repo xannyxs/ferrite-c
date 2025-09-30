@@ -18,35 +18,36 @@
 #include <stdint.h>
 
 #if !defined(__i386__)
-#error "This tutorial needs to be compiled with a ix86-elf compiler"
+#    error "This tutorial needs to be compiled with a ix86-elf compiler"
 #endif
 
-__attribute__((noreturn)) void kmain(uint32_t magic, multiboot_info_t *mbd) {
-  if (magic != MULTIBOOT_BOOTLOADER_MAGIC) {
-    abort("Invalid magic number!");
-  }
+__attribute__((noreturn)) void kmain(uint32_t magic, multiboot_info_t* mbd)
+{
+    if (magic != MULTIBOOT_BOOTLOADER_MAGIC) {
+        abort("Invalid magic number!");
+    }
 
-  gdt_init();
-  idt_init();
-  pic_remap(0x20, 0x28);
-  set_pit_count(LATCH);
+    gdt_init();
+    idt_init();
+    pic_remap(0x20, 0x28);
+    set_pit_count(LATCH);
 
-  vga_init();
-  rtc_init();
+    vga_init();
+    rtc_init();
 
-  pmm_init_from_map(mbd);
-  memblock_init();
+    pmm_init_from_map(mbd);
+    memblock_init();
 
-  vmm_init_pages();
-  buddy_init();
-  memblock_deactivate();
-  vmalloc_init();
+    vmm_init_pages();
+    buddy_init();
+    memblock_deactivate();
+    vmalloc_init();
 
-  init_ptables();
+    init_ptables();
 
-  sti();
+    sti();
 
-  create_initial_process();
-  schedule();
-  __builtin_unreachable();
+    create_initial_process();
+    schedule();
+    __builtin_unreachable();
 }

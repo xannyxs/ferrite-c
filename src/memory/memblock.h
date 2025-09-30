@@ -6,11 +6,11 @@
 
 void memblock_init(void);
 
-void *memblock(size_t);
+void* memblock(size_t);
 
-void *get_next_free_addr(void);
+void* get_next_free_addr(void);
 
-void *get_heap_end_addr(void);
+void* get_heap_end_addr(void);
 
 void memblock_deactivate(void);
 void memblock_activate(void);

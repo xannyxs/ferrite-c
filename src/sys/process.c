@@ -20,267 +20,280 @@
 extern uint32_t page_directory[1024];
 
 proc_t ptables[NUM_PROC];
-proc_t *current_proc = NULL;
-context_t *scheduler_context;
+proc_t* current_proc = NULL;
+context_t* scheduler_context;
 uint32_t pid_counter = 1;
 
 int32_t ticks_remaining;
-volatile bool need_resched = false;
+bool volatile need_resched = false;
 
 /* Private */
 
-proc_t *__alloc_proc(void) {
-  for (int32_t i = 0; i < NUM_PROC; i += 1) {
-    if (ptables[i].state == UNUSED) {
-      proc_t *p = &ptables[i];
+proc_t* __alloc_proc(void)
+{
+    for (int32_t i = 0; i < NUM_PROC; i += 1) {
+        if (ptables[i].state == UNUSED) {
+            proc_t* p = &ptables[i];
 
-      p->state = EMBRYO;
-      p->pid = pid_counter;
-      pid_counter += 1;
+            p->state = EMBRYO;
+            p->pid = pid_counter;
+            pid_counter += 1;
 
-      p->kstack = get_free_page();
-      if (!p->kstack) {
-        p->state = UNUSED;
-        return NULL;
-      }
+            p->kstack = get_free_page();
+            if (!p->kstack) {
+                p->state = UNUSED;
+                return NULL;
+            }
 
-      p->pgdir = setup_kvm();
-      if (!p->pgdir) {
-        p->state = UNUSED;
-        free_page(p->kstack);
-        return NULL;
-      }
+            p->pgdir = setup_kvm();
+            if (!p->pgdir) {
+                p->state = UNUSED;
+                free_page(p->kstack);
+                return NULL;
+            }
 
-      p->parent = current_proc;
+            p->parent = current_proc;
 
-      return p;
+            return p;
+        }
     }
-  }
 
-  return NULL;
+    return NULL;
 }
 
 /* Public */
 
-inline proc_t *myproc(void) { return current_proc; }
+inline proc_t* myproc(void) { return current_proc; }
 
-inline proc_t *find_process(pid_t pid) {
-  for (int32_t i = 0; i < NUM_PROC; i += 1) {
-    if (ptables[i].pid == pid) {
-      return &ptables[i];
-    }
-  }
-
-  return NULL;
-}
-
-void init_ptables(void) {
-  for (int32_t i = 0; i < NUM_PROC; i += 1) {
-    ptables[i].state = UNUSED;
-  }
-}
-
-inline void check_resched(void) {
-  proc_t *p = myproc();
-  if (!p || need_resched == false) {
-    return;
-  }
-
-  printk("Preempting PID %d\n", current_proc->pid);
-  need_resched = false;
-  yield();
-}
-
-__attribute__((naked)) static void fork_ret(void) {
-  __asm__ volatile("movl $0, %%eax\n\t"
-                   "popl %%ecx\n\t"
-                   "jmp *%%ecx" ::
-                       : "eax", "ecx");
-}
-
-void wakeup(void *channel) {
-  for (proc_t *p = &ptables[0]; p < &ptables[NUM_PROC]; p += 1) {
-    if (p->channel == channel && p->state == SLEEPING) {
-      p->state = READY;
-    }
-  }
-}
-
-void do_exit(int32_t status) {
-  proc_t *p = myproc();
-  proc_t *init = initproc();
-
-  for (int32_t i = 0; i < NUM_PROC; i++) {
-    if (ptables[i].parent != p) {
-      continue;
-    }
-
-    ptables[i].parent = init;
-    if (ptables[i].state == ZOMBIE) {
-      wakeup(init);
-    }
-  }
-
-  cli();
-
-  p->status = status;
-  wakeup(p->parent);
-  p->state = ZOMBIE;
-
-  swtch(&p->context, scheduler_context);
-  __builtin_unreachable();
-}
-
-pid_t do_wait(int32_t *status) {
-  while (true) {
-    proc_t *p;
-    bool have_kids = false;
-
+inline proc_t* find_process(pid_t pid)
+{
     for (int32_t i = 0; i < NUM_PROC; i += 1) {
-      p = &ptables[i];
+        if (ptables[i].pid == pid) {
+            return &ptables[i];
+        }
+    }
 
-      if (p->parent != myproc()) {
-        continue;
-      }
+    return NULL;
+}
 
-      have_kids = true;
-      if (p->state == ZOMBIE) {
-        pid_t pid = p->pid;
-        if (status) {
-          *status = p->status;
+void init_ptables(void)
+{
+    for (int32_t i = 0; i < NUM_PROC; i += 1) {
+        ptables[i].state = UNUSED;
+    }
+}
+
+inline void check_resched(void)
+{
+    proc_t* p = myproc();
+    if (!p || need_resched == false) {
+        return;
+    }
+
+    printk("Preempting PID %d\n", current_proc->pid);
+    need_resched = false;
+    yield();
+}
+
+__attribute__((naked)) static void fork_ret(void)
+{
+    __asm__ volatile("movl $0, %%eax\n\t"
+                     "popl %%ecx\n\t"
+                     "jmp *%%ecx" ::
+                         : "eax", "ecx");
+}
+
+void wakeup(void* channel)
+{
+    for (proc_t* p = &ptables[0]; p < &ptables[NUM_PROC]; p += 1) {
+        if (p->channel == channel && p->state == SLEEPING) {
+            p->state = READY;
+        }
+    }
+}
+
+void do_exit(int32_t status)
+{
+    proc_t* p = myproc();
+    proc_t* init = initproc();
+
+    for (int32_t i = 0; i < NUM_PROC; i++) {
+        if (ptables[i].parent != p) {
+            continue;
         }
 
-        free_page(p->kstack);
-        p->kstack = NULL;
-
-        vmm_free_pagedir(p->pgdir);
-        p->pgdir = NULL;
-
-        p->state = UNUSED;
-        p->pid = 0;
-        p->parent = NULL;
-
-        return pid;
-      }
+        ptables[i].parent = init;
+        if (ptables[i].state == ZOMBIE) {
+            wakeup(init);
+        }
     }
 
-    if (!have_kids) {
-      return -1;
+    cli();
+
+    p->status = status;
+    wakeup(p->parent);
+    p->state = ZOMBIE;
+
+    swtch(&p->context, scheduler_context);
+    __builtin_unreachable();
+}
+
+pid_t do_wait(int32_t* status)
+{
+    while (true) {
+        proc_t* p;
+        bool have_kids = false;
+
+        for (int32_t i = 0; i < NUM_PROC; i += 1) {
+            p = &ptables[i];
+
+            if (p->parent != myproc()) {
+                continue;
+            }
+
+            have_kids = true;
+            if (p->state == ZOMBIE) {
+                pid_t pid = p->pid;
+                if (status) {
+                    *status = p->status;
+                }
+
+                free_page(p->kstack);
+                p->kstack = NULL;
+
+                vmm_free_pagedir(p->pgdir);
+                p->pgdir = NULL;
+
+                p->state = UNUSED;
+                p->pid = 0;
+                p->parent = NULL;
+
+                return pid;
+            }
+        }
+
+        if (!have_kids) {
+            return -1;
+        }
+
+        sleeppid(myproc());
+    }
+}
+
+void* setup_kvm(void)
+{
+    uint32_t* pgdir = (uint32_t*)get_free_page();
+    if (!pgdir) {
+        return NULL;
     }
 
-    sleeppid(myproc());
-  }
+    for (int i = 0; i < 1024; i++) {
+        pgdir[i] = page_directory[i];
+    }
+
+    pgdir[1023] = V2P_WO((uintptr_t)pgdir) | PTE_P | PTE_W | PTE_U;
+
+    return pgdir;
 }
 
-void *setup_kvm(void) {
-  uint32_t *pgdir = (uint32_t *)get_free_page();
-  if (!pgdir) {
-    return NULL;
-  }
+pid_t do_exec(char const* name, void (*f)(void))
+{
+    proc_t* p = __alloc_proc();
+    if (!p) {
+        return -1;
+    }
 
-  for (int i = 0; i < 1024; i++) {
-    pgdir[i] = page_directory[i];
-  }
+    uint32_t* ctx = (uint32_t*)((char*)p->kstack + PAGE_SIZE);
+    *(--ctx) = (uint32_t)f; // EIP
+    *(--ctx) = 0;           // EBP
+    *(--ctx) = 0;           // EBX
+    *(--ctx) = 0;           // ESI
+    *(--ctx) = 0;           // EDI
+    p->context = (context_t*)ctx;
 
-  pgdir[1023] = V2P_WO((uintptr_t)pgdir) | PTE_P | PTE_W | PTE_U;
+    strlcpy(p->name, name, sizeof(p->name));
+    p->state = READY;
 
-  return pgdir;
+    return p->pid;
 }
 
-pid_t do_exec(const char *name, void (*f)(void)) {
-  proc_t *p = __alloc_proc();
-  if (!p) {
-    return -1;
-  }
+pid_t do_fork(char const* name)
+{
+    proc_t* p = __alloc_proc();
+    if (!p) {
+        return -1;
+    }
 
-  uint32_t *ctx = (uint32_t *)((char *)p->kstack + PAGE_SIZE);
-  *(--ctx) = (uint32_t)f; // EIP
-  *(--ctx) = 0;           // EBP
-  *(--ctx) = 0;           // EBX
-  *(--ctx) = 0;           // ESI
-  *(--ctx) = 0;           // EDI
-  p->context = (context_t *)ctx;
+    uint32_t caller_return;
+    __asm__ volatile("movl 4(%%ebp), %0" : "=r"(caller_return));
+    uint32_t* ctx = (uint32_t*)((char*)p->kstack + PAGE_SIZE);
+    *(--ctx) = caller_return;      // Return address for fork_ret (on stack)
+    *(--ctx) = (uint32_t)fork_ret; // EIP
+    *(--ctx) = 0;                  // EBP
+    *(--ctx) = 0;                  // EBX
+    *(--ctx) = 0;                  // ESI
+    *(--ctx) = 0;                  // EDI
+    p->context = (context_t*)ctx;
 
-  strlcpy(p->name, name, sizeof(p->name));
-  p->state = READY;
+    strlcpy(p->name, name, sizeof(p->name));
+    p->state = READY;
 
-  return p->pid;
+    return p->pid;
 }
 
-pid_t do_fork(const char *name) {
-  proc_t *p = __alloc_proc();
-  if (!p) {
-    return -1;
-  }
+inline void yield(void)
+{
+    proc_t* p = myproc();
+    if (!p) {
+        return;
+    }
 
-  uint32_t caller_return;
-  __asm__ volatile("movl 4(%%ebp), %0" : "=r"(caller_return));
-  uint32_t *ctx = (uint32_t *)((char *)p->kstack + PAGE_SIZE);
-  *(--ctx) = caller_return;      // Return address for fork_ret (on stack)
-  *(--ctx) = (uint32_t)fork_ret; // EIP
-  *(--ctx) = 0;                  // EBP
-  *(--ctx) = 0;                  // EBX
-  *(--ctx) = 0;                  // ESI
-  *(--ctx) = 0;                  // EDI
-  p->context = (context_t *)ctx;
-
-  strlcpy(p->name, name, sizeof(p->name));
-  p->state = READY;
-
-  return p->pid;
+    need_resched = false;
+    p->state = READY;
+    swtch(&p->context, scheduler_context);
 }
 
-inline void yield(void) {
-  proc_t *p = myproc();
-  if (!p) {
-    return;
-  }
-
-  need_resched = false;
-  p->state = READY;
-  swtch(&p->context, scheduler_context);
-}
-
-void schedule(void) {
-  static char *scheduler_stack = NULL;
-  if (!scheduler_stack) {
-    scheduler_stack = get_free_page();
+void schedule(void)
+{
+    static char* scheduler_stack = NULL;
     if (!scheduler_stack) {
-      abort("Cannot allocate scheduler stack");
-    }
-    scheduler_context = (context_t *)(scheduler_stack + PAGE_SIZE);
-  }
-
-  // FIFO - Round Robin
-  while (true) {
-    for (int32_t i = 0; i < NUM_PROC; i += 1) {
-      if (ptables[i].state != READY) {
-        continue;
-      }
-      proc_t *p = &ptables[i];
-      current_proc = p;
-
-      handle_signal();
-      if (p->state != READY && p->state != RUNNING) {
-        current_proc = NULL;
-        continue;
-      }
-
-      p->state = RUNNING;
-      ticks_remaining = TIME_QUANTUM;
-
-      lcr3(V2P_WO((uintptr_t)p->pgdir));
-      swtch(&scheduler_context, p->context);
-      lcr3(V2P_WO((uintptr_t)page_directory));
-
-      if (current_proc && current_proc->state == RUNNING) {
-        current_proc->state = READY;
-      }
-
-      current_proc = NULL;
+        scheduler_stack = get_free_page();
+        if (!scheduler_stack) {
+            abort("Cannot allocate scheduler stack");
+        }
+        scheduler_context = (context_t*)(scheduler_stack + PAGE_SIZE);
     }
 
-    sti();
-    __asm__ volatile("hlt");
-  }
+    // FIFO - Round Robin
+    while (true) {
+        for (int32_t i = 0; i < NUM_PROC; i += 1) {
+            if (ptables[i].state != READY) {
+                continue;
+            }
+            proc_t* p = &ptables[i];
+            current_proc = p;
+
+            handle_signal();
+            if (p->state != READY && p->state != RUNNING) {
+                current_proc = NULL;
+                continue;
+            }
+
+            p->state = RUNNING;
+            ticks_remaining = TIME_QUANTUM;
+
+            lcr3(V2P_WO((uintptr_t)p->pgdir));
+            swtch(&scheduler_context, p->context);
+            lcr3(V2P_WO((uintptr_t)page_directory));
+
+            if (current_proc && current_proc->state == RUNNING) {
+                current_proc->state = READY;
+            }
+
+            current_proc = NULL;
+        }
+
+        sti();
+        __asm__ volatile("hlt");
+    }
 }

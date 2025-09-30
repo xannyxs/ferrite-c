@@ -30,12 +30,13 @@ void pic_remap(int32_t, int32_t);
 
 uint16_t pic_get_isr(void);
 
-static inline void pic_send_eoi(uint8_t irq) {
-  if (irq & 8) {
-    outb(PIC2_COMMAND, PIC_EOI);
-  }
+static inline void pic_send_eoi(uint8_t irq)
+{
+    if (irq & 8) {
+        outb(PIC2_COMMAND, PIC_EOI);
+    }
 
-  outb(PIC1_COMMAND, PIC_EOI);
+    outb(PIC1_COMMAND, PIC_EOI);
 }
 
 #endif /* PIC_H */

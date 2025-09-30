@@ -19,25 +19,26 @@
  * @param n The number of bytes to allocate.
  * @return A pointer to the allocated memory, or NULL on failure.
  */
-void *kmalloc(size_t n) {
-  if (n == 0 || n >= MAXIMUM_SLAB_ALLOCATION) {
-    return NULL;
-  }
+void* kmalloc(size_t n)
+{
+    if (n == 0 || n >= MAXIMUM_SLAB_ALLOCATION) {
+        return NULL;
+    }
 
-  size_t total_size = ALIGN(n + sizeof(block_header_t), PAGE_SIZE);
+    size_t total_size = ALIGN(n + sizeof(block_header_t), PAGE_SIZE);
 
-  uint32_t num_pages = CEIL_DIV(total_size, PAGE_SIZE);
-  uint32_t order = ceil_log2(num_pages);
-  void *paddr = buddy_alloc(order);
-  if (!paddr) {
-    return NULL;
-  }
+    uint32_t num_pages = CEIL_DIV(total_size, PAGE_SIZE);
+    uint32_t order = ceil_log2(num_pages);
+    void* paddr = buddy_alloc(order);
+    if (!paddr) {
+        return NULL;
+    }
 
-  uintptr_t vaddr = P2V_WO((uintptr_t)paddr);
-  block_header_t *header = (block_header_t *)vaddr;
-  header->magic = MAGIC;
-  header->size = total_size;
-  header->flags = MEM_TYPE_KMALLOC;
+    uintptr_t vaddr = P2V_WO((uintptr_t)paddr);
+    block_header_t* header = (block_header_t*)vaddr;
+    header->magic = MAGIC;
+    header->size = total_size;
+    header->flags = MEM_TYPE_KMALLOC;
 
-  return (void *)(header + 1);
+    return (void*)(header + 1);
 }

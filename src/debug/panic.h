@@ -3,6 +3,6 @@
 
 #include "arch/x86/idt/idt.h"
 
-__attribute__((__noreturn__)) void panic(registers_t *, const char *);
+__attribute__((__noreturn__)) void panic(registers_t*, char const*);
 
 #endif /* PANIC_H */

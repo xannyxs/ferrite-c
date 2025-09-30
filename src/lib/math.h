@@ -13,23 +13,25 @@
 /**
  * @brief  Calculates the base-2 logarithm of n, rounded down (floor).
  */
-static inline uint32_t floor_log2(uint32_t n) {
-  if (unlikely(n == 0)) {
-    __builtin_trap();
-  }
+static inline uint32_t floor_log2(uint32_t n)
+{
+    if (unlikely(n == 0)) {
+        __builtin_trap();
+    }
 
-  return (sizeof(uint32_t) * 8 - 1) - __builtin_clz(n);
+    return (sizeof(uint32_t) * 8 - 1) - __builtin_clz(n);
 }
 
 /**
  * @brief  Calculates the base-2 logarithm of n, rounded up (ceiling).
  */
-static inline uint32_t ceil_log2(uint32_t n) {
-  if (unlikely(n == 0)) {
-    __builtin_trap();
-  }
+static inline uint32_t ceil_log2(uint32_t n)
+{
+    if (unlikely(n == 0)) {
+        __builtin_trap();
+    }
 
-  return (sizeof(uint32_t) * 8) - __builtin_clz(n - 1);
+    return (sizeof(uint32_t) * 8) - __builtin_clz(n - 1);
 }
 
 #endif /* MATH_H */
