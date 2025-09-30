@@ -1,4 +1,7 @@
 #include "sys/process.h"
+#include "arch/x86/io.h"
+#include "arch/x86/memlayout.h"
+#include "debug/debug.h"
 #include "drivers/printk.h"
 #include "lib/stdlib.h"
 #include "lib/string.h"
@@ -6,6 +9,7 @@
 #include "memory/kmalloc.h"
 #include "memory/memory.h"
 #include "memory/page.h"
+#include "memory/vmm.h"
 #include "sys/signal/signal.h"
 #include "sys/timer.h"
 
@@ -158,6 +162,21 @@ pid_t do_wait(int32_t *status) {
   }
 }
 
+void *setup_kvm(void) {
+  uint32_t *pgdir = (uint32_t *)get_free_page();
+  if (!pgdir) {
+    return NULL;
+  }
+
+  for (int i = 0; i < 1024; i++) {
+    pgdir[i] = page_directory[i];
+  }
+
+  pgdir[1023] = V2P_WO((uintptr_t)pgdir) | PTE_P | PTE_W | PTE_U;
+
+  return pgdir;
+}
+
 pid_t do_exec(const char *name, void (*f)(void)) {
   proc_t *p = alloc_proc();
   if (!p) {
@@ -183,7 +202,14 @@ pid_t do_exec(const char *name, void (*f)(void)) {
   p->pid = pid_counter;
   pid_counter += 1;
   p->context = (context_t *)ctx;
-  p->pgdir = page_directory;
+
+  p->pgdir = setup_kvm();
+  if (!p->pgdir) {
+    p->state = UNUSED;
+    free_page(p->kstack);
+    return -1;
+  }
+
   p->parent = current_proc;
   strlcpy(p->name, name, sizeof(p->name));
 
@@ -272,13 +298,15 @@ void schedule(void) {
       p->state = RUNNING;
       ticks_remaining = TIME_QUANTUM;
 
+      lcr3(V2P_WO((uintptr_t)p->pgdir));
+
       swtch(&scheduler_context, p->context);
 
+      lcr3(V2P_WO((uintptr_t)page_directory));
       if (current_proc && current_proc->state == RUNNING) {
         current_proc->state = READY;
       }
 
-      // printk("Scheduler: back from process %d\n", p->pid);
       current_proc = NULL;
     }
 

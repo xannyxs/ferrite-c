@@ -74,6 +74,8 @@ proc_t *find_process(pid_t pid);
 
 void check_resched(void);
 
+void *setup_kvm(void);
+
 /* Main process */
 
 void shell_process(void);
