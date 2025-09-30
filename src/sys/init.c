@@ -2,8 +2,8 @@
 #include "lib/stdlib.h"
 #include "lib/string.h"
 #include "memory/consts.h"
-#include "memory/kmalloc.h"
 #include "memory/page.h"
+#include "memory/vmm.h"
 #include "sys/process.h"
 
 #ifdef __TEST
@@ -16,6 +16,8 @@
 extern proc_t ptables[NUM_PROC];
 extern uint32_t pid_counter;
 extern uint32_t page_directory[1024];
+
+proc_t *initial_proc;
 
 void init_process(void) {
   const proc_t *current_proc = myproc();
@@ -48,6 +50,11 @@ void init_process(void) {
       if (p->state == ZOMBIE && p->parent == current_proc) {
         p->state = UNUSED;
         free_page(p->kstack);
+        vmm_free_pagedir(p->pgdir);
+
+        p->pgdir = NULL;
+        p->kstack = NULL;
+
         printk("Init: reaped zombie PID %d\n", p->pid);
       }
     }
@@ -56,25 +63,13 @@ void init_process(void) {
   }
 }
 
+proc_t *initproc(void) { return initial_proc; }
+
 void create_initial_process(void) {
-  proc_t *init = &ptables[0];
-  memset(init, 0, sizeof(proc_t));
-
-  init->state = EMBRYO;
-  init->parent = NULL;
-
-  init->pid = pid_counter;
-  pid_counter += 1;
-
-  strlcpy(init->name, "init", sizeof(init->name));
-  init->kstack = get_free_page();
-  if (!init->kstack) {
-    abort("create_first_process: initial process could not create a stack");
-  }
-
-  init->pgdir = setup_kvm();
-  if (!init->pgdir) {
-    abort("create_first_process: initial process could not create a pgdir");
+  proc_t *init = __alloc_proc();
+  if (!init) {
+    abort("create_initial_process: something went wrong on initiating the "
+          "process");
   }
 
   uint32_t *sp = (uint32_t *)((char *)init->kstack + PAGE_SIZE);
@@ -83,7 +78,10 @@ void create_initial_process(void) {
   *--sp = 0;                      // EBX
   *--sp = 0;                      // ESI
   *--sp = 0;                      // EDI
-
   init->context = (context_t *)sp;
+
+  strlcpy(init->name, "init", sizeof(init->name));
   init->state = READY;
+
+  initial_proc = init;
 }

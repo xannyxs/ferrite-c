@@ -29,7 +29,7 @@ volatile bool need_resched = false;
 
 /* Private */
 
-static proc_t *alloc_proc(void) {
+proc_t *__alloc_proc(void) {
   for (int32_t i = 0; i < NUM_PROC; i += 1) {
     if (ptables[i].state == UNUSED) {
       proc_t *p = &ptables[i];
@@ -58,21 +58,6 @@ static proc_t *alloc_proc(void) {
   }
 
   return NULL;
-}
-
-proc_t *setup_process(void) {
-  proc_t *p = alloc_proc();
-  if (!p) {
-    return NULL;
-  }
-
-  p->kstack = get_free_page();
-  if (!p->kstack) {
-    p->state = UNUSED;
-    return NULL;
-  }
-
-  return p;
 }
 
 /* Public */
@@ -123,9 +108,7 @@ void wakeup(void *channel) {
 
 void do_exit(int32_t status) {
   proc_t *p = myproc();
-  proc_t *init = &ptables[0];
-
-  // TODO: free page dir once implemented
+  proc_t *init = initproc();
 
   for (int32_t i = 0; i < NUM_PROC; i++) {
     if (ptables[i].parent != p) {
@@ -167,12 +150,15 @@ pid_t do_wait(int32_t *status) {
           *status = p->status;
         }
 
+        free_page(p->kstack);
+        p->kstack = NULL;
+
+        vmm_free_pagedir(p->pgdir);
+        p->pgdir = NULL;
+
         p->state = UNUSED;
         p->pid = 0;
         p->parent = NULL;
-        free_page(p->kstack);
-
-        // TODO: Page table free once implemented
 
         return pid;
       }
@@ -202,7 +188,7 @@ void *setup_kvm(void) {
 }
 
 pid_t do_exec(const char *name, void (*f)(void)) {
-  proc_t *p = alloc_proc();
+  proc_t *p = __alloc_proc();
   if (!p) {
     return -1;
   }
@@ -222,7 +208,7 @@ pid_t do_exec(const char *name, void (*f)(void)) {
 }
 
 pid_t do_fork(const char *name) {
-  proc_t *p = alloc_proc();
+  proc_t *p = __alloc_proc();
   if (!p) {
     return -1;
   }
