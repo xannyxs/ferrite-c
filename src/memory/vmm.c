@@ -7,6 +7,7 @@
 #include "memory/kmalloc.h"
 #include "memory/memblock.h"
 #include "memory/pmm.h"
+#include "page.h"
 #include "string.h"
 
 #include <stdint.h>
@@ -63,14 +64,17 @@ void visualize_paging(uint32_t limit_mb, uint32_t detailed_mb) {
 
 /* Public */
 
-void *vmm_setup_process(void) {
-  void *pgdir = kmalloc(PAGE_SIZE);
-  if (!pgdir) {
-    return NULL;
+void vmm_free_pagedir(void *pgdir) {
+  uint32_t *pgdir_addr = (uint32_t *)pgdir;
+
+  for (int32_t i = 0; i < 768; i += 1) {
+    if (pgdir_addr[i] & PTE_P && pgdir_addr[i] != page_directory[i]) {
+      uint32_t pt_paddr = pgdir_addr[i] & ~0xFFF;
+      free_page((void *)P2V_WO(pt_paddr));
+    }
   }
 
-  memset(&pgdir, 0, PAGE_SIZE);
-  return pgdir;
+  free_page(pgdir_addr);
 }
 
 void *vmm_unmap_page(void *vaddr) {

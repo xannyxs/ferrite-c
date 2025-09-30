@@ -19,6 +19,6 @@ void *vmm_unmap_page(void *);
 
 void vmm_remap_page(void *vaddr, void *paddr, int32_t flags);
 
-void *vmm_setup_process(void);
+void vmm_free_pagedir(void *pgdir);
 
 #endif /* VMM_H */
