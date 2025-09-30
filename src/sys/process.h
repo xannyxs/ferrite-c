@@ -66,13 +66,19 @@ void do_exit(int32_t status);
 
 pid_t do_wait(int32_t *status);
 
-proc_t *myproc(void);
-
 void process_list(void);
 
 proc_t *find_process(pid_t pid);
 
 void check_resched(void);
+
+void *setup_kvm(void);
+
+proc_t *__alloc_proc(void);
+
+proc_t *myproc(void);
+
+proc_t *initproc(void);
 
 /* Main process */
 

@@ -1,4 +1,7 @@
 #include "sys/process.h"
+#include "arch/x86/io.h"
+#include "arch/x86/memlayout.h"
+#include "debug/debug.h"
 #include "drivers/printk.h"
 #include "lib/stdlib.h"
 #include "lib/string.h"
@@ -6,6 +9,7 @@
 #include "memory/kmalloc.h"
 #include "memory/memory.h"
 #include "memory/page.h"
+#include "memory/vmm.h"
 #include "sys/signal/signal.h"
 #include "sys/timer.h"
 
@@ -25,26 +29,35 @@ volatile bool need_resched = false;
 
 /* Private */
 
-static proc_t *alloc_proc(void) {
+proc_t *__alloc_proc(void) {
   for (int32_t i = 0; i < NUM_PROC; i += 1) {
     if (ptables[i].state == UNUSED) {
-      ptables[i].state = EMBRYO;
+      proc_t *p = &ptables[i];
 
-      return &ptables[i];
+      p->state = EMBRYO;
+      p->pid = pid_counter;
+      pid_counter += 1;
+
+      p->kstack = get_free_page();
+      if (!p->kstack) {
+        p->state = UNUSED;
+        return NULL;
+      }
+
+      p->pgdir = setup_kvm();
+      if (!p->pgdir) {
+        p->state = UNUSED;
+        free_page(p->kstack);
+        return NULL;
+      }
+
+      p->parent = current_proc;
+
+      return p;
     }
   }
 
   return NULL;
-}
-
-void fork_return(void) {
-  uint32_t retval;
-  __asm__ volatile("popl %0" : "=r"(retval));
-  __asm__ volatile("movl %0, %%eax\n"
-                   "ret"
-                   :
-                   : "r"(retval)
-                   : "eax");
 }
 
 /* Public */
@@ -78,7 +91,7 @@ inline void check_resched(void) {
   yield();
 }
 
-__attribute__((naked)) void fork_ret(void) {
+__attribute__((naked)) static void fork_ret(void) {
   __asm__ volatile("movl $0, %%eax\n\t"
                    "popl %%ecx\n\t"
                    "jmp *%%ecx" ::
@@ -95,9 +108,7 @@ void wakeup(void *channel) {
 
 void do_exit(int32_t status) {
   proc_t *p = myproc();
-  proc_t *init = &ptables[0];
-
-  // TODO: free page dir once implemented
+  proc_t *init = initproc();
 
   for (int32_t i = 0; i < NUM_PROC; i++) {
     if (ptables[i].parent != p) {
@@ -139,12 +150,15 @@ pid_t do_wait(int32_t *status) {
           *status = p->status;
         }
 
+        free_page(p->kstack);
+        p->kstack = NULL;
+
+        vmm_free_pagedir(p->pgdir);
+        p->pgdir = NULL;
+
         p->state = UNUSED;
         p->pid = 0;
         p->parent = NULL;
-        free_page(p->kstack);
-
-        // TODO: Page table free once implemented
 
         return pid;
       }
@@ -158,75 +172,60 @@ pid_t do_wait(int32_t *status) {
   }
 }
 
+void *setup_kvm(void) {
+  uint32_t *pgdir = (uint32_t *)get_free_page();
+  if (!pgdir) {
+    return NULL;
+  }
+
+  for (int i = 0; i < 1024; i++) {
+    pgdir[i] = page_directory[i];
+  }
+
+  pgdir[1023] = V2P_WO((uintptr_t)pgdir) | PTE_P | PTE_W | PTE_U;
+
+  return pgdir;
+}
+
 pid_t do_exec(const char *name, void (*f)(void)) {
-  proc_t *p = alloc_proc();
+  proc_t *p = __alloc_proc();
   if (!p) {
     return -1;
   }
 
-  *p = *current_proc;
-
-  p->kstack = get_free_page();
-  if (!p->kstack) {
-    p->state = UNUSED;
-    return -1;
-  }
-
   uint32_t *ctx = (uint32_t *)((char *)p->kstack + PAGE_SIZE);
-
   *(--ctx) = (uint32_t)f; // EIP
   *(--ctx) = 0;           // EBP
   *(--ctx) = 0;           // EBX
   *(--ctx) = 0;           // ESI
   *(--ctx) = 0;           // EDI
-
-  p->pid = pid_counter;
-  pid_counter += 1;
   p->context = (context_t *)ctx;
-  p->pgdir = page_directory;
-  p->parent = current_proc;
-  strlcpy(p->name, name, sizeof(p->name));
 
+  strlcpy(p->name, name, sizeof(p->name));
   p->state = READY;
+
   return p->pid;
 }
 
 pid_t do_fork(const char *name) {
-  proc_t *p = alloc_proc();
+  proc_t *p = __alloc_proc();
   if (!p) {
     return -1;
   }
 
-  *p = *current_proc;
-
-  p->kstack = get_free_page();
-  if (!p->kstack) {
-    p->state = UNUSED;
-    return -1;
-  }
-
-  uint32_t *ctx = (uint32_t *)((char *)p->kstack + PAGE_SIZE);
-
   uint32_t caller_return;
   __asm__ volatile("movl 4(%%ebp), %0" : "=r"(caller_return));
-
+  uint32_t *ctx = (uint32_t *)((char *)p->kstack + PAGE_SIZE);
   *(--ctx) = caller_return;      // Return address for fork_ret (on stack)
   *(--ctx) = (uint32_t)fork_ret; // EIP
   *(--ctx) = 0;                  // EBP
   *(--ctx) = 0;                  // EBX
   *(--ctx) = 0;                  // ESI
   *(--ctx) = 0;                  // EDI
-
-  p->pid = pid_counter;
-  pid_counter += 1;
   p->context = (context_t *)ctx;
-  p->pgdir = page_directory;
-  p->parent = current_proc;
+
   strlcpy(p->name, name, sizeof(p->name));
-
   p->state = READY;
-
-  printk("PID: %d\n", p->pid);
 
   return p->pid;
 }
@@ -245,14 +244,14 @@ inline void yield(void) {
 void schedule(void) {
   static char *scheduler_stack = NULL;
   if (!scheduler_stack) {
-    scheduler_stack = kmalloc(PAGE_SIZE);
+    scheduler_stack = get_free_page();
     if (!scheduler_stack) {
       abort("Cannot allocate scheduler stack");
     }
-    scheduler_context = (context_t *)(scheduler_stack + PAGE_SIZE - 64);
+    scheduler_context = (context_t *)(scheduler_stack + PAGE_SIZE);
   }
 
-  // FIFO
+  // FIFO - Round Robin
   while (true) {
     for (int32_t i = 0; i < NUM_PROC; i += 1) {
       if (ptables[i].state != READY) {
@@ -260,8 +259,6 @@ void schedule(void) {
       }
       proc_t *p = &ptables[i];
       current_proc = p;
-
-      // printk("Scheduler: switching to process %d\n", p->pid);
 
       handle_signal();
       if (p->state != READY && p->state != RUNNING) {
@@ -272,13 +269,14 @@ void schedule(void) {
       p->state = RUNNING;
       ticks_remaining = TIME_QUANTUM;
 
+      lcr3(V2P_WO((uintptr_t)p->pgdir));
       swtch(&scheduler_context, p->context);
+      lcr3(V2P_WO((uintptr_t)page_directory));
 
       if (current_proc && current_proc->state == RUNNING) {
         current_proc->state = READY;
       }
 
-      // printk("Scheduler: back from process %d\n", p->pid);
       current_proc = NULL;
     }
 

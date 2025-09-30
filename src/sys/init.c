@@ -2,8 +2,8 @@
 #include "lib/stdlib.h"
 #include "lib/string.h"
 #include "memory/consts.h"
-#include "memory/kmalloc.h"
 #include "memory/page.h"
+#include "memory/vmm.h"
 #include "sys/process.h"
 
 #ifdef __TEST
@@ -16,6 +16,8 @@
 extern proc_t ptables[NUM_PROC];
 extern uint32_t pid_counter;
 extern uint32_t page_directory[1024];
+
+proc_t *initial_proc;
 
 void init_process(void) {
   const proc_t *current_proc = myproc();
@@ -48,6 +50,11 @@ void init_process(void) {
       if (p->state == ZOMBIE && p->parent == current_proc) {
         p->state = UNUSED;
         free_page(p->kstack);
+        vmm_free_pagedir(p->pgdir);
+
+        p->pgdir = NULL;
+        p->kstack = NULL;
+
         printk("Init: reaped zombie PID %d\n", p->pid);
       }
     }
@@ -56,31 +63,25 @@ void init_process(void) {
   }
 }
 
+proc_t *initproc(void) { return initial_proc; }
+
 void create_initial_process(void) {
-  proc_t *init = &ptables[0];
-  memset(init, 0, sizeof(proc_t));
-
-  init->state = EMBRYO;
-  init->parent = NULL;
-
-  init->pid = pid_counter;
-  pid_counter++;
-
-  memcpy(init->name, "init", 5);
-  init->kstack = kmalloc(PAGE_SIZE);
-  if (!init->kstack) {
-    abort("create_first_process: initial process could not create a stack");
+  proc_t *init = __alloc_proc();
+  if (!init) {
+    abort("create_initial_process: something went wrong on initiating the "
+          "process");
   }
 
-  init->pgdir = page_directory;
-
   uint32_t *sp = (uint32_t *)((char *)init->kstack + PAGE_SIZE);
-  *--sp = (uint32_t)init_process; // Function to execute
-  *--sp = 0;                      // ebp
-  *--sp = 0;                      // ebx
-  *--sp = 0;                      // esi
-  *--sp = 0;                      // edi
+  *--sp = (uint32_t)init_process; // EIP - function to execute
+  *--sp = 0;                      // EBP
+  *--sp = 0;                      // EBX
+  *--sp = 0;                      // ESI
+  *--sp = 0;                      // EDI
   init->context = (context_t *)sp;
 
+  strlcpy(init->name, "init", sizeof(init->name));
   init->state = READY;
+
+  initial_proc = init;
 }

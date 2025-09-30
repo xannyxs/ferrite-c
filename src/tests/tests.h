@@ -6,6 +6,8 @@
 #include "drivers/printk.h"
 #include "drivers/video/vga.h"
 
+#include <stdbool.h>
+
 #define ASSERT(condition, message)                                             \
   do {                                                                         \
     if (!(condition)) {                                                        \
