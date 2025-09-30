@@ -3,8 +3,6 @@
 
 #include "arch/x86/idt/idt.h"
 
-#include <stddef.h>
-
 enum syscalls_e { EXIT,
     WRITE,
     READ,

@@ -1,10 +1,9 @@
 #include "memory/memblock.h"
 #include "memory/consts.h"
 #include "memory/pmm.h"
+#include "types.h"
 
 #include <stdbool.h>
-#include <stddef.h>
-#include <stdint.h>
 
 static bool bumpalloc_is_active = false;
 static void* next_free_addr = NULL;
@@ -56,13 +55,13 @@ void* memblock(size_t num_bytes)
         return NULL;
     }
 
-    void* new_heap_end = (void*)((uintptr_t)next_free_addr + num_bytes);
+    void* new_heap_end = (void*)((u32)next_free_addr + num_bytes);
     if (new_heap_end > heap_end_addr) {
         return NULL;
     }
 
     void* ptr = next_free_addr;
-    next_free_addr = (void*)((uintptr_t)next_free_addr + num_bytes);
+    next_free_addr = (void*)((u32)next_free_addr + num_bytes);
 
     return ptr;
 }

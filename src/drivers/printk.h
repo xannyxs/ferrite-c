@@ -1,8 +1,8 @@
 #ifndef PRINTK_H
 #define PRINTK_H
 
-#include <stdint.h>
+#include "types.h"
 
-int32_t printk(char const* fmt, ...);
+s32 printk(char const* fmt, ...);
 
 #endif /* PRINTK_H */

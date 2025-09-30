@@ -6,8 +6,7 @@
 #include "memory/consts.h"
 #include "memory/kmalloc.h"
 #include "memory/memory.h"
-
-#include <stdint.h>
+#include "types.h"
 
 void kfree(void* ptr)
 {
@@ -25,11 +24,11 @@ void kfree(void* ptr)
         abort("kfree() is used on a vmalloc() pointer\n");
     }
 
-    uintptr_t vaddr = (uintptr_t)header;
+    u32 vaddr = (u32)header;
     size_t size = header->size;
-    uint32_t pages = CEIL_DIV(size, PAGE_SIZE);
-    uint32_t order = ceil_log2(pages);
+    u32 pages = CEIL_DIV(size, PAGE_SIZE);
+    u32 order = ceil_log2(pages);
 
-    uintptr_t paddr = V2P_WO(vaddr);
+    u32 paddr = V2P_WO(vaddr);
     buddy_dealloc(paddr, order);
 }

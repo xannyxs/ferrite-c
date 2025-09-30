@@ -1,10 +1,9 @@
 #include "arch/x86/memlayout.h"
 #include "drivers/printk.h"
+#include "lib/string.h"
 #include "memory/buddy_allocator/buddy.h"
 #include "memory/consts.h"
-
-#include <stdint.h>
-#include <string.h>
+#include "types.h"
 
 /*
  * Allocates a single 4KB page from the buddy allocator, converts it to a
@@ -17,7 +16,7 @@ void* get_free_page(void)
         return NULL;
     }
 
-    void* vaddr = (void*)P2V_WO((uintptr_t)paddr);
+    void* vaddr = (void*)P2V_WO((u32)paddr);
     memset(vaddr, 0, PAGE_SIZE);
 
     return vaddr;
@@ -33,11 +32,11 @@ void free_page(void* ptr)
         printk("ptr is null\n");
         return;
     }
-    if ((uintptr_t)ptr & (PAGE_SIZE - 1)) {
-        printk("free_page: ptr 0x%lx not page-aligned\n", (uintptr_t)ptr);
+    if ((u32)ptr & (PAGE_SIZE - 1)) {
+        printk("free_page: ptr 0x%lx not page-aligned\n", (u32)ptr);
         return;
     }
 
-    uintptr_t paddr = V2P_WO((uintptr_t)ptr);
+    u32 paddr = V2P_WO((u32)ptr);
     buddy_dealloc(paddr, 0);
 }

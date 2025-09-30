@@ -2,8 +2,7 @@
 #define PIC_H
 
 #include "arch/x86/io.h"
-
-#include <stdint.h>
+#include "types.h"
 
 #define PIC1 0x20 /* IO base address for master PIC */
 #define PIC2 0xA0 /* IO base address for slave PIC */
@@ -26,11 +25,11 @@
 
 #define PIC_EOI 0x20 /* End-of-interrupt command code */
 
-void pic_remap(int32_t, int32_t);
+void pic_remap(s32, s32);
 
-uint16_t pic_get_isr(void);
+u16 pic_get_isr(void);
 
-static inline void pic_send_eoi(uint8_t irq)
+static inline void pic_send_eoi(u8 irq)
 {
     if (irq & 8) {
         outb(PIC2_COMMAND, PIC_EOI);

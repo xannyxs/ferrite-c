@@ -4,14 +4,12 @@
 #include "sys/process.h"
 
 #include <stdbool.h>
-#include <stddef.h>
-#include <stdint.h>
 
 extern bool volatile need_resched;
 
 // TODO: Make sys_exit function
-__attribute__((target("general-regs-only"))) static uint32_t
-sys_exit(int32_t status)
+__attribute__((target("general-regs-only"))) static u32
+sys_exit(s32 status)
 {
     printk("Status: %d\n", status);
 
@@ -20,8 +18,8 @@ sys_exit(int32_t status)
 }
 
 // TODO: Make _read function
-__attribute__((target("general-regs-only"), warn_unused_result)) static int32_t
-sys_read(int32_t fd, void* buf, size_t count)
+__attribute__((target("general-regs-only"), warn_unused_result)) static s32
+sys_read(s32 fd, void* buf, size_t count)
 {
     (void)fd;
     (void)buf;
@@ -32,8 +30,8 @@ sys_read(int32_t fd, void* buf, size_t count)
 }
 
 // TODO: Make _write function
-__attribute__((target("general-regs-only"), warn_unused_result)) static int32_t
-sys_write(int32_t fd, void* buf, size_t count)
+__attribute__((target("general-regs-only"), warn_unused_result)) static s32
+sys_write(s32 fd, void* buf, size_t count)
 {
     (void)fd;
     (void)buf;

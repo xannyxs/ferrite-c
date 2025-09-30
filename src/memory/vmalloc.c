@@ -6,9 +6,7 @@
 #include "memory/consts.h"
 #include "memory/memory.h"
 #include "memory/vmm.h"
-
-#include <stddef.h>
-#include <stdint.h>
+#include "types.h"
 
 static free_list_t* virtual_free_list_head = NULL;
 
@@ -20,14 +18,14 @@ void set_free_list_head(free_list_t* list) { virtual_free_list_head = list; }
 
 void vmalloc_init(void)
 {
-    uintptr_t heap_start_addr = (uintptr_t)HEAP_START;
+    u32 heap_start_addr = (u32)HEAP_START;
 
     void* first_page_phys = buddy_alloc(0);
     if (!first_page_phys) {
         abort("Not enough physical memory to start the heap!");
     }
 
-    int32_t ret = vmm_map_page(first_page_phys, (void*)heap_start_addr, 0);
+    s32 ret = vmm_map_page(first_page_phys, (void*)heap_start_addr, 0);
     if (ret < 0) {
         printk("Should not be possible\n");
     }
@@ -83,7 +81,7 @@ void* vmalloc(size_t n)
         return NULL;
     }
 
-    uintptr_t vaddr = (uintptr_t)current;
+    u32 vaddr = (u32)current;
     if (current->size - total_size > sizeof(free_list_t)) {
         free_list_t* new_free_node = (free_list_t*)(vaddr + total_size);
 
@@ -92,7 +90,7 @@ void* vmalloc(size_t n)
             abort("Out of physical memory while splitting block!");
         }
 
-        int32_t ret = vmm_map_page(header_paddr, (void*)new_free_node, 0);
+        s32 ret = vmm_map_page(header_paddr, (void*)new_free_node, 0);
         if (ret < 0) {
             printk("Page already exists\n");
         }

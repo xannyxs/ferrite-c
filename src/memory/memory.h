@@ -1,8 +1,7 @@
 #ifndef MEMORY_H
 #define MEMORY_H
 
-#include <stddef.h>
-#include <stdint.h>
+#include "types.h"
 
 #define HEAP_START (void*)0xD0000000
 #define MAXIMUM_SLAB_ALLOCATION 16384
@@ -23,9 +22,9 @@ typedef struct block_header {
     // Bitfield for memory block properties.
     // Bit 0: Allocator type (0 = kmalloc, 1 = vmalloc)
     // Bits 1-7: Reserved for future use.
-    uint8_t flags;
+    u8 flags;
     size_t size;
-    uint32_t magic;
+    u32 magic;
 } block_header_t;
 
 #endif /* MEMORY_H */

@@ -1,8 +1,7 @@
 #include "sys/signal/signal.h"
 #include "drivers/printk.h"
 #include "sys/process.h"
-
-#include <stdint.h>
+#include "types.h"
 
 extern proc_t ptables[NUM_PROC];
 extern proc_t* current_proc;
@@ -44,21 +43,21 @@ sigaction_t sigaction[NSIG] = {
 
 /* Private */
 
-static inline void __default_sigterm_handler(int32_t sig)
+static inline void __default_sigterm_handler(s32 sig)
 {
     printk("Process %d terminated by signal %d\n", current_proc->pid, sig);
     current_proc->state = ZOMBIE;
     yield();
 }
 
-static inline void __default_sigkill_handler(int32_t sig)
+static inline void __default_sigkill_handler(s32 sig)
 {
     printk("Process %d killed by signal %d\n", current_proc->pid, sig);
     current_proc->state = ZOMBIE;
     yield();
 }
 
-static inline void __default_sigcore_handler(int32_t sig)
+static inline void __default_sigcore_handler(s32 sig)
 {
     printk("Process %d core dumped by signal %d\n", current_proc->pid, sig);
     // TODO: Dump core
@@ -66,7 +65,7 @@ static inline void __default_sigcore_handler(int32_t sig)
     yield();
 }
 
-static inline void __default_sigstop_handler(int32_t sig)
+static inline void __default_sigstop_handler(s32 sig)
 {
     printk("Process %d stopped by signal %d\n", current_proc->pid, sig);
     current_proc->state = SLEEPING;
@@ -75,7 +74,7 @@ static inline void __default_sigstop_handler(int32_t sig)
 
 /* Public */
 
-int32_t do_kill(pid_t pid, int32_t sig)
+s32 do_kill(pid_t pid, s32 sig)
 {
     if (sig < 1 || sig > NSIG) {
         return -1;
@@ -104,7 +103,7 @@ void handle_signal(void)
         return;
     }
 
-    for (int32_t sig = 1; sig < NSIG; sig += 1) {
+    for (s32 sig = 1; sig < NSIG; sig += 1) {
         if (!(current_proc->pending_signals & (1 << sig))) {
             continue;
         }

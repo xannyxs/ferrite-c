@@ -1,19 +1,18 @@
 #include "arch/x86/io.h"
+#include "types.h"
 
-#include <stdint.h>
+void halt(void) { __asm__ __volatile__("hlt"); }
 
-void halt() { __asm__ __volatile__("hlt"); }
-
-void halt_loop()
+void halt_loop(void)
 {
     while (1) {
         halt();
     }
 }
 
-__attribute__((noreturn)) void reboot()
+__attribute__((noreturn)) void reboot(void)
 {
-    uint8_t good = 0x02;
+    u8 good = 0x02;
 
     while (good == 0x02) {
         good = inb(0x64);

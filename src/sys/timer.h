@@ -1,8 +1,7 @@
 #ifndef TIMER_H
 #define TIMER_H
 
-#include "sys/process.h"
-#include <stdint.h>
+#include "types.h"
 
 typedef struct timer {
     struct timer* next;
@@ -13,7 +12,7 @@ typedef struct timer {
     void (*function)(void*);
 } timer_t;
 
-int32_t sleep(int32_t seconds);
+s32 sleep(s32 seconds);
 
 void sleeppid(void* channel);
 

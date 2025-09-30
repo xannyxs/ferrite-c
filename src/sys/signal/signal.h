@@ -2,8 +2,7 @@
 #define SIGNAL_H
 
 #include "sys/process.h"
-
-#include <stdint.h>
+#include "types.h"
 
 #define _NSIG 32
 #define NSIG _NSIG
@@ -49,8 +48,8 @@
 /* Arggh. Bad user source code wants this.. */
 #define SIGBUS SIGUNUSED
 
-typedef uint32_t sigset_t;
-typedef void (*__sighandler_t)(int32_t);
+typedef u32 sigset_t;
+typedef void (*__sighandler_t)(s32);
 
 #define SIG_DFL ((__sighandler_t)0)    /* default signal handling */
 #define SIG_IGN ((__sighandler_t)1)    /* ignore signal */
@@ -59,11 +58,11 @@ typedef void (*__sighandler_t)(int32_t);
 typedef struct {
     __sighandler_t sa_handler;
     sigset_t sa_mask;
-    int32_t sa_flags;
+    s32 sa_flags;
     void (*sa_restorer)(void);
 } sigaction_t;
 
-int32_t do_kill(pid_t pid, int32_t sig);
+s32 do_kill(pid_t pid, s32 sig);
 
 void handle_signal(void);
 

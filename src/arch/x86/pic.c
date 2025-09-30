@@ -1,9 +1,10 @@
 #include "arch/x86/pic.h"
 #include "arch/x86/io.h"
+#include "types.h"
 
 #define PIC_READ_ISR 0x0b /* OCW3 irq service next CMD read */
 
-static uint16_t __pic_get_irq_reg(int ocw3)
+static u16 __pic_get_irq_reg(int ocw3)
 {
     /* OCW3 to PIC CMD to get the register values.  PIC2 is chained, and
      * represents IRQs 8-15.  PIC1 is IRQs 0-7, with 2 being the chain */
@@ -12,9 +13,9 @@ static uint16_t __pic_get_irq_reg(int ocw3)
     return (inb(PIC2_COMMAND) << 8) | inb(PIC1_COMMAND);
 }
 
-uint16_t pic_get_isr(void) { return __pic_get_irq_reg(PIC_READ_ISR); }
+u16 pic_get_isr(void) { return __pic_get_irq_reg(PIC_READ_ISR); }
 
-void pic_remap(int32_t offset1, int32_t offset2)
+void pic_remap(s32 offset1, s32 offset2)
 {
     // starts the initialization sequence (in cascade mode)
     outb(PIC1_COMMAND, ICW1_INIT | ICW1_ICW4);

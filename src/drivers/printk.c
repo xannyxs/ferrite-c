@@ -1,10 +1,10 @@
 #include "debug/debug.h"
+#include "lib/string.h"
 #include "video/vga.h"
+
 #include <stdarg.h>
 #include <stdbool.h>
-#include <stddef.h>
-#include <stdint.h>
-#include <string.h>
+
 #if defined(__print_serial)
 #    include "drivers/serial.h"
 #endif
@@ -14,11 +14,11 @@ char buf[1024];
 /* Private */
 
 __attribute__((target("general-regs-only"))) static char*
-simple_number(char* str, long num, int32_t base, bool is_signed, int32_t width,
+simple_number(char* str, long num, s32 base, bool is_signed, s32 width,
     bool zero_pad)
 {
     char tmp[36];
-    int32_t i = 0;
+    s32 i = 0;
     bool negative = false;
 
     if (is_signed && base == 10 && num < 0) {
@@ -36,9 +36,9 @@ simple_number(char* str, long num, int32_t base, bool is_signed, int32_t width,
         }
     }
 
-    int32_t num_len = i + (negative ? 1 : 0);
+    s32 num_len = i + (negative ? 1 : 0);
     if (width > num_len) {
-        int32_t pad_count = width - num_len;
+        s32 pad_count = width - num_len;
         if (zero_pad && negative) {
             *str++ = '-';
             negative = false;
@@ -60,7 +60,7 @@ simple_number(char* str, long num, int32_t base, bool is_signed, int32_t width,
     return str;
 }
 
-__attribute__((target("general-regs-only"))) static int32_t
+__attribute__((target("general-regs-only"))) static s32
 kfmt(char* buf, char const* fmt, va_list args)
 {
     char* str = buf;
@@ -77,13 +77,13 @@ kfmt(char* buf, char const* fmt, va_list args)
             ++fmt;
         }
 
-        int32_t width = 0;
+        s32 width = 0;
         while (*fmt >= '0' && *fmt <= '9') {
             width = width * 10 + (*fmt - '0');
             ++fmt;
         }
 
-        int32_t precision = -1;
+        s32 precision = -1;
         if (*fmt == '.') {
             ++fmt;
             precision = 0;
@@ -108,8 +108,8 @@ kfmt(char* buf, char const* fmt, va_list args)
                 len = precision;
             }
             // Apply padding (strings are left-padded)
-            if (width > (int32_t)len) {
-                int32_t pad = width - len;
+            if (width > (s32)len) {
+                s32 pad = width - len;
                 while (pad-- > 0) {
                     *str++ = ' ';
                 }
@@ -153,14 +153,14 @@ kfmt(char* buf, char const* fmt, va_list args)
 
 /* Public */
 
-__attribute__((target("general-regs-only"))) int32_t printk(char const* fmt,
+__attribute__((target("general-regs-only"))) s32 printk(char const* fmt,
     ...)
 {
     cli();
 
     va_list args;
     va_start(args, fmt);
-    int32_t len = kfmt(buf, fmt, args);
+    s32 len = kfmt(buf, fmt, args);
     va_end(args);
     vga_writestring(buf);
 

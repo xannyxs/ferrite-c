@@ -2,13 +2,12 @@
 #define PROCESS_H
 
 #include "arch/x86/pit.h"
-
-#include <stdint.h>
+#include "types.h"
 
 #define NUM_PROC 64
 #define TIME_QUANTUM (100 * HZ / 1000)
 
-typedef int32_t pid_t;
+typedef s32 pid_t;
 typedef enum { UNUSED,
     EMBRYO,
     SLEEPING,
@@ -16,7 +15,7 @@ typedef enum { UNUSED,
     RUNNING,
     ZOMBIE } procstate_e;
 typedef struct {
-    uint32_t edi, esi, ebx, ebp, eip;
+    u32 edi, esi, ebx, ebp, eip;
 } context_t;
 
 typedef struct process {
@@ -26,14 +25,14 @@ typedef struct process {
     context_t* context;
 
     void* pgdir;
-    uint32_t sz;
+    u32 sz;
 
-    uint32_t pending_signals;
+    u32 pending_signals;
 
     char* kstack;
     struct process* parent;
     void* channel;
-    int32_t status;
+    s32 status;
     char name[16];
 } proc_t;
 
@@ -67,9 +66,9 @@ pid_t do_fork(char const* name);
  */
 pid_t do_exec(char const* name, void (*f)(void));
 
-void do_exit(int32_t status);
+void do_exit(s32 status);
 
-pid_t do_wait(int32_t* status);
+pid_t do_wait(s32* status);
 
 void process_list(void);
 

@@ -1,8 +1,7 @@
 #include "arch/x86/idt/idt.h"
 #include "debug/debug.h"
 #include "debug/panic.h"
-
-#include <stdint.h>
+#include "types.h"
 
 #define USER_SPACE 1
 #define KERNEL_SPACE 3
@@ -92,14 +91,14 @@ reserved_by_cpu(registers_t* regs)
 // --- Handlers that HAVE an error code ---
 
 __attribute__((target("general-regs-only"), interrupt)) void
-double_fault(registers_t* regs, uint32_t error_code)
+double_fault(registers_t* regs, u32 error_code)
 {
     (void)error_code;
     panic(regs, "Double Fault");
 }
 
 __attribute__((target("general-regs-only"), interrupt)) void
-invalid_tss(registers_t* regs, uint32_t error_code)
+invalid_tss(registers_t* regs, u32 error_code)
 {
     (void)error_code;
 
@@ -107,7 +106,7 @@ invalid_tss(registers_t* regs, uint32_t error_code)
 }
 
 __attribute__((target("general-regs-only"), interrupt)) void
-segment_not_present(registers_t* regs, uint32_t error_code)
+segment_not_present(registers_t* regs, u32 error_code)
 {
     (void)error_code;
     (void)regs;
@@ -117,7 +116,7 @@ segment_not_present(registers_t* regs, uint32_t error_code)
 }
 
 __attribute__((target("general-regs-only"), interrupt)) void
-stack_segment_fault(registers_t* regs, uint32_t error_code)
+stack_segment_fault(registers_t* regs, u32 error_code)
 {
     (void)error_code;
     (void)regs;
@@ -127,7 +126,7 @@ stack_segment_fault(registers_t* regs, uint32_t error_code)
 }
 
 __attribute__((target("general-regs-only"), interrupt)) void
-general_protection_fault(registers_t* regs, uint32_t error_code)
+general_protection_fault(registers_t* regs, u32 error_code)
 {
     (void)error_code;
     if ((regs->cs & 3) == 0) {
@@ -138,7 +137,7 @@ general_protection_fault(registers_t* regs, uint32_t error_code)
 }
 
 __attribute__((target("general-regs-only"), interrupt)) void
-page_fault(registers_t* regs, uint32_t error_code)
+page_fault(registers_t* regs, u32 error_code)
 {
     (void)error_code;
     if ((regs->cs & KERNEL_SPACE) == 0) {
