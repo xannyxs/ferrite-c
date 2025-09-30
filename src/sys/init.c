@@ -5,17 +5,17 @@
 #include "memory/page.h"
 #include "memory/vmm.h"
 #include "sys/process.h"
+#include "types.h"
 
 #ifdef __TEST
 #    include "tests/tests.h"
 #endif
 
 #include <stdbool.h>
-#include <stdint.h>
 
 extern proc_t ptables[NUM_PROC];
-extern uint32_t pid_counter;
-extern uint32_t page_directory[1024];
+extern u32 pid_counter;
+extern u32 page_directory[1024];
 
 proc_t* initial_proc;
 
@@ -46,7 +46,7 @@ void init_process(void)
     printk("Init: Created child PID %d with PID %d\n", pid, current_proc->pid);
 
     while (true) {
-        for (int32_t i = 0; i < NUM_PROC; i++) {
+        for (s32 i = 0; i < NUM_PROC; i++) {
             proc_t* p = &ptables[i];
             if (p->state == ZOMBIE && p->parent == current_proc) {
                 p->state = UNUSED;
@@ -74,12 +74,12 @@ void create_initial_process(void)
               "process");
     }
 
-    uint32_t* sp = (uint32_t*)((char*)init->kstack + PAGE_SIZE);
-    *--sp = (uint32_t)init_process; // EIP - function to execute
-    *--sp = 0;                      // EBP
-    *--sp = 0;                      // EBX
-    *--sp = 0;                      // ESI
-    *--sp = 0;                      // EDI
+    u32* sp = (u32*)((char*)init->kstack + PAGE_SIZE);
+    *--sp = (u32)init_process; // EIP - function to execute
+    *--sp = 0;                 // EBP
+    *--sp = 0;                 // EBX
+    *--sp = 0;                 // ESI
+    *--sp = 0;                 // EDI
     init->context = (context_t*)sp;
 
     strlcpy(init->name, "init", sizeof(init->name));

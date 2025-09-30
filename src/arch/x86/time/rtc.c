@@ -2,15 +2,15 @@
 #include "arch/x86/io.h"
 #include "arch/x86/time/time.h"
 #include "drivers/printk.h"
+#include "types.h"
 
 #include <stdbool.h>
-#include <stdint.h>
 
 #define RTC_REG_A 0x0A
 #define RTC_REG_B 0x0B
 #define BCD_TO_BIN(n) ((n >> 4) * 10) + (n & 0x0F);
 
-static inline uint8_t read_rtc_register(int32_t reg)
+static inline u8 read_rtc_register(s32 reg)
 {
     outb(0x70, reg);
     return inb(0x71);
@@ -43,7 +43,7 @@ void rtc_init(void)
     rtc_time_t time;
 
     outb(0x70, 0x8B);           // Select Register B, disable NMI
-    uint8_t prev_b = inb(0x71); // Read current value of Register B
+    u8 prev_b = inb(0x71);      // Read current value of Register B
     outb(0x70, 0x8B);           // Re-select Register B
     outb(0x71, prev_b & ~0x40); // Write back with bit 6 (PIE) cleared
 

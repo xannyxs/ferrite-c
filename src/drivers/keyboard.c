@@ -1,25 +1,22 @@
-#include "drivers/keyboard.h"
-#include "arch/x86/idt/idt.h"
 #include "drivers/console.h"
-#include "drivers/printk.h"
 #include "sys/process.h"
+#include "types.h"
 
 #include <stdbool.h>
-#include <stdint.h>
 
 static bool SHIFT_PRESSED = false;
 static bool CTRL_PRESSED = false;
 
 extern struct {
-    uint8_t buf[256];
-    int32_t head; // Read position
-    int32_t tail; // Write position
+    u8 buf[256];
+    s32 head; // Read position
+    s32 tail; // Write position
     pid_t shell_pid;
 } tty;
 
 /* Private */
 
-char scancode_to_ascii(uint8_t scan_code)
+char scancode_to_ascii(u8 scan_code)
 {
     static char const scancode_map_no_shift[] = {
         0, 0, '1', '2', '3', '4', '5', '6', '7', '8', '9', '0',
@@ -65,7 +62,7 @@ char scancode_to_ascii(uint8_t scan_code)
 
 /* Public */
 
-void keyboard_put(uint8_t scancode)
+void keyboard_put(u8 scancode)
 {
     switch (scancode) {
     case 29:

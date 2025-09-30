@@ -1,8 +1,6 @@
 #include "arch/x86/idt/idt.h"
 #include "arch/x86/entry.h"
 
-#include <stdint.h>
-
 #define NUM_EXCEPTION_HANDLERS 17
 #define NUM_HARDWARE_HANDLERS 3
 
@@ -34,7 +32,7 @@ interrupt_hardware_t const HARDWARE_HANDLERS[NUM_HARDWARE_HANDLERS] = {
     { 0x20, timer_handler }, { 0x21, keyboard_handler }, { 0x27, spurious_handler }
 };
 
-static void idt_set_gate(uint32_t num, uint32_t handler)
+static void idt_set_gate(u32 num, u32 handler)
 {
     idt_entries[num].pointer_low = (handler & 0xffff);
     idt_entries[num].selector = 0x08;
@@ -46,28 +44,28 @@ static void idt_set_gate(uint32_t num, uint32_t handler)
 void idt_init(void)
 {
     // Exceptions
-    for (int32_t i = 0; i < NUM_EXCEPTION_HANDLERS; i += 1) {
-        uint32_t handler = 0;
+    for (s32 i = 0; i < NUM_EXCEPTION_HANDLERS; i += 1) {
+        u32 handler = 0;
 
         if (EXCEPTION_HANDLERS[i].type == REGULAR) {
-            handler = (uint32_t)EXCEPTION_HANDLERS[i].handler.regular;
+            handler = (u32)EXCEPTION_HANDLERS[i].handler.regular;
         } else if (EXCEPTION_HANDLERS[i].type == WITH_ERROR_CODE) {
-            handler = (uint32_t)EXCEPTION_HANDLERS[i].handler.with_error_code;
+            handler = (u32)EXCEPTION_HANDLERS[i].handler.with_error_code;
         }
 
         idt_set_gate(i, handler);
     }
 
     // Hardware Interrupts
-    for (int32_t i = 0; i < NUM_HARDWARE_HANDLERS; i += 1) {
-        idt_set_gate(HARDWARE_HANDLERS[i].hex, (uint32_t)HARDWARE_HANDLERS[i].func);
+    for (s32 i = 0; i < NUM_HARDWARE_HANDLERS; i += 1) {
+        idt_set_gate(HARDWARE_HANDLERS[i].hex, (u32)HARDWARE_HANDLERS[i].func);
     }
 
     // Syscalls
-    idt_set_gate(0x80, (uint32_t)syscall_handler);
+    idt_set_gate(0x80, (u32)syscall_handler);
 
     idt_ptr.limit = sizeof(entry_t) * IDT_ENTRY_COUNT - 1;
-    idt_ptr.base = (uint32_t)&idt_entries;
+    idt_ptr.base = (u32)&idt_entries;
 
     __asm__ __volatile__("lidt %0" : : "m"(idt_ptr));
 }
