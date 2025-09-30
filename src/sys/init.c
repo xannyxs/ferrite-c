@@ -64,7 +64,7 @@ void create_initial_process(void) {
   init->parent = NULL;
 
   init->pid = pid_counter;
-  pid_counter++;
+  pid_counter += 1;
 
   strlcpy(init->name, "init", sizeof(init->name));
   init->kstack = get_free_page();
@@ -85,11 +85,5 @@ void create_initial_process(void) {
   *--sp = 0;                      // EDI
 
   init->context = (context_t *)sp;
-
   init->state = READY;
-
-  printk("init_process function at: 0x%x\n", (uint32_t)init_process);
-  printk("init->kstack at: 0x%x\n", (uint32_t)init->kstack);
-  printk("init->context at: 0x%x\n", (uint32_t)init->context);
-  printk("scheduler_stack would be at: 0x%x\n", (uint32_t)get_free_page());
 }
