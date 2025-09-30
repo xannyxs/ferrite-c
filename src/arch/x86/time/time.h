@@ -3,7 +3,7 @@
 
 #include "rtc.h"
 
-typedef unsigned long time_t;
+typedef unsigned long long time_t;
 
 void gettime(rtc_time_t* t);
 

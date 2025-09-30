@@ -7,7 +7,7 @@
 #define NUM_TIMERS 16
 
 extern context_t* scheduler_context;
-extern unsigned long volatile ticks;
+extern unsigned long long volatile ticks;
 extern proc_t* current_proc;
 static timer_t timers[NUM_TIMERS];
 

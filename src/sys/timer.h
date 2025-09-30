@@ -7,7 +7,7 @@ typedef struct timer {
     struct timer* next;
     struct timer* prev;
 
-    unsigned long expires;
+    unsigned long long expires;
     void* data;
     void (*function)(void*);
 } timer_t;
