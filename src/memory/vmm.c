@@ -200,5 +200,5 @@ void vmm_init_pages(void) {
     abort("Scratch Page is already taken\n");
   }
 
-  visualize_paging(8, 8);
+  // visualize_paging(8, 8);
 }

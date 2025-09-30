@@ -72,15 +72,24 @@ void create_initial_process(void) {
     abort("create_first_process: initial process could not create a stack");
   }
 
-  init->pgdir = page_directory;
+  init->pgdir = setup_kvm();
+  if (!init->pgdir) {
+    abort("create_first_process: initial process could not create a pgdir");
+  }
 
   uint32_t *sp = (uint32_t *)((char *)init->kstack + PAGE_SIZE);
-  *--sp = (uint32_t)init_process; // Function to execute
-  *--sp = 0;                      // ebp
-  *--sp = 0;                      // ebx
-  *--sp = 0;                      // esi
-  *--sp = 0;                      // edi
+  *--sp = (uint32_t)init_process; // EIP - function to execute
+  *--sp = 0;                      // EBP
+  *--sp = 0;                      // EBX
+  *--sp = 0;                      // ESI
+  *--sp = 0;                      // EDI
+
   init->context = (context_t *)sp;
 
   init->state = READY;
+
+  printk("init_process function at: 0x%x\n", (uint32_t)init_process);
+  printk("init->kstack at: 0x%x\n", (uint32_t)init->kstack);
+  printk("init->context at: 0x%x\n", (uint32_t)init->context);
+  printk("scheduler_stack would be at: 0x%x\n", (uint32_t)get_free_page());
 }
