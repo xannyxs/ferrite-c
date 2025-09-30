@@ -1,12 +1,10 @@
 #include "debug/debug.h"
 #include "video/vga.h"
-
 #include <stdarg.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <string.h>
-
 #if defined(__print_serial)
 #include "drivers/serial.h"
 #endif
@@ -15,12 +13,15 @@ char buf[1024];
 
 /* Private */
 
-static char *simple_number(char *str, long num, int32_t base, bool is_signed) {
+__attribute__((target("general-regs-only"))) static char *
+simple_number(char *str, long num, int32_t base, bool is_signed, int32_t width,
+              bool zero_pad) {
   char tmp[36];
-  int i = 0;
+  int32_t i = 0;
+  bool negative = false;
 
   if (is_signed && base == 10 && num < 0) {
-    *str++ = '-';
+    negative = true;
     num = -num;
   }
 
@@ -34,6 +35,23 @@ static char *simple_number(char *str, long num, int32_t base, bool is_signed) {
     }
   }
 
+  int32_t num_len = i + (negative ? 1 : 0);
+  if (width > num_len) {
+    int32_t pad_count = width - num_len;
+    if (zero_pad && negative) {
+      *str++ = '-';
+      negative = false;
+    }
+    char pad_char = zero_pad ? '0' : ' ';
+    while (pad_count-- > 0) {
+      *str++ = pad_char;
+    }
+  }
+
+  if (negative) {
+    *str++ = '-';
+  }
+
   while (i-- > 0) {
     *str++ = tmp[i];
   }
@@ -41,16 +59,37 @@ static char *simple_number(char *str, long num, int32_t base, bool is_signed) {
   return str;
 }
 
-static int kfmt(char *buf, const char *fmt, va_list args) {
+__attribute__((target("general-regs-only"))) static int32_t
+kfmt(char *buf, const char *fmt, va_list args) {
   char *str = buf;
-
   for (; *fmt; ++fmt) {
     if (*fmt != '%') {
       *str++ = *fmt;
       continue;
     }
-
     ++fmt;
+
+    bool zero_pad = false;
+    if (*fmt == '0') {
+      zero_pad = true;
+      ++fmt;
+    }
+
+    int32_t width = 0;
+    while (*fmt >= '0' && *fmt <= '9') {
+      width = width * 10 + (*fmt - '0');
+      ++fmt;
+    }
+
+    int32_t precision = -1;
+    if (*fmt == '.') {
+      ++fmt;
+      precision = 0;
+      while (*fmt >= '0' && *fmt <= '9') {
+        precision = precision * 10 + (*fmt - '0');
+        ++fmt;
+      }
+    }
 
     switch (*fmt) {
     case 'c': {
@@ -62,33 +101,39 @@ static int kfmt(char *buf, const char *fmt, va_list args) {
       if (!s) {
         s = "<NULL>";
       }
-
       size_t len = strlen(s);
-
+      if (precision >= 0 && (size_t)precision < len) {
+        len = precision;
+      }
+      // Apply padding (strings are left-padded)
+      if (width > (int32_t)len) {
+        int32_t pad = width - len;
+        while (pad-- > 0) {
+          *str++ = ' ';
+        }
+      }
       for (size_t i = 0; i < len; ++i) {
         *str++ = *s++;
       }
       break;
     }
-
     case 'x':
     case 'X': {
-      str = simple_number(str, va_arg(args, unsigned long), 16, 1);
+      str = simple_number(str, va_arg(args, unsigned long), 16, 0, width,
+                          zero_pad);
       break;
     }
-
     case 'd':
     case 'i': {
       long i = va_arg(args, long);
-      str = simple_number(str, i, 10, 1);
+      str = simple_number(str, i, 10, 1, width, zero_pad);
       break;
     }
     case 'u': {
       unsigned long u = va_arg(args, unsigned long);
-      str = simple_number(str, u, 10, 0);
+      str = simple_number(str, u, 10, 0, width, zero_pad);
       break;
     }
-
     default: {
       *str++ = '%';
       if (*fmt) {
@@ -100,21 +145,20 @@ static int kfmt(char *buf, const char *fmt, va_list args) {
     }
     }
   }
-
   *str = '\0';
   return str - buf;
 }
 
 /* Public */
 
-int32_t printk(const char *fmt, ...) {
+__attribute__((target("general-regs-only"))) int32_t printk(const char *fmt,
+                                                            ...) {
   cli();
-  va_list args;
 
+  va_list args;
   va_start(args, fmt);
   int32_t len = kfmt(buf, fmt, args);
   va_end(args);
-
   vga_writestring(buf);
 
 #if defined(__print_serial)

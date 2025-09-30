@@ -4,7 +4,6 @@
 #include "lib/stdlib.h"
 #include "memory/buddy_allocator/buddy.h"
 #include "memory/consts.h"
-#include "memory/kmalloc.h"
 #include "memory/memblock.h"
 #include "memory/pmm.h"
 #include "page.h"

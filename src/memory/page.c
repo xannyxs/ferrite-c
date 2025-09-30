@@ -11,11 +11,11 @@
  * virtual address, zeros it, and returns the usable virtual address.
  */
 void *get_free_page(void) {
-
   void *paddr = buddy_alloc(0);
   if (!paddr) {
     return NULL;
   }
+
   void *vaddr = (void *)P2V_WO((uintptr_t)paddr);
   memset(vaddr, 0, PAGE_SIZE);
 
