@@ -4,14 +4,13 @@
 #include "drivers/printk.h"
 #include "lib/math.h"
 #include "lib/stdlib.h"
+#include "lib/string.h"
 #include "memory/consts.h"
 #include "memory/memblock.h"
 #include "memory/vmm.h"
+#include "types.h"
 
 #include <stdbool.h>
-#include <stddef.h>
-#include <stdint.h>
-#include <string.h>
 
 static buddy_allocator_t g_buddy = { 0 };
 
@@ -19,8 +18,8 @@ static buddy_allocator_t g_buddy = { 0 };
 
 static int buddy_get_bit(int bit_index)
 {
-    uint32_t byte_index = bit_index / 8;
-    uint32_t bit_in_byte = bit_index % 8;
+    u32 byte_index = bit_index / 8;
+    u32 bit_in_byte = bit_index % 8;
 
     if (byte_index >= g_buddy.map_size) {
         return 1;
@@ -71,14 +70,14 @@ void buddy_visualize(void)
     printk("\n-------------------------------------\n");
 }
 
-static bool is_block_free(uint32_t i, uint32_t order)
+static bool is_block_free(u32 i, u32 order)
 {
-    uint32_t blocks_to_check = 1 << order;
+    u32 blocks_to_check = 1 << order;
 
-    for (uint32_t j = 0; j < blocks_to_check; j++) {
-        uint32_t current_page_index = i + j;
-        uint32_t byte_index = current_page_index / 8;
-        uint32_t bit_in_byte = current_page_index % 8;
+    for (u32 j = 0; j < blocks_to_check; j++) {
+        u32 current_page_index = i + j;
+        u32 byte_index = current_page_index / 8;
+        u32 bit_in_byte = current_page_index % 8;
 
         if (byte_index >= g_buddy.map_size) {
             return false;
@@ -92,7 +91,7 @@ static bool is_block_free(uint32_t i, uint32_t order)
     return true;
 }
 
-void remove_from_free_list(uintptr_t paddr, uint32_t order)
+void remove_from_free_list(u32 paddr, u32 order)
 {
     if (order > g_buddy.max_order) {
         abort("Invalid order provided to remove_from_free_list");
@@ -100,7 +99,7 @@ void remove_from_free_list(uintptr_t paddr, uint32_t order)
 
     buddy_node_t* head = g_buddy.free_lists[order];
 
-    if ((uintptr_t)head == paddr) {
+    if ((u32)head == paddr) {
         g_buddy.free_lists[order] = head->next;
         return;
     }
@@ -109,7 +108,7 @@ void remove_from_free_list(uintptr_t paddr, uint32_t order)
     buddy_node_t* current = head->next;
 
     while (current) {
-        if ((uintptr_t)current == paddr) {
+        if ((u32)current == paddr) {
             prev->next = current->next;
             return;
         }
@@ -120,15 +119,15 @@ void remove_from_free_list(uintptr_t paddr, uint32_t order)
     abort("Failed to remove address from free list: address not found!");
 }
 
-static void mark_free(uintptr_t paddr, uint32_t order)
+static void mark_free(u32 paddr, u32 order)
 {
-    uint32_t i = (paddr - g_buddy.base) / PAGE_SIZE;
-    uint32_t blocks_to_mark = 1 << order;
+    u32 i = (paddr - g_buddy.base) / PAGE_SIZE;
+    u32 blocks_to_mark = 1 << order;
 
-    for (uint32_t j = 0; j < blocks_to_mark; j++) {
-        uint32_t current = i + j;
-        uint32_t byte_index = current / 8;
-        uint32_t bit_in_byte = current % 8;
+    for (u32 j = 0; j < blocks_to_mark; j++) {
+        u32 current = i + j;
+        u32 byte_index = current / 8;
+        u32 bit_in_byte = current % 8;
 
         if (byte_index >= g_buddy.map_size) {
             abort("Allocation address out of map bounds!");
@@ -138,15 +137,15 @@ static void mark_free(uintptr_t paddr, uint32_t order)
     }
 }
 
-static void mark_allocated(uintptr_t paddr, uint32_t order)
+static void mark_allocated(u32 paddr, u32 order)
 {
-    uint32_t i = (paddr - g_buddy.base) / PAGE_SIZE;
-    uint32_t blocks_to_mark = 1 << order;
+    u32 i = (paddr - g_buddy.base) / PAGE_SIZE;
+    u32 blocks_to_mark = 1 << order;
 
-    for (uint32_t j = 0; j < blocks_to_mark; j++) {
-        uint32_t current = i + j;
-        uint32_t byte_index = current / 8;
-        uint32_t bit_in_byte = current % 8;
+    for (u32 j = 0; j < blocks_to_mark; j++) {
+        u32 current = i + j;
+        u32 byte_index = current / 8;
+        u32 bit_in_byte = current % 8;
 
         if (byte_index >= g_buddy.map_size) {
             abort("Allocation address out of map bounds!");
@@ -156,7 +155,7 @@ static void mark_allocated(uintptr_t paddr, uint32_t order)
     }
 }
 
-static void buddy_list_add(uintptr_t paddr, uint32_t k)
+static void buddy_list_add(u32 paddr, u32 k)
 {
     vmm_remap_page(SCRATCH_VADDR, (void*)paddr, 0);
     buddy_node_t* mapped_buddy = (buddy_node_t*)SCRATCH_VADDR;
@@ -169,16 +168,16 @@ static void buddy_list_add(uintptr_t paddr, uint32_t k)
 
 size_t buddy_get_total_memory(void) { return g_buddy.size; }
 
-void buddy_dealloc(uintptr_t addr, uint32_t order)
+void buddy_dealloc(u32 addr, u32 order)
 {
     mark_free(addr, order);
 
-    uintptr_t current_addr = addr;
-    uint32_t current_order = order;
+    u32 current_addr = addr;
+    u32 current_order = order;
 
     while (current_order < g_buddy.max_order) {
         size_t block_size = PAGE_SIZE << current_order;
-        uintptr_t buddy_addr = current_addr ^ block_size;
+        u32 buddy_addr = current_addr ^ block_size;
 
         if (!is_block_free(buddy_addr, current_order)) {
             break;
@@ -193,13 +192,13 @@ void buddy_dealloc(uintptr_t addr, uint32_t order)
     buddy_list_add(current_addr, current_order);
 }
 
-void* buddy_alloc(uint32_t order)
+void* buddy_alloc(u32 order)
 {
     if (order > g_buddy.max_order) {
         return NULL;
     }
 
-    uint32_t k = order;
+    u32 k = order;
     while (k < g_buddy.max_order && !g_buddy.free_lists[k]) {
         k += 1;
     }
@@ -210,7 +209,7 @@ void* buddy_alloc(uint32_t order)
     }
 
     buddy_node_t* node = g_buddy.free_lists[k];
-    uintptr_t block_addr = (uintptr_t)node;
+    u32 block_addr = (u32)node;
 
     vmm_remap_page(SCRATCH_VADDR, (void*)node, 0);
     buddy_node_t* mapped_node = (buddy_node_t*)SCRATCH_VADDR;
@@ -218,7 +217,7 @@ void* buddy_alloc(uint32_t order)
 
     while (k > order) {
         k -= 1;
-        uintptr_t buddy_addr = block_addr + (PAGE_SIZE << k);
+        u32 buddy_addr = block_addr + (PAGE_SIZE << k);
 
         buddy_list_add(buddy_addr, k);
     }
@@ -229,20 +228,20 @@ void* buddy_alloc(uint32_t order)
 
 void buddy_init(void)
 {
-    uintptr_t start_addr = (uintptr_t)get_next_free_addr();
-    uintptr_t end_addr = (uintptr_t)get_heap_end_addr();
+    u32 start_addr = (u32)get_next_free_addr();
+    u32 end_addr = (u32)get_heap_end_addr();
 
     size_t num_pages = (end_addr - start_addr) / PAGE_SIZE;
     size_t map_size_needed = CEIL_DIV(num_pages, 8);
     g_buddy.map_size = ALIGN(map_size_needed, sizeof(size_t));
 
-    g_buddy.map = (uint8_t*)memblock(g_buddy.map_size);
+    g_buddy.map = (u8*)memblock(g_buddy.map_size);
     if (!g_buddy.map) {
         abort("Could not allocate the bitmap for Buddy Allocator");
     }
     memset(g_buddy.map, 0, g_buddy.map_size);
 
-    g_buddy.base = ALIGN((uintptr_t)g_buddy.map + g_buddy.map_size, PAGE_SIZE);
+    g_buddy.base = ALIGN((u32)g_buddy.map + g_buddy.map_size, PAGE_SIZE);
     g_buddy.size = end_addr - g_buddy.base;
     if (g_buddy.size < PAGE_SIZE) {
         abort("Not enough memory for the buddy pool");
@@ -250,15 +249,15 @@ void buddy_init(void)
 
     g_buddy.max_order = floor_log2(g_buddy.size / PAGE_SIZE);
 
-    for (int32_t i = 0; i <= MAX_ORDER; i++) {
+    for (s32 i = 0; i <= MAX_ORDER; i++) {
         g_buddy.free_lists[i] = NULL;
     }
 
     size_t remaining = g_buddy.size;
-    uintptr_t current_addr = g_buddy.base;
+    u32 current_addr = g_buddy.base;
 
     while (remaining >= PAGE_SIZE) {
-        uint32_t order = floor_log2(remaining / PAGE_SIZE);
+        u32 order = floor_log2(remaining / PAGE_SIZE);
         if (order > g_buddy.max_order) {
             order = g_buddy.max_order;
         }

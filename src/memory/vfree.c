@@ -7,8 +7,6 @@
 #include "memory/vmalloc.h"
 #include "memory/vmm.h"
 
-#include <stdint.h>
-
 void vfree(void* ptr)
 {
     if (!ptr) {
@@ -26,7 +24,7 @@ void vfree(void* ptr)
         abort("vfree() is used on a kmalloc() pointer\n");
     }
 
-    uintptr_t block_vaddr = (uintptr_t)header;
+    u32 block_vaddr = (u32)header;
     size_t block_size = header->size;
 
     free_list_t* freed_block = (free_list_t*)block_vaddr;
@@ -35,12 +33,12 @@ void vfree(void* ptr)
     free_list_t* current = get_free_list_head();
     free_list_t* prev = NULL;
 
-    while (current && (uintptr_t)current < (uintptr_t)freed_block) {
+    while (current && (u32)current < (u32)freed_block) {
         prev = current;
         current = current->next;
     }
 
-    if (prev && (uintptr_t)prev + prev->size == (uintptr_t)freed_block) {
+    if (prev && (u32)prev + prev->size == (u32)freed_block) {
         prev->size += freed_block->size;
         freed_block = prev;
     } else {
@@ -51,7 +49,7 @@ void vfree(void* ptr)
         }
     }
 
-    if (current && (uintptr_t)freed_block + freed_block->size == (uintptr_t)current) {
+    if (current && (u32)freed_block + freed_block->size == (u32)current) {
         freed_block->size += current->size;
         freed_block->next = current->next;
     } else {
@@ -59,10 +57,10 @@ void vfree(void* ptr)
     }
 
     for (size_t i = 1; i < block_size / PAGE_SIZE; i++) {
-        uintptr_t current_vaddr = block_vaddr + i * PAGE_SIZE;
+        u32 current_vaddr = block_vaddr + (i * PAGE_SIZE);
         void* paddr = vmm_unmap_page((void*)current_vaddr);
         if (paddr) {
-            buddy_dealloc((uintptr_t)paddr, 0);
+            buddy_dealloc((u32)paddr, 0);
         }
     }
 }

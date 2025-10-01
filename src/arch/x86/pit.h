@@ -2,8 +2,7 @@
 #define PIT_H
 
 #include "arch/x86/io.h"
-
-#include <stdint.h>
+#include "types.h"
 
 #ifndef HZ
 #    define HZ 100
@@ -21,7 +20,7 @@
          << (SHIFT_SCALE - SHIFT_HZ))                                                                                        \
         / HZ)
 
-static inline void set_pit_count(uint32_t const count)
+static inline void set_pit_count(u32 const count)
 {
     __asm__ __volatile__("cli");
 

@@ -1,15 +1,14 @@
 #include "arch/x86/io.h"
 #include "lib/stdlib.h"
+#include "types.h"
 
-#include <stdint.h>
-
-uint16_t const PORT = 0x3f8;
+u16 const PORT = 0x3f8;
 
 /* Private */
 
-static uint8_t is_transmit_empty() { return inb(PORT + 5) & 0x20; }
+static u8 is_transmit_empty(void) { return inb(PORT + 5) & 0x20; }
 
-static void serial_write_byte(uint8_t a)
+static void serial_write_byte(u8 a)
 {
     while (is_transmit_empty() == 0) {
     }
@@ -19,9 +18,9 @@ static void serial_write_byte(uint8_t a)
 
 /* Public */
 
-void serial_write_string(char* s)
+void serial_write_string(char const* s)
 {
-    for (int32_t i = 0; s[i]; i++) {
+    for (s32 i = 0; s[i]; i++) {
         serial_write_byte(s[i]);
     }
 }

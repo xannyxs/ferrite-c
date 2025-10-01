@@ -1,9 +1,7 @@
 #ifndef KEYBOARD_H
 #define KEYBOARD_H
 
-#include "arch/x86/idt/idt.h"
-#include <stdbool.h>
-#include <stdint.h>
+#include "types.h"
 
 #define KEYBOARD_DATA_PORT 0x60
 #define KEYBOARD_STATUS_PORT 0x64
@@ -31,8 +29,8 @@ typedef enum keyboard_key {
     KeyT = 0x14,
     KeyY = 0x15,
     KeyU = 0x16,
-    KeyI = 0x17,
-    KeyO = 0x18,
+    KeyI = 0x17, // NOLINT(*-confusable-identifiers)
+    KeyO = 0x18, // NOLINT(*-confusable-identifiers)
     KeyP = 0x19,
     KeyOpenBrace = 0x1a,
     KeyCloseBrace = 0x1b,
@@ -136,6 +134,6 @@ typedef enum keyboard_key {
     KeyPause = 0xef,
 } keyboard_key_t;
 
-void keyboard_put(uint8_t scancode);
+void keyboard_put(u8 scancode);
 
 #endif /* KEYBOARD_H */

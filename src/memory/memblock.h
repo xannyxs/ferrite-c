@@ -1,8 +1,8 @@
 #ifndef MEMBLOCK_H
 #define MEMBLOCK_H
 
+#include "types.h"
 #include <stdbool.h>
-#include <stddef.h>
 
 void memblock_init(void);
 

@@ -1,10 +1,13 @@
 #ifdef __TEST
 
 #    include "tests/tests.h"
+#    include "types.h"
 
-extern uint64_t volatile ticks;
-extern uint32_t tests_passed;
-extern uint32_t tests_failed;
+#    include <stdbool.h>
+
+extern unsigned long long volatile ticks;
+extern u32 tests_passed;
+extern u32 tests_failed;
 static int volatile interrupt_handled = 0;
 
 TEST(breakpoint_instruction)
@@ -17,12 +20,12 @@ TEST(breakpoint_instruction)
 
 TEST(timer_interrupt_fires)
 {
-    uint32_t start_ticks = ticks;
+    u32 start_ticks = ticks;
 
     for (int volatile i = 0; i < 10000000; i++)
         ;
 
-    uint32_t end_ticks = ticks;
+    u32 end_ticks = ticks;
     ASSERT(end_ticks > start_ticks, "Timer should have incremented");
     printk("  Timer ticks: %u -> %u\n", start_ticks, end_ticks);
     return true;

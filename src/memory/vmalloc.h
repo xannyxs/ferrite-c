@@ -2,7 +2,6 @@
 #define VMALLOC_H
 
 #include "memory/memory.h"
-#include <stddef.h>
 
 size_t vsize(void* ptr);
 

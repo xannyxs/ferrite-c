@@ -4,9 +4,7 @@
 #include "memory/buddy_allocator/buddy.h"
 #include "memory/consts.h"
 #include "memory/memory.h"
-
-#include <stddef.h>
-#include <stdint.h>
+#include "types.h"
 
 /* Public */
 
@@ -27,14 +25,14 @@ void* kmalloc(size_t n)
 
     size_t total_size = ALIGN(n + sizeof(block_header_t), PAGE_SIZE);
 
-    uint32_t num_pages = CEIL_DIV(total_size, PAGE_SIZE);
-    uint32_t order = ceil_log2(num_pages);
+    u32 num_pages = CEIL_DIV(total_size, PAGE_SIZE);
+    u32 order = ceil_log2(num_pages);
     void* paddr = buddy_alloc(order);
     if (!paddr) {
         return NULL;
     }
 
-    uintptr_t vaddr = P2V_WO((uintptr_t)paddr);
+    u32 vaddr = P2V_WO((u32)paddr);
     block_header_t* header = (block_header_t*)vaddr;
     header->magic = MAGIC;
     header->size = total_size;

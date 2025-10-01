@@ -6,32 +6,29 @@
 #include "lib/stdlib.h"
 #include "lib/string.h"
 #include "memory/consts.h"
-#include "memory/kmalloc.h"
-#include "memory/memory.h"
 #include "memory/page.h"
 #include "memory/vmm.h"
 #include "sys/signal/signal.h"
 #include "sys/timer.h"
+#include "types.h"
 
 #include <stdbool.h>
-#include <stddef.h>
-#include <stdint.h>
 
-extern uint32_t page_directory[1024];
+extern u32 page_directory[1024];
 
 proc_t ptables[NUM_PROC];
 proc_t* current_proc = NULL;
 context_t* scheduler_context;
-uint32_t pid_counter = 1;
+s32 pid_counter = 1;
 
-int32_t ticks_remaining;
+s32 ticks_remaining;
 bool volatile need_resched = false;
 
 /* Private */
 
 proc_t* __alloc_proc(void)
 {
-    for (int32_t i = 0; i < NUM_PROC; i += 1) {
+    for (s32 i = 0; i < NUM_PROC; i += 1) {
         if (ptables[i].state == UNUSED) {
             proc_t* p = &ptables[i];
 
@@ -67,7 +64,7 @@ inline proc_t* myproc(void) { return current_proc; }
 
 inline proc_t* find_process(pid_t pid)
 {
-    for (int32_t i = 0; i < NUM_PROC; i += 1) {
+    for (s32 i = 0; i < NUM_PROC; i += 1) {
         if (ptables[i].pid == pid) {
             return &ptables[i];
         }
@@ -78,7 +75,7 @@ inline proc_t* find_process(pid_t pid)
 
 void init_ptables(void)
 {
-    for (int32_t i = 0; i < NUM_PROC; i += 1) {
+    for (s32 i = 0; i < NUM_PROC; i += 1) {
         ptables[i].state = UNUSED;
     }
 }
@@ -112,12 +109,12 @@ void wakeup(void* channel)
     }
 }
 
-void do_exit(int32_t status)
+void do_exit(s32 status)
 {
     proc_t* p = myproc();
     proc_t* init = initproc();
 
-    for (int32_t i = 0; i < NUM_PROC; i++) {
+    for (s32 i = 0; i < NUM_PROC; i++) {
         if (ptables[i].parent != p) {
             continue;
         }
@@ -138,14 +135,13 @@ void do_exit(int32_t status)
     __builtin_unreachable();
 }
 
-pid_t do_wait(int32_t* status)
+pid_t do_wait(s32* status)
 {
     while (true) {
-        proc_t* p;
         bool have_kids = false;
 
-        for (int32_t i = 0; i < NUM_PROC; i += 1) {
-            p = &ptables[i];
+        for (s32 i = 0; i < NUM_PROC; i += 1) {
+            proc_t* p = &ptables[i];
 
             if (p->parent != myproc()) {
                 continue;
@@ -182,7 +178,7 @@ pid_t do_wait(int32_t* status)
 
 void* setup_kvm(void)
 {
-    uint32_t* pgdir = (uint32_t*)get_free_page();
+    u32* pgdir = (u32*)get_free_page();
     if (!pgdir) {
         return NULL;
     }
@@ -191,7 +187,7 @@ void* setup_kvm(void)
         pgdir[i] = page_directory[i];
     }
 
-    pgdir[1023] = V2P_WO((uintptr_t)pgdir) | PTE_P | PTE_W | PTE_U;
+    pgdir[1023] = V2P_WO((u32)pgdir) | PTE_P | PTE_W | PTE_U;
 
     return pgdir;
 }
@@ -203,12 +199,12 @@ pid_t do_exec(char const* name, void (*f)(void))
         return -1;
     }
 
-    uint32_t* ctx = (uint32_t*)((char*)p->kstack + PAGE_SIZE);
-    *(--ctx) = (uint32_t)f; // EIP
-    *(--ctx) = 0;           // EBP
-    *(--ctx) = 0;           // EBX
-    *(--ctx) = 0;           // ESI
-    *(--ctx) = 0;           // EDI
+    u32* ctx = (u32*)(p->kstack + PAGE_SIZE);
+    *(--ctx) = (u32)f; // EIP
+    *(--ctx) = 0;      // EBP
+    *(--ctx) = 0;      // EBX
+    *(--ctx) = 0;      // ESI
+    *(--ctx) = 0;      // EDI
     p->context = (context_t*)ctx;
 
     strlcpy(p->name, name, sizeof(p->name));
@@ -224,15 +220,15 @@ pid_t do_fork(char const* name)
         return -1;
     }
 
-    uint32_t caller_return;
+    u32 caller_return;
     __asm__ volatile("movl 4(%%ebp), %0" : "=r"(caller_return));
-    uint32_t* ctx = (uint32_t*)((char*)p->kstack + PAGE_SIZE);
-    *(--ctx) = caller_return;      // Return address for fork_ret (on stack)
-    *(--ctx) = (uint32_t)fork_ret; // EIP
-    *(--ctx) = 0;                  // EBP
-    *(--ctx) = 0;                  // EBX
-    *(--ctx) = 0;                  // ESI
-    *(--ctx) = 0;                  // EDI
+    u32* ctx = (u32*)(p->kstack + PAGE_SIZE);
+    *(--ctx) = caller_return; // Return address for fork_ret (on stack)
+    *(--ctx) = (u32)fork_ret; // EIP
+    *(--ctx) = 0;             // EBP
+    *(--ctx) = 0;             // EBX
+    *(--ctx) = 0;             // ESI
+    *(--ctx) = 0;             // EDI
     p->context = (context_t*)ctx;
 
     strlcpy(p->name, name, sizeof(p->name));
@@ -266,7 +262,7 @@ void schedule(void)
 
     // FIFO - Round Robin
     while (true) {
-        for (int32_t i = 0; i < NUM_PROC; i += 1) {
+        for (s32 i = 0; i < NUM_PROC; i += 1) {
             if (ptables[i].state != READY) {
                 continue;
             }
@@ -282,9 +278,9 @@ void schedule(void)
             p->state = RUNNING;
             ticks_remaining = TIME_QUANTUM;
 
-            lcr3(V2P_WO((uintptr_t)p->pgdir));
+            lcr3(V2P_WO((u32)p->pgdir));
             swtch(&scheduler_context, p->context);
-            lcr3(V2P_WO((uintptr_t)page_directory));
+            lcr3(V2P_WO((u32)page_directory));
 
             if (current_proc && current_proc->state == RUNNING) {
                 current_proc->state = READY;

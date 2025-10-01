@@ -4,13 +4,10 @@
 #include "drivers/printk.h"
 #include "sys/process.h"
 
-#include <stddef.h>
-#include <stdint.h>
-
 #define NUM_TIMERS 16
 
 extern context_t* scheduler_context;
-extern uint64_t volatile ticks;
+extern unsigned long long volatile ticks;
 extern proc_t* current_proc;
 static timer_t timers[NUM_TIMERS];
 
@@ -20,9 +17,9 @@ void wake_up_process(void* data)
     p->state = READY;
 }
 
-int32_t add_timer(timer_t* timer)
+s32 add_timer(timer_t* timer)
 {
-    for (int32_t i = 0; i < NUM_TIMERS; i++) {
+    for (s32 i = 0; i < NUM_TIMERS; i++) {
         if (!timers[i].function) {
             timers[i] = *timer;
             return 0;
@@ -34,7 +31,7 @@ int32_t add_timer(timer_t* timer)
 
 void check_timers(void)
 {
-    for (int32_t i = 0; i < NUM_TIMERS; i += 1) {
+    for (s32 i = 0; i < NUM_TIMERS; i += 1) {
         if (timers[i].function && ticks >= timers[i].expires) {
             timers[i].function(timers[i].data);
             timers[i].function = NULL;
@@ -49,15 +46,15 @@ void check_timers(void)
  * POSIX approach would use: alarm(seconds) + pause() + SIGALRM handler
  * TODO: Implement SIGALRM-based sleep for full POSIX compliance
  */
-int32_t sleep(int32_t seconds)
+s32 ksleep(s32 seconds)
 {
     timer_t timer;
 
-    timer.expires = ticks + seconds * HZ;
+    timer.expires = ticks + (unsigned long long)seconds * HZ;
     timer.function = wake_up_process;
     timer.data = (void*)current_proc;
 
-    int32_t r = add_timer(&timer);
+    s32 r = add_timer(&timer);
     if (r < 0) {
         printk("sleep: Timer array is full");
         return -1;

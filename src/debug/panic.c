@@ -1,13 +1,14 @@
 #include "arch/x86/idt/idt.h"
 #include "drivers/video/vga.h"
+#include "types.h"
 
 #include <stdbool.h>
 
 __attribute__((target("general-regs-only"))) void
-save_stack(uint32_t stack_pointer)
+save_stack(u32 stack_pointer)
 {
     vga_writestring("\n--- STACK DUMP ---\n");
-    uint32_t* stack = (uint32_t*)stack_pointer;
+    u32* stack = (u32*)stack_pointer;
     for (int i = 0; i < 16; i++) {
         vga_write_hex(stack[i]);
         vga_putchar(' ');
@@ -54,7 +55,7 @@ panic(registers_t* regs, char const* msg)
     vga_write_hex(regs->int_no);
     vga_putchar('\n');
 
-    save_stack((uint32_t)regs);
+    save_stack((u32)regs);
     clean_registers();
 
     vga_writestring("\nSystem Halted.");

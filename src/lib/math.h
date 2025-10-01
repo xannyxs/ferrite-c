@@ -1,8 +1,8 @@
 #ifndef MATH_H
 #define MATH_H
 
+#include "types.h"
 #include <stdbool.h>
-#include <stdint.h>
 
 #define likely(x) __builtin_expect(!!(x), true)
 #define unlikely(x) __builtin_expect(!!(x), false)
@@ -13,25 +13,25 @@
 /**
  * @brief  Calculates the base-2 logarithm of n, rounded down (floor).
  */
-static inline uint32_t floor_log2(uint32_t n)
+static inline u32 floor_log2(u32 n)
 {
     if (unlikely(n == 0)) {
         __builtin_trap();
     }
 
-    return (sizeof(uint32_t) * 8 - 1) - __builtin_clz(n);
+    return (sizeof(u32) * 8 - 1) - __builtin_clz(n);
 }
 
 /**
  * @brief  Calculates the base-2 logarithm of n, rounded up (ceiling).
  */
-static inline uint32_t ceil_log2(uint32_t n)
+static inline u32 ceil_log2(u32 n)
 {
     if (unlikely(n == 0)) {
         __builtin_trap();
     }
 
-    return (sizeof(uint32_t) * 8) - __builtin_clz(n - 1);
+    return (sizeof(u32) * 8) - __builtin_clz(n - 1);
 }
 
 #endif /* MATH_H */

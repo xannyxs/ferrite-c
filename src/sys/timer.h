@@ -1,19 +1,18 @@
 #ifndef TIMER_H
 #define TIMER_H
 
-#include "sys/process.h"
-#include <stdint.h>
+#include "types.h"
 
 typedef struct timer {
     struct timer* next;
     struct timer* prev;
 
-    unsigned long expires;
+    unsigned long long expires;
     void* data;
     void (*function)(void*);
 } timer_t;
 
-int32_t sleep(int32_t seconds);
+s32 ksleep(s32 seconds);
 
 void sleeppid(void* channel);
 

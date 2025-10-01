@@ -1,27 +1,26 @@
 #ifndef IDT_H
 #define IDT_H
 
-#include <stdint.h>
-
+#include "types.h"
 #define IDT_ENTRY_COUNT 256
 
 typedef struct interrupt_descriptor {
-    uint16_t pointer_low;    // offset bits 0..15
-    uint16_t selector;       // a code segment selector in GDT or LDT
-    uint8_t zero;            // unused, set to 0
-    uint8_t type_attributes; // gate type, dpl, and p fields
-    uint16_t pointer_high;   // offset bits 16..31
+    u16 pointer_low;    // offset bits 0..15
+    u16 selector;       // a code segment selector in GDT or LDT
+    u8 zero;            // unused, set to 0
+    u8 type_attributes; // gate type, dpl, and p fields
+    u16 pointer_high;   // offset bits 16..31
 } interrupt_descriptor_t;
 
 typedef struct registers {
-    uint32_t ds;
-    uint32_t edi, esi, ebp, esp, ebx, edx, ecx, eax;
-    uint32_t int_no, err_code;
-    uint32_t eip, cs, eflags, useresp, ss;
+    u32 ds;
+    u32 edi, esi, ebp, esp, ebx, edx, ecx, eax;
+    u32 int_no, err_code;
+    u32 eip, cs, eflags, useresp, ss;
 } registers_t;
 
 typedef void (*interrupt_handler)(registers_t*);
-typedef void (*interrupt_handler_with_error)(registers_t*, uint32_t);
+typedef void (*interrupt_handler_with_error)(registers_t*, u32);
 
 typedef enum {
     REGULAR,
@@ -37,7 +36,7 @@ typedef struct {
 } interrupt_handler_entry_t;
 
 typedef struct {
-    uint32_t hex;
+    u32 hex;
     interrupt_handler func;
 } interrupt_hardware_t;
 
@@ -56,12 +55,12 @@ void x87_fpu_exception(registers_t*);
 void reserved_by_cpu(registers_t*);
 
 // --- Handlers that HAVE an error code ---
-void double_fault(registers_t*, uint32_t error_code);
-void invalid_tss(registers_t*, uint32_t error_code);
-void segment_not_present(registers_t*, uint32_t error_code);
-void stack_segment_fault(registers_t*, uint32_t error_code);
-void general_protection_fault(registers_t*, uint32_t error_code);
-void page_fault(registers_t*, uint32_t error_code);
+void double_fault(registers_t*, u32 error_code);
+void invalid_tss(registers_t*, u32 error_code);
+void segment_not_present(registers_t*, u32 error_code);
+void stack_segment_fault(registers_t*, u32 error_code);
+void general_protection_fault(registers_t*, u32 error_code);
+void page_fault(registers_t*, u32 error_code);
 
 // --- Hardware Interrupts ---
 void timer_handler(registers_t*);

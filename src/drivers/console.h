@@ -2,8 +2,7 @@
 #define CONSOLE_H
 
 #include "sys/process.h"
-
-#include <stdint.h>
+#include "types.h"
 
 typedef struct exec {
     char const* cmd;
@@ -11,9 +10,9 @@ typedef struct exec {
 } exec_t;
 
 typedef struct {
-    uint8_t buf[256];
-    int32_t head; // Read position
-    int32_t tail; // Write position
+    u8 buf[256];
+    s32 head; // Read position
+    s32 tail; // Write position
     pid_t shell_pid;
 } tty_t;
 

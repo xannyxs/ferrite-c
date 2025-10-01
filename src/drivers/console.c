@@ -5,20 +5,19 @@
 #include "arch/x86/time/time.h"
 #include "drivers/printk.h"
 #include "drivers/video/vga.h"
+#include "lib/stdlib.h"
+#include "lib/string.h"
 #include "memory/buddy_allocator/buddy.h"
-#include "stdlib.h"
 #include "sys/process.h"
 #include "sys/signal/signal.h"
 #include "sys/timer.h"
-
-#include <stdint.h>
-#include <string.h>
+#include "types.h"
 
 extern proc_t* current_proc;
 
 static char const* prompt = "[42]$ ";
 static char buffer[VGA_WIDTH];
-static int32_t i = 0;
+static s32 i = 0;
 
 tty_t tty;
 
@@ -91,22 +90,24 @@ static void print_gdt(void)
 
 static void print_buddy(void) { buddy_visualize(); }
 
-static void exec_sleep(void) { sleep(3); }
+static void exec_sleep(void) { ksleep(3); }
+
+static void exec_abort(void) { abort("Test abort"); }
 
 static void execute_buffer(void)
 {
     static exec_t const command_table[] = {
         { "reboot", reboot }, { "gdt", print_gdt }, { "memory", print_buddy },
-        { "clear", vga_init }, { "help", print_help }, { "panic", abort },
+        { "clear", vga_init }, { "help", print_help }, { "panic", exec_abort },
         { "idt", print_idt }, { "time", print_time }, { "epoch", print_epoch },
         { "top", process_list }, { "sleep", exec_sleep }, { NULL, NULL }
     };
 
     printk("\n");
 
-    for (int32_t i = 0; command_table[i].cmd; i++) {
-        if (command_table[i].f && strcmp(buffer, command_table[i].cmd) == 0) {
-            command_table[i].f();
+    for (s32 cmd = 0; command_table[cmd].cmd; cmd++) {
+        if (command_table[cmd].f && strcmp(buffer, command_table[cmd].cmd) == 0) {
+            command_table[cmd].f();
             break;
         }
     }

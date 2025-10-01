@@ -1,4 +1,4 @@
-#include "arch/x86/io.h"
+#include "arch/x86/idt/idt.h"
 #include "arch/x86/pic.h"
 #include "arch/x86/pit.h"
 #include "arch/x86/time/time.h"
@@ -7,15 +7,16 @@
 #include "drivers/printk.h"
 #include "sys/process.h"
 #include "sys/timer.h"
+#include "types.h"
 
-#include <stdint.h>
+#include <stdbool.h>
 
 extern tty_t tty;
-extern int32_t ticks_remaining;
+extern s32 ticks_remaining;
 extern context_t* scheduler_context;
 extern bool volatile need_resched;
 
-uint64_t volatile ticks = 0;
+unsigned long long volatile ticks = 0;
 
 __attribute__((target("general-regs-only"), interrupt)) void
 timer_handler(registers_t* regs)
@@ -49,7 +50,7 @@ keyboard_handler(registers_t* regs)
     (void)regs;
     pic_send_eoi(1);
 
-    int32_t scancode = inb(KEYBOARD_DATA_PORT);
+    s32 scancode = inb(KEYBOARD_DATA_PORT);
     if ((tty.tail + 1) % 256 != tty.head) {
         tty.buf[tty.tail] = scancode;
         tty.tail = (tty.tail + 1) % 256;
@@ -63,7 +64,7 @@ spurious_handler(registers_t* regs)
 {
     (void)regs;
 
-    uint8_t isr = pic_get_isr();
+    u8 isr = pic_get_isr();
 
     if (!(isr & 0x80)) {
         printk("Spurious IRQ 7 on Master PIC handled. No EOI sent.\n");

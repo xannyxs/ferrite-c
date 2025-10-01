@@ -12,16 +12,15 @@
 #include "memory/vmalloc.h"
 #include "memory/vmm.h"
 #include "sys/process.h"
+#include "types.h"
 
 #include <stdbool.h>
-#include <stddef.h>
-#include <stdint.h>
 
 #if !defined(__i386__)
 #    error "This tutorial needs to be compiled with a ix86-elf compiler"
 #endif
 
-__attribute__((noreturn)) void kmain(uint32_t magic, multiboot_info_t* mbd)
+__attribute__((noreturn)) void kmain(u32 magic, multiboot_info_t* mbd)
 {
     if (magic != MULTIBOOT_BOOTLOADER_MAGIC) {
         abort("Invalid magic number!");

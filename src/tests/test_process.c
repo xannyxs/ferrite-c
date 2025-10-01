@@ -2,13 +2,12 @@
 #    include "sys/process.h"
 #    include "sys/timer.h"
 #    include "tests/tests.h"
+#    include "types.h"
 
 #    include <stdbool.h>
-#    include <stddef.h>
-#    include <stdint.h>
 
-extern uint32_t tests_passed;
-extern uint32_t tests_failed;
+extern u32 tests_passed;
+extern u32 tests_failed;
 
 // ========== Test Helper Processes ==========
 
@@ -33,7 +32,7 @@ void test_child_exit_123(void)
 void test_child_with_work(void)
 {
     printk("  [child %d] Doing work before exit\n", myproc()->pid);
-    for (int32_t volatile i = 0; i < 1000000; i++) {
+    for (s32 volatile i = 0; i < 1000000; i++) {
         // Busy work
     }
     printk("  [child %d] Work done, exiting\n", myproc()->pid);
@@ -43,7 +42,7 @@ void test_child_with_work(void)
 void test_child_sleeps(void)
 {
     printk("  [child %d] Sleeping for 2 seconds\n", myproc()->pid);
-    sleep(2);
+    ksleep(2);
     printk("  [child %d] Woke up, exiting\n", myproc()->pid);
     do_exit(99);
 }
@@ -66,7 +65,7 @@ TEST(parent_child_wait_exit)
 
 TEST(wait_with_no_children)
 {
-    int32_t result = do_wait(NULL);
+    s32 result = do_wait(NULL);
     ASSERT_EQ(result, -1, "wait() should return -1 with no children");
     return true;
 }
@@ -76,7 +75,7 @@ TEST(wait_returns_exit_status)
     pid_t child = do_exec("child", test_child_exit_42);
     ASSERT(child > 0, "Failed to create child");
 
-    int32_t status;
+    s32 status;
     pid_t result = do_wait(&status);
 
     ASSERT_EQ(result, child, "Should return child PID");
@@ -89,7 +88,7 @@ TEST(wait_returns_different_exit_status)
     pid_t child = do_exec("child", test_child_exit_123);
     ASSERT(child > 0, "Failed to create child");
 
-    int32_t status;
+    s32 status;
     pid_t result = do_wait(&status);
 
     ASSERT_EQ(result, child, "Should return child PID");
@@ -139,7 +138,7 @@ TEST(wait_for_child_that_does_work)
     pid_t child = do_exec("worker_child", test_child_with_work);
     ASSERT(child > 0, "Failed to create worker child");
 
-    int32_t status;
+    s32 status;
     pid_t result = do_wait(&status);
 
     ASSERT_EQ(result, child, "Should reap worker child");
@@ -153,7 +152,7 @@ TEST(wait_for_sleeping_child)
     pid_t child = do_exec("sleeping_child", test_child_sleeps);
     ASSERT(child > 0, "Failed to create sleeping child");
 
-    int32_t status;
+    s32 status;
     pid_t result = do_wait(&status);
 
     ASSERT_EQ(result, child, "Should reap sleeping child");
