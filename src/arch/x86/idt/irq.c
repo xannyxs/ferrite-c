@@ -9,6 +9,8 @@
 #include "sys/timer.h"
 #include "types.h"
 
+#include <stdbool.h>
+
 extern tty_t tty;
 extern s32 ticks_remaining;
 extern context_t* scheduler_context;

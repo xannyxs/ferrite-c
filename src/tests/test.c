@@ -2,9 +2,10 @@
 
 #    include "arch/x86/io.h"
 #    include "tests.h"
+#    include "types.h"
 
-uint32_t tests_passed = 0;
-uint32_t tests_failed = 0;
+u32 tests_passed = 0;
+u32 tests_failed = 0;
 
 void main_tests(void)
 {

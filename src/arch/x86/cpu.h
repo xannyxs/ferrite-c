@@ -12,7 +12,7 @@ inline void halt_loop(void)
     }
 }
 
-__attribute__((noreturn)) inline void reboot(void)
+__attribute__((noreturn)) void reboot(void)
 {
     u8 good = 0x02;
 
