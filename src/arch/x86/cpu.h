@@ -1,16 +1,18 @@
+#pragma once
+
 #include "arch/x86/io.h"
 #include "types.h"
 
-void halt(void) { __asm__ __volatile__("hlt"); }
+inline void halt(void) { __asm__ __volatile__("hlt"); }
 
-void halt_loop(void)
+inline void halt_loop(void)
 {
     while (1) {
         halt();
     }
 }
 
-__attribute__((noreturn)) void reboot(void)
+__attribute__((noreturn)) inline void reboot(void)
 {
     u8 good = 0x02;
 

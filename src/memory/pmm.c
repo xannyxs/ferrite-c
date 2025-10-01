@@ -83,7 +83,7 @@ u32 pmm_get_first_addr(void)
 
         for (int bit = 0; bit < 8; bit++) {
             if ((pmm_bitmap[i] & (1 << bit)) == 0) {
-                size_t page_number = i * 8 + bit;
+                size_t page_number = (i * 8) + bit;
 
                 return page_number * PAGE_SIZE;
             }
@@ -98,7 +98,7 @@ void* pmm_get_physaddr(void* vaddr)
     u32 pdindex = (u32)vaddr >> 22;
     u32 ptindex = (u32)vaddr >> 12 & 0x03FF;
     u32 offset = (u32)vaddr & 0xFFF;
-    u32* pd = (u32*)0xFFFFF000;
+    const u32* pd = (u32*)0xFFFFF000;
 
     if (!(pd[pdindex] & PTE_P)) {
         return 0;

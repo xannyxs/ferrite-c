@@ -47,7 +47,7 @@ void rtc_init(void)
     outb(0x70, 0x8B);           // Re-select Register B
     outb(0x71, prev_b & ~0x40); // Write back with bit 6 (PIE) cleared
 
-    (void)rtc_read_time(&time);
+    rtc_read_time(&time);
     printk("RTC Time: 20%d-%d-%d %d:%d:%d\n", time.year, time.month, time.day,
         time.hour, time.minute, time.second);
 

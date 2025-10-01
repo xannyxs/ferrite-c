@@ -74,7 +74,7 @@ void create_initial_process(void)
               "process");
     }
 
-    u32* sp = (u32*)((char*)init->kstack + PAGE_SIZE);
+    u32* sp = (u32*)(init->kstack + PAGE_SIZE);
     *--sp = (u32)init_process; // EIP - function to execute
     *--sp = 0;                 // EBP
     *--sp = 0;                 // EBX

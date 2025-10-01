@@ -61,7 +61,7 @@ simple_number(char* str, long num, s32 base, bool is_signed, s32 width,
 }
 
 __attribute__((target("general-regs-only"))) static s32
-kfmt(char* buf, char const* fmt, va_list const args)
+kfmt(char* buf, char const* fmt, va_list args)
 {
     char* str = buf;
     for (; *fmt; ++fmt) {
@@ -131,7 +131,7 @@ kfmt(char* buf, char const* fmt, va_list const args)
             break;
         }
         case 'u': {
-            unsigned long u = va_arg(args, unsigned long);
+            const unsigned long u = va_arg(args, unsigned long);
             str = simple_number(str, u, 10, 0, width, zero_pad);
             break;
         }

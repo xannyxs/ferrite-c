@@ -3,8 +3,6 @@
 
 #include "types.h"
 
-#include <stdbool.h>
-
 #define KEYBOARD_DATA_PORT 0x60
 #define KEYBOARD_STATUS_PORT 0x64
 
@@ -31,8 +29,8 @@ typedef enum keyboard_key {
     KeyT = 0x14,
     KeyY = 0x15,
     KeyU = 0x16,
-    KeyI = 0x17,
-    KeyO = 0x18,
+    KeyI = 0x17, // NOLINT(*-confusable-identifiers)
+    KeyO = 0x18, // NOLINT(*-confusable-identifiers)
     KeyP = 0x19,
     KeyOpenBrace = 0x1a,
     KeyCloseBrace = 0x1b,

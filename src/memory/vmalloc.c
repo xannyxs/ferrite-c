@@ -56,7 +56,7 @@ void vmalloc_init(void)
  * Slower than kmalloc. Used to allocate large memory regions that do not need
  * to be physically contiguous, such as for kernel modules.
  *
- * @param size The number of bytes to allocate.
+ * @param n The number of bytes to allocate.
  * @return A pointer to the allocated memory, or NULL on failure.
  */
 void* vmalloc(size_t n)
@@ -117,7 +117,7 @@ void* vmalloc(size_t n)
             abort("Out of physical memory during mapping");
         }
 
-        vmm_map_page(paddr, (void*)(vaddr + i * PAGE_SIZE), 0);
+        vmm_map_page(paddr, (void*)(vaddr + (i * PAGE_SIZE)), 0);
     }
 
     block_header_t* header = (block_header_t*)vaddr;

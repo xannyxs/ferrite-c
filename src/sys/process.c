@@ -138,11 +138,10 @@ void do_exit(s32 status)
 pid_t do_wait(s32* status)
 {
     while (true) {
-        proc_t* p;
         bool have_kids = false;
 
         for (s32 i = 0; i < NUM_PROC; i += 1) {
-            p = &ptables[i];
+            proc_t *p = &ptables[i];
 
             if (p->parent != myproc()) {
                 continue;
@@ -200,7 +199,7 @@ pid_t do_exec(char const* name, void (*f)(void))
         return -1;
     }
 
-    u32* ctx = (u32*)((char*)p->kstack + PAGE_SIZE);
+    u32* ctx = (u32*)(p->kstack + PAGE_SIZE);
     *(--ctx) = (u32)f; // EIP
     *(--ctx) = 0;      // EBP
     *(--ctx) = 0;      // EBX
@@ -223,7 +222,7 @@ pid_t do_fork(char const* name)
 
     u32 caller_return;
     __asm__ volatile("movl 4(%%ebp), %0" : "=r"(caller_return));
-    u32* ctx = (u32*)((char*)p->kstack + PAGE_SIZE);
+    u32* ctx = (u32*)(p->kstack + PAGE_SIZE);
     *(--ctx) = caller_return; // Return address for fork_ret (on stack)
     *(--ctx) = (u32)fork_ret; // EIP
     *(--ctx) = 0;             // EBP

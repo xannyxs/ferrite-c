@@ -13,7 +13,7 @@ __attribute__((warn_unused_result)) inline time_t getepoch(void)
     return seconds_since_epoch;
 }
 
-inline void setepoch(time_t new) { seconds_since_epoch = new; }
+inline void setepoch(const time_t new) { seconds_since_epoch = new; }
 
 static inline s32 is_leap(u32 year)
 {
@@ -22,17 +22,16 @@ static inline s32 is_leap(u32 year)
 
 time_t to_epoch(rtc_time_t* t)
 {
-    unsigned long long epoch_seconds;
     u32 full_year = 2000 + t->year;
     u32 days_since_epoch = 0;
-    u32 const days_in_month[] = { 0, 31, 28, 31, 30, 31, 30,
-        31, 31, 30, 31, 30, 31 };
 
     for (u32 y = 1970; y < full_year; ++y) {
         days_since_epoch += is_leap(y) ? 366 : 365;
     }
 
     for (u8 m = 1; m < t->month; ++m) {
+        u32 const days_in_month[] = { 0, 31, 28, 31, 30, 31, 30,
+            31, 31, 30, 31, 30, 31 };
         days_since_epoch += days_in_month[m];
         if (m == 2 && is_leap(full_year)) {
             days_since_epoch++;
@@ -41,19 +40,16 @@ time_t to_epoch(rtc_time_t* t)
 
     days_since_epoch += t->day - 1;
 
-    epoch_seconds = days_since_epoch * 86400ULL + t->hour * 3600ULL + t->minute * 60ULL + t->second;
+    unsigned long long epoch_seconds = (days_since_epoch * 86400ULL) + (t->hour * 3600ULL) + (t->minute * 60ULL) + t->second;
 
     return epoch_seconds;
 }
 
 void from_epoch(time_t epoch, rtc_time_t* t)
 {
-    u32 const days_in_month[] = { 0, 31, 28, 31, 30, 31, 30,
-        31, 31, 30, 31, 30, 31 };
     u32 current_year = 1970;
-    u32 days_in_current_year;
 
-    unsigned long long seconds_of_day = epoch % 86400ULL;
+    const unsigned long long seconds_of_day = epoch % 86400ULL;
     t->hour = seconds_of_day / 3600;
     t->minute = (seconds_of_day % 3600) / 60;
     t->second = seconds_of_day % 60;
@@ -61,7 +57,7 @@ void from_epoch(time_t epoch, rtc_time_t* t)
     unsigned long long total_days = epoch / 86400ULL;
 
     while (true) {
-        days_in_current_year = is_leap(current_year) ? 366 : 365;
+        u32 days_in_current_year = is_leap(current_year) ? 366 : 365;
         if (total_days >= days_in_current_year) {
             total_days -= days_in_current_year;
             current_year++;
@@ -73,6 +69,8 @@ void from_epoch(time_t epoch, rtc_time_t* t)
     t->year = (current_year >= 2000) ? (current_year - 2000) : 0;
 
     for (t->month = 1; t->month <= 12; ++t->month) {
+        u32 const days_in_month[] = { 0, 31, 28, 31, 30, 31, 30,
+            31, 31, 30, 31, 30, 31 };
         unsigned int days_this_month = days_in_month[t->month];
         if (t->month == 2 && is_leap(current_year)) {
             days_this_month++;

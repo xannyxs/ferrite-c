@@ -57,7 +57,7 @@ void vfree(void* ptr)
     }
 
     for (size_t i = 1; i < block_size / PAGE_SIZE; i++) {
-        u32 current_vaddr = block_vaddr + i * PAGE_SIZE;
+        u32 current_vaddr = block_vaddr + (i * PAGE_SIZE);
         void* paddr = vmm_unmap_page((void*)current_vaddr);
         if (paddr) {
             buddy_dealloc((u32)paddr, 0);

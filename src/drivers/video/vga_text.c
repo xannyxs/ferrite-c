@@ -26,7 +26,7 @@ __attribute__((target("general-regs-only"))) static void vga_scroll_up(void)
         sizeof(u16) * VGA_WIDTH * (VGA_HEIGHT - 1));
 
     for (size_t x = 0; x < VGA_WIDTH; x++) {
-        size_t const index = (VGA_HEIGHT - 1) * VGA_WIDTH + x;
+        size_t const index = ((VGA_HEIGHT - 1) * VGA_WIDTH) + x;
         terminal_buffer[index] = vga_entry(' ', terminal_color);
     }
 }
@@ -35,12 +35,11 @@ __attribute__((target("general-regs-only"))) static void vga_scroll_up(void)
 
 __attribute__((target("general-regs-only"))) void vga_write_hex(u32 n)
 {
-    char const* hex = "0123456789ABCDEF";
-
     vga_writestring("0x");
 
     for (int i = 28; i >= 0; i -= 4) {
-        u8 nibble = (n >> i) & 0xF;
+        char const* hex = "0123456789ABCDEF";
+        const u8 nibble = (n >> i) & 0xF;
         vga_putchar(hex[nibble]);
     }
 }
@@ -53,7 +52,7 @@ void vga_init(void)
 
     for (size_t y = 0; y < VGA_HEIGHT; y++) {
         for (size_t x = 0; x < VGA_WIDTH; x++) {
-            size_t const index = y * VGA_WIDTH + x;
+            size_t const index = (y * VGA_WIDTH) + x;
             terminal_buffer[index] = vga_entry(' ', terminal_color);
         }
     }
@@ -64,7 +63,7 @@ void vga_setcolor(vga_color_t color) { terminal_color = color; }
 __attribute__((target("general-regs-only"))) void
 vga_putentryat(char c, u8 color, size_t x, size_t y)
 {
-    size_t const index = y * VGA_WIDTH + x;
+    size_t const index = (y * VGA_WIDTH) + x;
     terminal_buffer[index] = vga_entry(c, color);
 }
 

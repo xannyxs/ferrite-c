@@ -105,9 +105,9 @@ static void execute_buffer(void)
 
     printk("\n");
 
-    for (s32 i = 0; command_table[i].cmd; i++) {
-        if (command_table[i].f && strcmp(buffer, command_table[i].cmd) == 0) {
-            command_table[i].f();
+    for (s32 cmd = 0; command_table[cmd].cmd; cmd++) {
+        if (command_table[cmd].f && strcmp(buffer, command_table[cmd].cmd) == 0) {
+            command_table[cmd].f();
             break;
         }
     }
