@@ -131,7 +131,7 @@ kfmt(char* buf, char const* fmt, va_list args)
             break;
         }
         case 'u': {
-            const unsigned long u = va_arg(args, unsigned long);
+            unsigned long const u = va_arg(args, unsigned long);
             str = simple_number(str, u, 10, 0, width, zero_pad);
             break;
         }

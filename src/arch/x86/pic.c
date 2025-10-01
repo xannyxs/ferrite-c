@@ -15,7 +15,7 @@ static u16 __pic_get_irq_reg(int ocw3)
 
 u16 pic_get_isr(void) { return __pic_get_irq_reg(PIC_READ_ISR); }
 
-void pic_remap(const s32 offset1, const s32 offset2)
+void pic_remap(s32 const offset1, s32 const offset2)
 {
     // starts the initialization sequence (in cascade mode)
     outb(PIC1_COMMAND, ICW1_INIT | ICW1_ICW4);

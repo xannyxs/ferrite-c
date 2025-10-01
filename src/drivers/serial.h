@@ -3,6 +3,6 @@
 
 void serial_init(void);
 
-void serial_write_string(const char* s);
+void serial_write_string(char const* s);
 
 #endif /* SERIAL_H */

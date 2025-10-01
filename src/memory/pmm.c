@@ -98,7 +98,7 @@ void* pmm_get_physaddr(void* vaddr)
     u32 pdindex = (u32)vaddr >> 22;
     u32 ptindex = (u32)vaddr >> 12 & 0x03FF;
     u32 offset = (u32)vaddr & 0xFFF;
-    const u32* pd = (u32*)0xFFFFF000;
+    u32 const* pd = (u32*)0xFFFFF000;
 
     if (!(pd[pdindex] & PTE_P)) {
         return 0;

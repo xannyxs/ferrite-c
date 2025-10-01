@@ -78,7 +78,7 @@ void keyboard_put(u8 scancode)
         SHIFT_PRESSED = false;
         return;
     default:
-            break;
+        break;
     }
 
     char c = scancode_to_ascii(scancode);

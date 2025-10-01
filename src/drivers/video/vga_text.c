@@ -39,7 +39,7 @@ __attribute__((target("general-regs-only"))) void vga_write_hex(u32 n)
 
     for (int i = 28; i >= 0; i -= 4) {
         char const* hex = "0123456789ABCDEF";
-        const u8 nibble = (n >> i) & 0xF;
+        u8 const nibble = (n >> i) & 0xF;
         vga_putchar(hex[nibble]);
     }
 }

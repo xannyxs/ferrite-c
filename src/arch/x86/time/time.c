@@ -13,7 +13,7 @@ __attribute__((warn_unused_result)) inline time_t getepoch(void)
     return seconds_since_epoch;
 }
 
-inline void setepoch(const time_t new) { seconds_since_epoch = new; }
+inline void setepoch(time_t const new) { seconds_since_epoch = new; }
 
 static inline s32 is_leap(u32 year)
 {
@@ -49,7 +49,7 @@ void from_epoch(time_t epoch, rtc_time_t* t)
 {
     u32 current_year = 1970;
 
-    const unsigned long long seconds_of_day = epoch % 86400ULL;
+    unsigned long long const seconds_of_day = epoch % 86400ULL;
     t->hour = seconds_of_day / 3600;
     t->minute = (seconds_of_day % 3600) / 60;
     t->second = seconds_of_day % 60;

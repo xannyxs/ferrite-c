@@ -141,7 +141,7 @@ pid_t do_wait(s32* status)
         bool have_kids = false;
 
         for (s32 i = 0; i < NUM_PROC; i += 1) {
-            proc_t *p = &ptables[i];
+            proc_t* p = &ptables[i];
 
             if (p->parent != myproc()) {
                 continue;

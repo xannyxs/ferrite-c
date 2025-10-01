@@ -18,7 +18,7 @@ static void serial_write_byte(u8 a)
 
 /* Public */
 
-void serial_write_string(const char* s)
+void serial_write_string(char const* s)
 {
     for (s32 i = 0; s[i]; i++) {
         serial_write_byte(s[i]);
