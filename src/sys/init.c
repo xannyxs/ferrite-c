@@ -19,6 +19,10 @@ extern u32 page_directory[1024];
 
 proc_t* initial_proc;
 
+/* Public */
+
+inline proc_t* initproc(void) { return initial_proc; }
+
 void init_process(void)
 {
     proc_t const* current_proc = myproc();
@@ -63,8 +67,6 @@ void init_process(void)
         yield();
     }
 }
-
-proc_t* initproc(void) { return initial_proc; }
 
 void create_initial_process(void)
 {
