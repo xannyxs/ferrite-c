@@ -32,12 +32,12 @@ interrupt_hardware_t const HARDWARE_HANDLERS[NUM_HARDWARE_HANDLERS] = {
     { 0x20, timer_handler }, { 0x21, keyboard_handler }, { 0x27, spurious_handler }
 };
 
-static void idt_set_gate(u32 num, u32 handler)
+static void idt_set_gate(u32 num, u32 handler, u8 type_attributes)
 {
     idt_entries[num].pointer_low = (handler & 0xffff);
     idt_entries[num].selector = 0x08;
     idt_entries[num].zero = 0;
-    idt_entries[num].type_attributes = 0x8E;
+    idt_entries[num].type_attributes = type_attributes;
     idt_entries[num].pointer_high = ((handler >> 16) & 0xffff);
 }
 
@@ -53,16 +53,16 @@ void idt_init(void)
             handler = (u32)EXCEPTION_HANDLERS[i].handler.with_error_code;
         }
 
-        idt_set_gate(i, handler);
+        idt_set_gate(i, handler, 0x8E);
     }
 
     // Hardware Interrupts
     for (s32 i = 0; i < NUM_HARDWARE_HANDLERS; i += 1) {
-        idt_set_gate(HARDWARE_HANDLERS[i].hex, (u32)HARDWARE_HANDLERS[i].func);
+        idt_set_gate(HARDWARE_HANDLERS[i].hex, (u32)HARDWARE_HANDLERS[i].func, 0x8E);
     }
 
     // Syscalls
-    idt_set_gate(0x80, (u32)syscall_handler);
+    idt_set_gate(0x80, (u32)syscall_handler, 0xEE);
 
     idt_ptr.limit = sizeof(entry_t) * IDT_ENTRY_COUNT - 1;
     idt_ptr.base = (u32)&idt_entries;

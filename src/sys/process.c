@@ -1,4 +1,5 @@
 #include "sys/process.h"
+#include "arch/x86/gdt/gdt.h"
 #include "arch/x86/io.h"
 #include "arch/x86/memlayout.h"
 #include "debug/debug.h"
@@ -301,6 +302,9 @@ void schedule(void)
 
             p->state = RUNNING;
             ticks_remaining = TIME_QUANTUM;
+
+            u32 kernel_stack_top = (u32)p->kstack + PAGE_SIZE;
+            tss_set_stack(kernel_stack_top);
 
             lcr3(V2P_WO((u32)p->pgdir));
             swtch(&scheduler_context, p->context);

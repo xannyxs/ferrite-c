@@ -26,6 +26,7 @@ enum syscalls_e {
     SYS_BRK = 45,
     SYS_SIGNAL = 48,
     SYS_GETEUID = 49,
+    SYS_NANOSLEEP = 162,
 };
 
 void syscall_dispatcher_c(registers_t*);

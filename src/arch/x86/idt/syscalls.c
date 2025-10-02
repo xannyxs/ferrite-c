@@ -4,6 +4,7 @@
 #include "drivers/printk.h"
 #include "sys/process.h"
 #include "sys/signal/signal.h"
+#include "sys/timer.h"
 
 #include <stdbool.h>
 
@@ -79,8 +80,21 @@ sys_getuid(void)
 __attribute__((target("general-regs-only"), warn_unused_result)) static s32
 sys_kill(pid_t pid, s32 sig)
 {
+    proc_t* caller = myproc();
+    proc_t* target = find_process(pid);
+    if (!target || !caller) {
+        return -1;
+    }
 
-    return do_kill(pid, sig);
+    if (caller->euid == ROOT_UID) {
+        return do_kill(pid, sig);
+    }
+
+    if (caller->euid == target->euid || caller->uid == target->uid) {
+        return do_kill(pid, sig);
+    }
+
+    return -1;
 }
 
 __attribute__((target("general-regs-only"), warn_unused_result)) static uid_t
@@ -108,6 +122,12 @@ sys_setuid(uid_t uid)
     }
 
     return -1;
+}
+
+// TODO: Create a valid nanosleep syscall
+__attribute__((target("general-regs-only"), warn_unused_result)) static s32 sys_nanosleep(void)
+{
+    return knanosleep(1000);
 }
 
 __attribute__((target("general-regs-only"))) void
@@ -151,6 +171,10 @@ syscall_dispatcher_c(registers_t* reg)
 
     case SYS_SETUID:
         reg->eax = sys_setuid((s32)reg->ebx);
+        break;
+
+    case SYS_NANOSLEEP:
+        reg->eax = sys_nanosleep();
         break;
 
     default:
