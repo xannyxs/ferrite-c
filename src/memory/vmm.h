@@ -13,7 +13,7 @@ void* vmm_find_free_region(u32);
 
 void vmm_init_pages(void);
 
-s32 vmm_map_page(void* physaddr, void* virtualaddr, u32 flags);
+s32 vmm_map_page(void* paddr, void* vaddr, u32 flags);
 
 void* vmm_unmap_page(void*);
 

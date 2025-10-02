@@ -26,12 +26,24 @@ bool volatile need_resched = false;
 
 /* Private */
 
+static inline void inherit_credentials(proc_t* child, proc_t* parent)
+{
+    if (parent) {
+        child->uid = parent->uid;
+        child->euid = parent->euid;
+        return;
+    }
+
+    child->uid = child->euid = ROOT_UID;
+}
+
 proc_t* __alloc_proc(void)
 {
     for (s32 i = 0; i < NUM_PROC; i += 1) {
         if (ptables[i].state == UNUSED) {
             proc_t* p = &ptables[i];
 
+            inherit_credentials(p, current_proc);
             p->state = EMBRYO;
             p->pid = pid_counter;
             pid_counter += 1;
@@ -61,6 +73,18 @@ proc_t* __alloc_proc(void)
 /* Public */
 
 inline proc_t* myproc(void) { return current_proc; }
+
+// Real UID: actual user who started the process (for accounting/auditing)
+inline uid_t getuid(void)
+{
+    return current_proc->uid;
+}
+
+// Effective UID: determines permissions for system access (files, syscalls, etc.)
+inline uid_t geteuid(void)
+{
+    return current_proc->euid;
+}
 
 inline proc_t* find_process(pid_t pid)
 {
