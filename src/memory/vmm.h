@@ -9,8 +9,6 @@
 
 #define ZONE_NORMAL 896 * 1024 * 1024
 
-void* vmm_find_free_region(u32);
-
 void vmm_init_pages(void);
 
 s32 vmm_map_page(void* paddr, void* vaddr, u32 flags);
