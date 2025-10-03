@@ -1,62 +1,73 @@
 #include "arch/x86/idt/idt.h"
 #include "debug/debug.h"
 #include "debug/panic.h"
+#include "drivers/printk.h"
+#include "sys/process.h"
 #include "types.h"
 
-#define USER_SPACE 1
-#define KERNEL_SPACE 3
+#define KERNEL_MODE 0
+#define USER_MODE 3
 
-__attribute__((target("general-regs-only"), interrupt)) void
-divide_by_zero_handler(registers_t* regs)
+__attribute__((target("general-regs-only"))) void
+divide_by_zero_handler(registers_t* regs, u32 error_code)
 {
-    if ((regs->cs & KERNEL_SPACE) == 0) {
+    (void)error_code;
+    if ((regs->cs & 3) == KERNEL_MODE) {
         panic(regs, "Division by Zero");
     }
 
-    __asm__ volatile("cli; hlt");
+    do_exit(-1);
 }
 
-__attribute__((target("general-regs-only"), interrupt)) void
-debug_interrupt_handler(registers_t* regs)
+__attribute__((target("general-regs-only"))) void
+debug_interrupt_handler(registers_t* regs, u32 error_code)
 {
+    (void)error_code;
     (void)regs;
+
+    printk("Debug interrupt");
     BOCHS_MAGICBREAK();
 }
 
-__attribute__((target("general-regs-only"), interrupt)) void
-non_maskable_interrupt_handler(registers_t* regs)
+__attribute__((target("general-regs-only"))) void
+non_maskable_interrupt_handler(registers_t* regs, u32 error_code)
 {
+    (void)error_code;
     panic(regs, "Non Maskable Interrupt");
 }
 
-__attribute__((target("general-regs-only"), interrupt)) void
-breakpoint_handler(registers_t* regs)
+__attribute__((target("general-regs-only"))) void
+breakpoint_handler(registers_t* regs, u32 error_code)
 {
+    (void)error_code;
     (void)regs;
     BOCHS_MAGICBREAK();
 }
 
-__attribute__((target("general-regs-only"), interrupt)) void
-overflow_handler(registers_t* regs)
+__attribute__((target("general-regs-only"))) void
+overflow_handler(registers_t* regs, u32 error_code)
 {
     (void)regs;
+    (void)error_code;
     // TODO:
 
     __asm__ volatile("cli; hlt");
 }
 
-__attribute__((target("general-regs-only"), interrupt)) void
-bound_range_exceeded_handler(registers_t* regs)
+__attribute__((target("general-regs-only"))) void
+bound_range_exceeded_handler(registers_t* regs, u32 error_code)
 {
     (void)regs;
+    (void)error_code;
     // TODO:
 
     __asm__ volatile("cli; hlt");
 }
 
-__attribute__((target("general-regs-only"), interrupt)) void
-invalid_opcode(registers_t* regs)
+__attribute__((target("general-regs-only"))) void
+invalid_opcode(registers_t* regs, u32 error_code)
 {
+    (void)error_code;
     if ((regs->cs & 3) == 0) {
         panic(regs, "Invalid Opcode");
     }
@@ -67,45 +78,50 @@ invalid_opcode(registers_t* regs)
 // NOTE:
 // This exception is primarily used to handle FPU context switching. Without an
 // FPU, the CPU won't generate this fault for floating-point instructions.
-__attribute__((target("general-regs-only"), interrupt)) void
-device_not_available(registers_t* regs)
+__attribute__((target("general-regs-only"))) void
+device_not_available(registers_t* regs, u32 error_code)
 {
+    (void)error_code;
     (void)regs;
 
     __asm__ volatile("cli; hlt");
 }
 
-void x87_fpu_exception(registers_t* regs)
+void x87_fpu_exception(registers_t* regs, u32 error_code)
 {
     (void)regs;
+    (void)error_code;
 
     __asm__ volatile("cli; hlt");
 }
 
-__attribute__((target("general-regs-only"), interrupt)) void
-reserved_by_cpu(registers_t* regs)
+__attribute__((target("general-regs-only"))) void
+reserved_by_cpu(registers_t* regs, u32 error_code)
 {
-    panic(regs, "Reserved by CPU");
+    (void)error_code;
+    (void)regs;
 }
 
 // --- Handlers that HAVE an error code ---
 
-__attribute__((target("general-regs-only"), interrupt)) void
+__attribute__((target("general-regs-only"))) void
 double_fault(registers_t* regs, u32 error_code)
 {
+    (void)error_code;
     (void)error_code;
     panic(regs, "Double Fault");
 }
 
-__attribute__((target("general-regs-only"), interrupt)) void
+__attribute__((target("general-regs-only"))) void
 invalid_tss(registers_t* regs, u32 error_code)
 {
+    (void)error_code;
     (void)error_code;
 
     panic(regs, "Invalid TSS");
 }
 
-__attribute__((target("general-regs-only"), interrupt)) void
+__attribute__((target("general-regs-only"))) void
 segment_not_present(registers_t* regs, u32 error_code)
 {
     (void)error_code;
@@ -115,7 +131,7 @@ segment_not_present(registers_t* regs, u32 error_code)
     __asm__ volatile("cli; hlt");
 }
 
-__attribute__((target("general-regs-only"), interrupt)) void
+__attribute__((target("general-regs-only"))) void
 stack_segment_fault(registers_t* regs, u32 error_code)
 {
     (void)error_code;
@@ -125,7 +141,7 @@ stack_segment_fault(registers_t* regs, u32 error_code)
     __asm__ volatile("cli; hlt");
 }
 
-__attribute__((target("general-regs-only"), interrupt)) void
+__attribute__((target("general-regs-only"))) void
 general_protection_fault(registers_t* regs, u32 error_code)
 {
     (void)error_code;
@@ -136,11 +152,11 @@ general_protection_fault(registers_t* regs, u32 error_code)
     __asm__ volatile("cli; hlt");
 }
 
-__attribute__((target("general-regs-only"), interrupt)) void
+__attribute__((target("general-regs-only"))) void
 page_fault(registers_t* regs, u32 error_code)
 {
     (void)error_code;
-    if ((regs->cs & KERNEL_SPACE) == 0) {
+    if ((regs->cs & 3) == KERNEL_MODE) {
         panic(regs, "Page Fault");
     }
 

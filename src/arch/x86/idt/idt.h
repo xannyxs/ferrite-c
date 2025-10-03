@@ -13,8 +13,8 @@ typedef struct interrupt_descriptor {
 } interrupt_descriptor_t;
 
 typedef struct registers {
-    u32 ds;
-    u32 edi, esi, ebp, esp, ebx, edx, ecx, eax;
+    u32 eax, ecx, edx, ebx, esp, ebp, esi, edi;
+    u32 gs, fs, es, ds;
     u32 int_no, err_code;
     u32 eip, cs, eflags, useresp, ss;
 } registers_t;
@@ -22,37 +22,24 @@ typedef struct registers {
 typedef void (*interrupt_handler)(registers_t*);
 typedef void (*interrupt_handler_with_error)(registers_t*, u32);
 
-typedef enum {
-    REGULAR,
-    WITH_ERROR_CODE,
-} interrupt_handler_e;
-
-typedef struct {
-    interrupt_handler_e type;
-    union {
-        interrupt_handler regular;
-        interrupt_handler_with_error with_error_code;
-    } handler;
-} interrupt_handler_entry_t;
-
 typedef struct {
     u32 hex;
     interrupt_handler func;
 } interrupt_hardware_t;
 
 // --- Handlers that DO NOT have an error code ---
-void divide_by_zero_handler(registers_t*);
-void debug_interrupt_handler(registers_t*);
-void non_maskable_interrupt_handler(registers_t*);
-void breakpoint_handler(registers_t*);
-void overflow_handler(registers_t*);
-void bound_range_exceeded_handler(registers_t*);
-void invalid_opcode(registers_t*);
-void device_not_available(registers_t*);
-void x87_fpu_exception(registers_t*);
+void divide_by_zero_handler(registers_t*, u32);
+void debug_interrupt_handler(registers_t*, u32);
+void non_maskable_interrupt_handler(registers_t*, u32);
+void breakpoint_handler(registers_t*, u32);
+void overflow_handler(registers_t*, u32);
+void bound_range_exceeded_handler(registers_t*, u32);
+void invalid_opcode(registers_t*, u32);
+void device_not_available(registers_t*, u32);
+void x87_fpu_exception(registers_t*, u32);
 
 // Reserved, does nothing
-void reserved_by_cpu(registers_t*);
+void reserved_by_cpu(registers_t*, u32);
 
 // --- Handlers that HAVE an error code ---
 void double_fault(registers_t*, u32 error_code);
