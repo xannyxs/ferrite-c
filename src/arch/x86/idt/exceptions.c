@@ -8,6 +8,37 @@
 #define KERNEL_MODE 0
 #define USER_MODE 3
 
+typedef void (*exception_handler_t)(registers_t*, u32);
+exception_handler_t const EXCEPTION_HANDLERS[NUM_EXCEPTION_HANDLERS] = {
+    divide_by_zero_handler,
+    debug_interrupt_handler,
+    non_maskable_interrupt_handler,
+    breakpoint_handler,
+    overflow_handler,
+    bound_range_exceeded_handler,
+    invalid_opcode,
+    device_not_available,
+    double_fault,
+    reserved_by_cpu,
+    invalid_tss,
+    segment_not_present,
+    stack_segment_fault,
+    general_protection_fault,
+    page_fault,
+    reserved_by_cpu,
+    x87_fpu_exception,
+};
+
+void exception_dispatcher_c(registers_t* reg)
+{
+    if (reg->int_no >= NUM_EXCEPTION_HANDLERS) {
+        printk("Unknown exception: %d\n", reg->int_no);
+        return;
+    }
+
+    EXCEPTION_HANDLERS[reg->int_no](reg, reg->err_code);
+}
+
 __attribute__((target("general-regs-only"))) void
 divide_by_zero_handler(registers_t* regs, u32 error_code)
 {

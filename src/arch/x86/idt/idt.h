@@ -2,7 +2,10 @@
 #define IDT_H
 
 #include "types.h"
+
 #define IDT_ENTRY_COUNT 256
+#define NUM_EXCEPTION_HANDLERS 17
+#define NUM_HARDWARE_HANDLERS 3
 
 typedef struct interrupt_descriptor {
     u16 pointer_low;    // offset bits 0..15
@@ -19,12 +22,9 @@ typedef struct registers {
     u32 eip, cs, eflags, useresp, ss;
 } registers_t;
 
-typedef void (*interrupt_handler)(registers_t*);
-typedef void (*interrupt_handler_with_error)(registers_t*, u32);
-
 typedef struct {
     u32 hex;
-    interrupt_handler func;
+    void (*f)(void);
 } interrupt_hardware_t;
 
 // --- Handlers that DO NOT have an error code ---
