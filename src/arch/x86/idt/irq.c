@@ -18,11 +18,10 @@ extern bool volatile need_resched;
 
 unsigned long long volatile ticks = 0;
 
-__attribute__((target("general-regs-only"), interrupt)) void
+__attribute__((target("general-regs-only"))) void
 timer_handler(registers_t* regs)
 {
     (void)regs;
-    pic_send_eoi(0);
 
     ticks += 1;
     check_timers();
@@ -40,26 +39,23 @@ timer_handler(registers_t* regs)
             }
         }
     }
-
-    check_resched();
+    pic_send_eoi(0);
 }
 
-__attribute__((target("general-regs-only"), interrupt)) void
+__attribute__((target("general-regs-only"))) void
 keyboard_handler(registers_t* regs)
 {
     (void)regs;
-    pic_send_eoi(1);
 
     s32 scancode = inb(KEYBOARD_DATA_PORT);
     if ((tty.tail + 1) % 256 != tty.head) {
         tty.buf[tty.tail] = scancode;
         tty.tail = (tty.tail + 1) % 256;
     }
-
-    check_resched();
+    pic_send_eoi(1);
 }
 
-__attribute__((target("general-regs-only"), interrupt)) void
+__attribute__((target("general-regs-only"))) void
 spurious_handler(registers_t* regs)
 {
     (void)regs;
@@ -73,5 +69,27 @@ spurious_handler(registers_t* regs)
 
     printk("Real IRQ 7 received. Sending EOI.\n");
     pic_send_eoi(0);
+}
+
+__attribute__((target("general-regs-only"))) void
+irq_dispatcher_c(registers_t* regs)
+{
+    u32 irq_num = regs->int_no - 0x20;
+
+    switch (regs->int_no) {
+    case 0x20:
+        timer_handler(regs);
+        break;
+    case 0x21:
+        keyboard_handler(regs);
+        break;
+    case 0x27:
+        spurious_handler(regs);
+        break;
+    default:
+        printk("Unhandled IRQ: %d\n", irq_num);
+        break;
+    }
+
     check_resched();
 }
