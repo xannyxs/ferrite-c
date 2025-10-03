@@ -12,7 +12,6 @@ __attribute__((target("general-regs-only"))) static u32
 sys_exit(s32 status)
 {
     do_exit(status);
-    return status;
 }
 
 // // TODO: Make _read function

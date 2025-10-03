@@ -2,6 +2,7 @@
 #include "debug/debug.h"
 #include "debug/panic.h"
 #include "drivers/printk.h"
+#include "memory/vmm.h"
 #include "sys/process.h"
 #include "types.h"
 
@@ -56,7 +57,7 @@ debug_interrupt_handler(registers_t* regs, u32 error_code)
     (void)error_code;
     (void)regs;
 
-    printk("Debug interrupt");
+    printk("Debug interrupt\n");
     BOCHS_MAGICBREAK();
 }
 
@@ -167,7 +168,6 @@ stack_segment_fault(registers_t* regs, u32 error_code)
 {
     (void)error_code;
     (void)regs;
-    // TODO:
 
     __asm__ volatile("cli; hlt");
 }
@@ -175,28 +175,43 @@ stack_segment_fault(registers_t* regs, u32 error_code)
 __attribute__((target("general-regs-only"))) void
 general_protection_fault(registers_t* regs, u32 error_code)
 {
-    (void)error_code;
-    if ((regs->cs & 3) == 0) {
-        printk("GPF: error=%x, cs=%x\n",
-            error_code, regs->cs);
-        panic(regs, "General Protection Fault");
+    printk("=== GPF ===\n");
+    printk("error_code: %x\n", error_code);
+    printk("cs: %x, eip: %x\n", regs->cs, regs->eip);
+    printk("ss: %x, esp: %x\n", regs->ss, regs->useresp);
+    printk("eflags: %x\n", regs->eflags);
+
+    if (error_code) {
+        printk("External: %d, Table: %d, Index: %d\n",
+            error_code & 1,
+            (error_code >> 1) & 3,
+            error_code >> 3);
     }
 
-    printk("GPF: error=%x, cs=%x\n",
-        error_code, regs->cs);
-    __asm__ volatile("cli; hlt");
+    panic(regs, "General Protection Fault");
 }
+
+#define USER_SPACE_END 0xC0000000
 
 __attribute__((target("general-regs-only"))) void
 page_fault(registers_t* regs, u32 error_code)
 {
-    (void)error_code;
-    if ((regs->cs & 3) == KERNEL_MODE) {
-        panic(regs, "Page Fault");
+    u32 fault_addr;
+    __asm__ volatile("movl %%cr2, %0" : "=r"(fault_addr));
+
+    if ((regs->cs & 3) == USER_MODE && fault_addr < USER_SPACE_END) {
+        if ((error_code & 0x1) == 0) {
+            void* page_base = (void*)(fault_addr & ~0xFFF);
+
+            if (vmm_map_page(NULL, page_base, PTE_P | PTE_W | PTE_U) == 0) {
+                return;
+            }
+        }
     }
 
-    printk("Page Fault: addr=%p, error=%x, cs=%x\n",
+    printk("Page Fault: addr=%x, error=%x, cs=%x\n",
         fault_addr, error_code, regs->cs);
+    printk("Faulting instruction at: 0x%x\n", regs->eip);
     panic(regs, "Page Fault");
     __builtin_unreachable();
 }

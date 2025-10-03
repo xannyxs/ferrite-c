@@ -108,6 +108,10 @@ __attribute__((warn_unused_result)) s32 vmm_map_page(void* paddr,
     void* vaddr,
     u32 flags)
 {
+    if (!paddr) {
+        paddr = buddy_alloc(0);
+    }
+
     u32 pdindex = (u32)vaddr >> 22;
     u32 ptindex = (u32)vaddr >> 12 & 0x03FF;
 
@@ -115,18 +119,19 @@ __attribute__((warn_unused_result)) s32 vmm_map_page(void* paddr,
     u32* pt = (u32*)(0xFFC00000 + (pdindex * PAGE_SIZE));
 
     if (!(pd[pdindex] & PTE_P)) {
-        u32 paddr = 0;
+        u32 pt_paddr = 0;
+
         if (memblock_is_active() == true) {
-            paddr = (u32)memblock(PAGE_SIZE);
+            pt_paddr = (u32)memblock(PAGE_SIZE);
         } else {
-            paddr = (u32)buddy_alloc(0);
+            pt_paddr = (u32)buddy_alloc(0);
         }
 
-        if (!paddr) {
+        if (!pt_paddr) {
             abort("Out of physical memory");
         }
 
-        pd[pdindex] = paddr | PTE_U | PTE_W | PTE_P;
+        pd[pdindex] = pt_paddr | PTE_U | PTE_W | PTE_P;
         flush_tlb();
 
         memset(pt, 0, PAGE_SIZE);
