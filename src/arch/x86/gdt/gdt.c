@@ -39,6 +39,11 @@ static void tss_init(void)
 
 /* Public */
 
+void tss_set_stack(u32 stack)
+{
+    tss_entry.esp0 = stack;
+}
+
 void gdt_init(void)
 {
     gdt_ptr.limit = sizeof(entry_t) * NUM_ENTRIES - 1;

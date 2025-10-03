@@ -53,6 +53,7 @@ pinnedPkgs.mkShell {
     grub2
     bear
     tree
+    cloc
 
     customBochs
   ];

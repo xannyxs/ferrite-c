@@ -11,20 +11,30 @@ syscall_handler:
 	push ecx
 	push edx
 	push ebx
-
 	push esp
-
 	push ebp
 	push esi
 	push edi
 
 	push ds
+	push es
+	push fs
+	push gs
+
+	mov ax, 0x10
+	mov ds, ax
+	mov es, ax
+	mov fs, ax
+	mov gs, ax
 
 	extern syscall_dispatcher_c
 	push   esp; Push the `registers_t frame` as the argument
 	call   syscall_dispatcher_c
 	add    esp, 4; Clean up the argument `registers_t`
 
+	pop gs
+	pop fs
+	pop es
 	pop ds
 
 	pop edi

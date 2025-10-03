@@ -104,12 +104,12 @@ void* vmm_unmap_page(void* vaddr)
  * @return 0 on success.
  * @return -1 if the mapping already exists.
  */
-__attribute__((warn_unused_result)) s32 vmm_map_page(void* physaddr,
-    void* virtualaddr,
+__attribute__((warn_unused_result)) s32 vmm_map_page(void* paddr,
+    void* vaddr,
     u32 flags)
 {
-    u32 pdindex = (u32)virtualaddr >> 22;
-    u32 ptindex = (u32)virtualaddr >> 12 & 0x03FF;
+    u32 pdindex = (u32)vaddr >> 22;
+    u32 ptindex = (u32)vaddr >> 12 & 0x03FF;
 
     u32* pd = (u32*)0xFFFFF000;
     u32* pt = (u32*)(0xFFC00000 + (pdindex * PAGE_SIZE));
@@ -122,7 +122,7 @@ __attribute__((warn_unused_result)) s32 vmm_map_page(void* physaddr,
             paddr = (u32)buddy_alloc(0);
         }
 
-        if (paddr == 0) {
+        if (!paddr) {
             abort("Out of physical memory");
         }
 
@@ -133,11 +133,10 @@ __attribute__((warn_unused_result)) s32 vmm_map_page(void* physaddr,
     }
 
     if (pt[ptindex] & PTE_P) {
-        printk("Mapping already exists\n");
         return -1;
     }
 
-    pt[ptindex] = ((u32)physaddr) | (flags & 0xFFF) | PTE_P;
+    pt[ptindex] = ((u32)paddr) | (flags & 0xFFF) | PTE_P;
 
     flush_tlb();
     return 0;

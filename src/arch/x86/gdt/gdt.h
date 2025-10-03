@@ -19,6 +19,8 @@ typedef struct {
     u16 trap, iomap_base;
 } __attribute__((packed)) tss_entry_t;
 
+void tss_set_stack(u32 stack);
+
 void gdt_init(void);
 
 #endif /* GDT_H */

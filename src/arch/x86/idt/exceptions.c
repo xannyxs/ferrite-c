@@ -177,9 +177,13 @@ general_protection_fault(registers_t* regs, u32 error_code)
 {
     (void)error_code;
     if ((regs->cs & 3) == 0) {
+        printk("GPF: error=%x, cs=%x\n",
+            error_code, regs->cs);
         panic(regs, "General Protection Fault");
     }
 
+    printk("GPF: error=%x, cs=%x\n",
+        error_code, regs->cs);
     __asm__ volatile("cli; hlt");
 }
 
@@ -191,12 +195,8 @@ page_fault(registers_t* regs, u32 error_code)
         panic(regs, "Page Fault");
     }
 
-    /* TODO:
-     * Implement On-Demand Paging (lazy loading) for the user space.
-     *
-     * To make the kernel more effecient, we do not map anything in the user
-     * space, until there is a page fault. It will then ensure the physical
-     * address is being mapped with a virtual address.
-     */
-    __asm__ volatile("cli; hlt");
+    printk("Page Fault: addr=%p, error=%x, cs=%x\n",
+        fault_addr, error_code, regs->cs);
+    panic(regs, "Page Fault");
+    __builtin_unreachable();
 }
