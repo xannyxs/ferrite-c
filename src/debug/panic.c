@@ -1,22 +1,24 @@
 #include "arch/x86/idt/idt.h"
-#include "drivers/video/vga.h"
+#include "arch/x86/io.h"
+#include "drivers/printk.h"
 #include "types.h"
 
 #include <stdbool.h>
 
-__attribute__((target("general-regs-only"))) void
+__attribute__((target("general-regs-only"))) static void
 save_stack(u32 stack_pointer)
 {
-    vga_writestring("\n--- STACK DUMP ---\n");
+    printk("\n--- STACK DUMP ---\n");
     u32* stack = (u32*)stack_pointer;
+
     for (int i = 0; i < 16; i++) {
-        vga_write_hex(stack[i]);
-        vga_putchar(' ');
+        printk("0x%x ", stack[i]);
     }
-    vga_writestring("\n------------------\n");
+
+    printk("\n------------------\n");
 }
 
-__attribute__((target("general-regs-only"))) void clean_registers(void)
+__attribute__((target("general-regs-only"))) static void clean_registers(void)
 {
     __asm__ volatile("xor %%eax, %%eax\n"
                      "xor %%ebx, %%ebx\n"
@@ -32,34 +34,23 @@ __attribute__((target("general-regs-only"))) void clean_registers(void)
 __attribute__((target("general-regs-only"), noreturn)) void
 panic(registers_t* regs, char const* msg)
 {
-    (void)msg;
-    __asm__ volatile("cli");
+    cli();
 
-    vga_writestring("!!! KERNEL PANIC !!!\n");
-    vga_writestring(msg);
-    vga_writestring("\n\n");
-
-    vga_writestring("EAX: ");
-    vga_write_hex(regs->eax);
-    vga_putchar('\n');
-    vga_writestring("EIP: ");
-    vga_write_hex(regs->eip);
-    vga_putchar('\n');
-    vga_writestring("CS:  ");
-    vga_write_hex(regs->cs);
-    vga_putchar('\n');
-    vga_writestring("EFLAGS: ");
-    vga_write_hex(regs->eflags);
-    vga_putchar('\n');
-    vga_writestring("INT: ");
-    vga_write_hex(regs->int_no);
-    vga_putchar('\n');
+    printk("!!! KERNEL PANIC !!!\n");
+    printk("%s\n\n", msg);
+    printk("EAX: 0x%x\n", regs->eax);
+    printk("EIP: 0x%x\n", regs->eip);
+    printk("CS:  0x%x\n", regs->cs);
+    printk("EFLAGS: 0x%x\n", regs->eflags);
+    printk("INT: 0x%x\n", regs->int_no);
 
     save_stack((u32)regs);
     clean_registers();
 
-    vga_writestring("\nSystem Halted.");
+    printk("\nSystem Halted.");
+
     while (true) {
+        cli();
         __asm__ volatile("hlt");
     }
 }

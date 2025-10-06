@@ -33,17 +33,6 @@ __attribute__((target("general-regs-only"))) static void vga_scroll_up(void)
 
 /* Public */
 
-__attribute__((target("general-regs-only"))) void vga_write_hex(u32 n)
-{
-    vga_writestring("0x");
-
-    for (int i = 28; i >= 0; i -= 4) {
-        char const* hex = "0123456789ABCDEF";
-        u8 const nibble = (n >> i) & 0xF;
-        vga_putchar(hex[nibble]);
-    }
-}
-
 void vga_init(void)
 {
     terminal_column = 0;

@@ -1,8 +1,6 @@
 #ifndef VGA_H
 #define VGA_H
 
-#include "types.h"
-
 #define VGA_WIDTH 80
 #define VGA_HEIGHT 25
 #define VGA_MEMORY 0xC00B8000 // or 0xB8000?
@@ -35,7 +33,5 @@ void vga_writestring(char const* data);
 void vga_putchar(char c);
 
 void vga_clear_char(void);
-
-void vga_write_hex(u32 n);
 
 #endif /* VGA_H */
