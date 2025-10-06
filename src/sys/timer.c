@@ -71,7 +71,7 @@ s32 knanosleep(s32 ms)
     return 0;
 }
 
-void sleeppid(void* channel)
+void waitchan(void* channel)
 {
     proc_t* p = myproc();
     cli();

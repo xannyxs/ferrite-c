@@ -15,13 +15,12 @@
 
 #include <stdbool.h>
 
+proc_t* initial_proc;
+
 extern proc_t ptables[NUM_PROC];
 extern u32 pid_counter;
 extern u32 page_directory[1024];
-
 extern void jump_to_usermode(void* entry, void* user_stack);
-
-proc_t* initial_proc;
 
 void user_init(void)
 {
@@ -38,13 +37,7 @@ void user_init(void)
         : "a"(1), "b"(my_pid) // SYS_EXIT=0
     );
 
-    while (1) {
-        __asm__ volatile(
-            "int $0x80"
-            : "=a"(my_pid)
-            : "a"(20) // SYS_GETPID in EAX
-        );
-    }
+    __builtin_unreachable();
 }
 
 /* Public */
@@ -98,7 +91,7 @@ void init_process(void)
             if (p->state == ZOMBIE && p->parent == current_proc) {
                 p->state = UNUSED;
                 free_page(p->kstack);
-                vmm_free_pagedir(p->pgdir);
+                // vmm_free_pagedir(p->pgdir);
 
                 p->pgdir = NULL;
                 p->kstack = NULL;

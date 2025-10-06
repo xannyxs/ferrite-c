@@ -8,7 +8,7 @@
 
 #include <stdbool.h>
 
-__attribute__((target("general-regs-only"))) static u32
+__attribute__((target("general-regs-only"))) static void
 sys_exit(s32 status)
 {
     do_exit(status);
@@ -67,6 +67,8 @@ sys_time(time_t* tloc)
 __attribute__((target("general-regs-only"), warn_unused_result)) static pid_t
 sys_getpid(void)
 {
+    printk("PID: %d\n", myproc()->pid);
+
     return myproc()->pid;
 }
 

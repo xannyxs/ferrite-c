@@ -16,7 +16,7 @@ s32 ksleep(s32 seconds);
 
 s32 knanosleep(s32 ms);
 
-void sleeppid(void* channel);
+void waitchan(void* channel);
 
 void check_timers(void);
 
