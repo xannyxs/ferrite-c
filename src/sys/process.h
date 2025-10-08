@@ -77,6 +77,8 @@ pid_t do_exec(char const* name, void (*f)(void));
 
 void do_exit(s32 status);
 
+void wakeup(void* channel);
+
 pid_t do_wait(s32* status);
 
 void process_list(void);

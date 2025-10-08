@@ -197,7 +197,7 @@ pid_t do_wait(s32* status)
             return -1;
         }
 
-        sleeppid(myproc());
+        waitchan(myproc());
     }
 }
 

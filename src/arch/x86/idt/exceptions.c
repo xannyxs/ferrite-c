@@ -200,6 +200,7 @@ page_fault(registers_t* regs, u32 error_code)
     __asm__ volatile("movl %%cr2, %0" : "=r"(fault_addr));
 
     if ((regs->cs & 3) == USER_MODE && fault_addr < USER_SPACE_END) {
+
         if ((error_code & 0x1) == 0) {
             void* page_base = (void*)(fault_addr & ~0xFFF);
 
