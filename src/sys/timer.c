@@ -39,6 +39,11 @@ void check_timers(void)
     }
 }
 
+s32 ksleep(s32 seconds)
+{
+    return knanosleep(seconds * 1000);
+}
+
 /*
  * Sleep for specified seconds by blocking current process.
  * Current implementation: Direct timer callback wakes process
@@ -46,11 +51,11 @@ void check_timers(void)
  * POSIX approach would use: alarm(seconds) + pause() + SIGALRM handler
  * TODO: Implement SIGALRM-based sleep for full POSIX compliance
  */
-s32 ksleep(s32 seconds)
+s32 knanosleep(s32 ms)
 {
     timer_t timer;
 
-    timer.expires = ticks + (unsigned long long)seconds * HZ;
+    timer.expires = ticks + (unsigned long long)ms * HZ / 1000;
     timer.function = wake_up_process;
     timer.data = (void*)current_proc;
 
@@ -66,7 +71,7 @@ s32 ksleep(s32 seconds)
     return 0;
 }
 
-void sleeppid(void* channel)
+void waitchan(void* channel)
 {
     proc_t* p = myproc();
     cli();

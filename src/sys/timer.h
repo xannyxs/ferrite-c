@@ -14,7 +14,9 @@ typedef struct timer {
 
 s32 ksleep(s32 seconds);
 
-void sleeppid(void* channel);
+s32 knanosleep(s32 ms);
+
+void waitchan(void* channel);
 
 void check_timers(void);
 

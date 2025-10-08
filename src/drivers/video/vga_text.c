@@ -15,7 +15,7 @@ static inline u8 vga_entry_color(enum vga_color fg, enum vga_color bg)
 }
 
 __attribute__((target("general-regs-only"))) static inline u16
-vga_entry(unsigned char uc, u8 color)
+vga_entry(u8 uc, u8 color)
 {
     return (u16)uc | (u16)color << 8;
 }
@@ -32,17 +32,6 @@ __attribute__((target("general-regs-only"))) static void vga_scroll_up(void)
 }
 
 /* Public */
-
-__attribute__((target("general-regs-only"))) void vga_write_hex(u32 n)
-{
-    vga_writestring("0x");
-
-    for (int i = 28; i >= 0; i -= 4) {
-        char const* hex = "0123456789ABCDEF";
-        u8 const nibble = (n >> i) & 0xF;
-        vga_putchar(hex[nibble]);
-    }
-}
 
 void vga_init(void)
 {

@@ -6,8 +6,10 @@
 
 #define NUM_PROC 64
 #define TIME_QUANTUM (100 * HZ / 1000)
+#define ROOT_UID 0
 
 typedef s32 pid_t;
+typedef s32 uid_t;
 typedef enum { UNUSED,
     EMBRYO,
     SLEEPING,
@@ -20,23 +22,30 @@ typedef struct {
 
 typedef struct process {
     pid_t pid;
+
+    uid_t uid;
+    uid_t euid;
+
     procstate_e state;
 
     context_t* context;
 
     void* pgdir;
-    u32 sz;
-
-    u32 pending_signals;
-
     char* kstack;
-    struct process* parent;
+
     void* channel;
+    u32 pending_signals;
     s32 status;
+
+    struct process* parent;
     char name[16];
 } proc_t;
 
 extern void swtch(context_t** old, context_t* new);
+
+uid_t getuid(void);
+
+uid_t geteuid(void);
 
 void schedule(void);
 
@@ -67,6 +76,8 @@ pid_t do_fork(char const* name);
 pid_t do_exec(char const* name, void (*f)(void));
 
 void do_exit(s32 status);
+
+void wakeup(void* channel);
 
 pid_t do_wait(s32* status);
 

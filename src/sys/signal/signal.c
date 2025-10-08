@@ -85,7 +85,7 @@ s32 do_kill(pid_t pid, s32 sig)
         return -1;
     }
 
-    p->pending_signals = (1 << sig);
+    p->pending_signals |= (1 << sig);
 
     if (p->state == SLEEPING) {
         p->state = READY;
@@ -110,7 +110,9 @@ void handle_signal(void)
 
         current_proc->pending_signals &= ~(1 << sig);
         __sighandler_t handler = sigaction[sig].sa_handler;
-        if (handler == SIG_IGN) {
+
+        // TODO: Handle SIG_ERR instead of continuing
+        if (handler == SIG_IGN || handler == SIG_ERR) {
             continue;
         }
 

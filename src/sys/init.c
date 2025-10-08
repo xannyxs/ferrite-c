@@ -1,3 +1,5 @@
+#include "arch/x86/gdt/gdt.h"
+#include "debug/debug.h"
 #include "drivers/printk.h"
 #include "lib/stdlib.h"
 #include "lib/string.h"
@@ -13,11 +15,36 @@
 
 #include <stdbool.h>
 
+proc_t* initial_proc;
+
 extern proc_t ptables[NUM_PROC];
 extern u32 pid_counter;
 extern u32 page_directory[1024];
+extern void jump_to_usermode(void* entry, void* user_stack);
 
-proc_t* initial_proc;
+void user_init(void)
+{
+    s32 my_pid;
+    __asm__ volatile(
+        "int $0x80"
+        : "=a"(my_pid)
+        : "a"(20) // SYS_GETPID in EAX
+    );
+
+    __asm__ volatile(
+        "int $0x80"
+        :
+        : "a"(1), "b"(my_pid) // SYS_EXIT=0
+    );
+
+    __builtin_unreachable();
+}
+
+/* Public */
+
+inline proc_t* initproc(void) { return initial_proc; }
+
+#include "arch/x86/memlayout.h"
 
 void init_process(void)
 {
@@ -28,13 +55,26 @@ void init_process(void)
 
     printk("Initial process started...!\n");
 
+    // pid_t pid = do_fork("user space");
+    // if (pid < 0) {
+    //     abort("Init: could not create a new process");
+    // } else if (pid == 0) {
+    //     void* user_code_addr = (void*)0x400000;
+    //     memcpy(user_code_addr, (void*)(u32)user_init, 4096);
+    //
+    //     vmm_map_page(NULL, (void*)0xBFFFF000, PTE_P | PTE_W | PTE_U);
+    //
+    //     printk("Second\n");
+    //     process_list();
+    //     jump_to_usermode((void*)0x400000, (void*)0xC0000000);
+    // }
+
     pid_t pid = do_exec("shell", shell_process);
     if (pid < 0) {
         abort("Init: could not create a new process");
-    } else if (pid == 0) {
-        shell_process();
-        __builtin_unreachable();
     }
+    printk("First\n");
+    process_list();
 
 #ifdef __TEST
     pid = do_exec("test", main_tests);
@@ -51,7 +91,7 @@ void init_process(void)
             if (p->state == ZOMBIE && p->parent == current_proc) {
                 p->state = UNUSED;
                 free_page(p->kstack);
-                vmm_free_pagedir(p->pgdir);
+                // vmm_free_pagedir(p->pgdir);
 
                 p->pgdir = NULL;
                 p->kstack = NULL;
@@ -63,8 +103,6 @@ void init_process(void)
         yield();
     }
 }
-
-proc_t* initproc(void) { return initial_proc; }
 
 void create_initial_process(void)
 {
@@ -86,4 +124,7 @@ void create_initial_process(void)
     init->state = READY;
 
     initial_proc = init;
+
+    u32 kernel_stack_top = (u32)init->kstack + PAGE_SIZE;
+    tss_set_stack(kernel_stack_top);
 }
