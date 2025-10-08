@@ -55,21 +55,21 @@ void init_process(void)
 
     printk("Initial process started...!\n");
 
-    pid_t pid = do_fork("user space");
-    if (pid < 0) {
-        abort("Init: could not create a new process");
-    } else if (pid == 0) {
-        void* user_code_addr = (void*)0x400000;
-        memcpy(user_code_addr, (void*)(u32)user_init, 4096);
+    // pid_t pid = do_fork("user space");
+    // if (pid < 0) {
+    //     abort("Init: could not create a new process");
+    // } else if (pid == 0) {
+    //     void* user_code_addr = (void*)0x400000;
+    //     memcpy(user_code_addr, (void*)(u32)user_init, 4096);
+    //
+    //     vmm_map_page(NULL, (void*)0xBFFFF000, PTE_P | PTE_W | PTE_U);
+    //
+    //     printk("Second\n");
+    //     process_list();
+    //     jump_to_usermode((void*)0x400000, (void*)0xC0000000);
+    // }
 
-        vmm_map_page(NULL, (void*)0xBFFFF000, PTE_P | PTE_W | PTE_U);
-
-        printk("Second\n");
-        process_list();
-        jump_to_usermode((void*)0x400000, (void*)0xC0000000);
-    }
-
-    pid = do_exec("shell", shell_process);
+    pid_t pid = do_exec("shell", shell_process);
     if (pid < 0) {
         abort("Init: could not create a new process");
     }
