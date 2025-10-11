@@ -41,10 +41,7 @@ void buddy_visualize(void)
         int free_block_count = 0;
         while (node) {
             free_block_count++;
-            vmm_remap_page(SCRATCH_VADDR, node, 0);
-
-            buddy_node_t* mapped_node = (buddy_node_t*)SCRATCH_VADDR;
-            node = mapped_node->next;
+            node = node->next;
         }
         int pages_per_block = 1 << i;
         printk("    Order %d (%d pages): %d free blocks\n", i, pages_per_block,
@@ -91,55 +88,56 @@ static bool is_block_free(u32 i, u32 order)
     return true;
 }
 
-void remove_from_free_list(u32 paddr, u32 order)
+static bool remove_from_free_list(vaddr_t vaddr, u32 order)
 {
     if (order > g_buddy.max_order) {
         abort("Invalid order provided to remove_from_free_list");
     }
 
+    buddy_node_t* target = (buddy_node_t*)vaddr;
     buddy_node_t* head = g_buddy.free_lists[order];
 
-    if ((u32)head == paddr) {
+    if (head == target) {
         g_buddy.free_lists[order] = head->next;
-        return;
+        return true;
     }
 
     buddy_node_t* prev = head;
     buddy_node_t* current = head->next;
 
     while (current) {
-        if ((u32)current == paddr) {
+        if (current == target) {
             prev->next = current->next;
-            return;
+            return true;
         }
         prev = current;
         current = current->next;
     }
 
-    abort("Failed to remove address from free list: address not found!");
+    return false;
 }
 
-static void mark_free(u32 paddr, u32 order)
+static void mark_free(vaddr_t vaddr, u32 order)
 {
-    u32 i = (paddr - g_buddy.base) / PAGE_SIZE;
+    u32 i = (vaddr - g_buddy.base) / PAGE_SIZE;
     u32 blocks_to_mark = 1 << order;
 
     for (u32 j = 0; j < blocks_to_mark; j++) {
         u32 current = i + j;
         u32 byte_index = current / 8;
-        u32 bit_in_byte = current % 8;
+        u32 bit_index = current % 8;
 
         if (byte_index >= g_buddy.map_size) {
-            abort("Allocation address out of map bounds!");
+            abort("Deallocation address out of map bounds!");
         }
 
-        g_buddy.map[byte_index] &= ~(1 << bit_in_byte);
+        g_buddy.map[byte_index] &= ~(1 << bit_index);
     }
 }
 
-static void mark_allocated(u32 paddr, u32 order)
+static void mark_allocated(vaddr_t vaddr, u32 order)
 {
-    u32 i = (paddr - g_buddy.base) / PAGE_SIZE;
+    u32 i = (vaddr - g_buddy.base) / PAGE_SIZE;
     u32 blocks_to_mark = 1 << order;
 
     for (u32 j = 0; j < blocks_to_mark; j++) {
@@ -155,41 +153,56 @@ static void mark_allocated(u32 paddr, u32 order)
     }
 }
 
-static void buddy_list_add(u32 paddr, u32 k)
+static inline void buddy_list_add(vaddr_t vaddr, u32 k)
 {
-    vmm_remap_page(SCRATCH_VADDR, (void*)paddr, 0);
-    buddy_node_t* mapped_buddy = (buddy_node_t*)SCRATCH_VADDR;
-
-    mapped_buddy->next = g_buddy.free_lists[k];
-    g_buddy.free_lists[k] = (buddy_node_t*)paddr;
+    buddy_node_t* node = (buddy_node_t*)vaddr;
+    node->next = g_buddy.free_lists[k];
+    g_buddy.free_lists[k] = node;
 }
 
 /* Public */
 
-size_t buddy_get_total_memory(void) { return g_buddy.size; }
-
-void buddy_dealloc(u32 addr, u32 order)
+u32 buddy_get_max_order(void)
 {
-    mark_free(addr, order);
+    return g_buddy.max_order;
+}
 
-    u32 current_addr = addr;
+size_t buddy_get_total_memory(void)
+{
+
+    return g_buddy.size;
+}
+
+void buddy_dealloc(paddr_t paddr, u32 order)
+{
+    vaddr_t vaddr = P2V_WO(paddr);
+    mark_free(vaddr, order);
+
+    paddr_t current_paddr = paddr;
     u32 current_order = order;
 
     while (current_order < g_buddy.max_order) {
         size_t block_size = PAGE_SIZE << current_order;
-        u32 buddy_addr = current_addr ^ block_size;
+        paddr_t buddy_paddr = current_paddr ^ block_size;
+        vaddr_t buddy_vaddr = P2V_WO(buddy_paddr);
+        u32 buddy_index = (buddy_vaddr - g_buddy.base) / PAGE_SIZE;
 
-        if (!is_block_free(buddy_addr, current_order)) {
+        if (!is_block_free(buddy_index, current_order)) {
             break;
         }
 
-        remove_from_free_list(buddy_addr, current_order);
+        if (!remove_from_free_list(buddy_vaddr, current_order)) {
+            break;
+        }
 
-        current_addr = (current_addr < buddy_addr) ? current_addr : buddy_addr;
+        mark_allocated(buddy_vaddr, current_order);
+
+        current_paddr = (current_paddr < buddy_paddr) ? current_paddr : buddy_paddr;
         current_order += 1;
     }
 
-    buddy_list_add(current_addr, current_order);
+    vaddr_t current_vaddr = P2V_WO(current_paddr);
+    buddy_list_add(current_vaddr, current_order);
 }
 
 void* buddy_alloc(u32 order)
@@ -199,7 +212,7 @@ void* buddy_alloc(u32 order)
     }
 
     u32 k = order;
-    while (k < g_buddy.max_order && !g_buddy.free_lists[k]) {
+    while (k <= g_buddy.max_order && !g_buddy.free_lists[k]) {
         k += 1;
     }
 
@@ -209,40 +222,43 @@ void* buddy_alloc(u32 order)
     }
 
     buddy_node_t* node = g_buddy.free_lists[k];
-    u32 block_addr = (u32)node;
-
-    vmm_remap_page(SCRATCH_VADDR, (void*)node, 0);
-    buddy_node_t* mapped_node = (buddy_node_t*)SCRATCH_VADDR;
-    g_buddy.free_lists[k] = mapped_node->next;
+    vaddr_t block_vaddr = (vaddr_t)node;
+    g_buddy.free_lists[k] = node->next;
 
     while (k > order) {
         k -= 1;
-        u32 buddy_addr = block_addr + (PAGE_SIZE << k);
+        vaddr_t buddy_vaddr = block_vaddr + (PAGE_SIZE << k);
 
-        buddy_list_add(buddy_addr, k);
+        buddy_list_add(buddy_vaddr, k);
     }
 
-    mark_allocated(block_addr, order);
-    return (void*)block_addr;
+    mark_allocated(block_vaddr, order);
+    return (void*)V2P_WO(block_vaddr);
 }
 
 void buddy_init(void)
 {
-    u32 start_addr = (u32)get_next_free_addr();
-    u32 end_addr = (u32)get_heap_end_addr();
+    paddr_t start_paddr = (paddr_t)get_next_free_addr();
+    paddr_t end_paddr = (paddr_t)get_heap_end_addr();
+    vaddr_t end_vaddr = P2V_WO(end_paddr);
 
-    size_t num_pages = (end_addr - start_addr) / PAGE_SIZE;
+    size_t num_pages = (end_paddr - start_paddr) / PAGE_SIZE;
     size_t map_size_needed = CEIL_DIV(num_pages, 8);
     g_buddy.map_size = ALIGN(map_size_needed, sizeof(size_t));
 
-    g_buddy.map = (u8*)memblock(g_buddy.map_size);
+    paddr_t map_ptr = (paddr_t)memblock(g_buddy.map_size);
+    g_buddy.map = (u8*)P2V_WO(map_ptr);
     if (!g_buddy.map) {
         abort("Could not allocate the bitmap for Buddy Allocator");
     }
     memset(g_buddy.map, 0, g_buddy.map_size);
 
-    g_buddy.base = ALIGN((u32)g_buddy.map + g_buddy.map_size, PAGE_SIZE);
-    g_buddy.size = end_addr - g_buddy.base;
+    vaddr_t temp_base = ALIGN((u32)g_buddy.map + g_buddy.map_size, PAGE_SIZE);
+    size_t temp_size = end_vaddr - temp_base;
+    u32 temp_max_order = floor_log2(temp_size / PAGE_SIZE);
+
+    g_buddy.base = ALIGN((u32)g_buddy.map + g_buddy.map_size, PAGE_SIZE << temp_max_order);
+    g_buddy.size = end_vaddr - g_buddy.base;
     if (g_buddy.size < PAGE_SIZE) {
         abort("Not enough memory for the buddy pool");
     }
@@ -254,7 +270,7 @@ void buddy_init(void)
     }
 
     size_t remaining = g_buddy.size;
-    u32 current_addr = g_buddy.base;
+    vaddr_t current_addr = g_buddy.base;
 
     while (remaining >= PAGE_SIZE) {
         u32 order = floor_log2(remaining / PAGE_SIZE);
@@ -262,7 +278,7 @@ void buddy_init(void)
             order = g_buddy.max_order;
         }
 
-        vmm_remap_page(SCRATCH_VADDR, (void*)current_addr, 0);
+        vmm_remap_page(SCRATCH_VADDR, (void*)V2P_WO(current_addr), 0);
         buddy_node_t* block = (buddy_node_t*)SCRATCH_VADDR;
 
         block->next = g_buddy.free_lists[order];

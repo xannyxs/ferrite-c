@@ -11,6 +11,9 @@ typedef signed int s32;
 
 typedef unsigned int size_t;
 
+typedef unsigned long paddr_t;
+typedef unsigned long vaddr_t;
+
 #define NULL ((void*)0)
 
 #endif
