@@ -69,10 +69,18 @@ void vmm_free_pagedir(void* pgdir)
     for (s32 i = 0; i < 768; i += 1) {
         if (pgdir_addr[i] & PTE_P && pgdir_addr[i] != page_directory[i]) {
             u32 pt_paddr = pgdir_addr[i] & ~0xFFF;
-            free_page((void*)P2V_WO(pt_paddr));
+            u32* pt_vaddr = (u32*)P2V_WO(pt_paddr);
+
+            for (s32 j = 0; j < 1024; j += 1) {
+                if (pt_vaddr[j] & PTE_P) {
+                    u32 page_paddr = pt_vaddr[j] & ~0xFFF;
+                    free_page((void*)P2V_WO(page_paddr));
+                }
+            }
+
+            free_page(pt_vaddr);
         }
     }
-
     free_page(pgdir_addr);
 }
 
@@ -110,6 +118,9 @@ __attribute__((warn_unused_result)) s32 vmm_map_page(void* paddr,
 {
     if (!paddr) {
         paddr = buddy_alloc(0);
+        if (!paddr) {
+            return -1;
+        }
     }
 
     u32 pdindex = (u32)vaddr >> 22;
@@ -193,7 +204,7 @@ void vmm_init_pages(void)
     }
 
     u32 page_directory_paddr = V2P_WO((u32)page_directory);
-    page_directory[1023] = page_directory_paddr | PTE_P | PTE_W | PTE_U;
+    page_directory[1023] = page_directory_paddr | PTE_P | PTE_W;
 
     load_page_directory((u32*)page_directory_paddr);
     enable_paging();
@@ -208,6 +219,4 @@ void vmm_init_pages(void)
     if (ret < 0) {
         abort("Scratch Page is already taken\n");
     }
-
-    // visualize_paging(8, 8);
 }

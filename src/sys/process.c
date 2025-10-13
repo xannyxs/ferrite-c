@@ -208,8 +208,16 @@ void* setup_kvm(void)
         return NULL;
     }
 
-    for (int i = 0; i < 1024; i++) {
-        pgdir[i] = page_directory[i];
+    for (int i = 0; i < 4; i++) {
+        if (page_directory[i] & PTE_P) {
+            pgdir[i] = page_directory[i];
+        }
+    }
+
+    for (int i = KERNBASE << 22; i < 1024; i++) {
+        if (page_directory[i] & PTE_P) {
+            pgdir[i] = page_directory[i];
+        }
     }
 
     pgdir[1023] = V2P_WO((u32)pgdir) | PTE_P | PTE_W | PTE_U;

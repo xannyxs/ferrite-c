@@ -67,8 +67,6 @@ sys_time(time_t* tloc)
 __attribute__((target("general-regs-only"), warn_unused_result)) static pid_t
 sys_getpid(void)
 {
-    printk("PID: %d\n", myproc()->pid);
-
     return myproc()->pid;
 }
 
