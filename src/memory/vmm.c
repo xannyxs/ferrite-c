@@ -69,10 +69,18 @@ void vmm_free_pagedir(void* pgdir)
     for (s32 i = 0; i < 768; i += 1) {
         if (pgdir_addr[i] & PTE_P && pgdir_addr[i] != page_directory[i]) {
             u32 pt_paddr = pgdir_addr[i] & ~0xFFF;
-            free_page((void*)P2V_WO(pt_paddr));
+            u32* pt_vaddr = (u32*)P2V_WO(pt_paddr);
+
+            for (s32 j = 0; j < 1024; j += 1) {
+                if (pt_vaddr[j] & PTE_P) {
+                    u32 page_paddr = pt_vaddr[j] & ~0xFFF;
+                    free_page((void*)P2V_WO(page_paddr));
+                }
+            }
+
+            free_page(pt_vaddr);
         }
     }
-
     free_page(pgdir_addr);
 }
 

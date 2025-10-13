@@ -3,6 +3,7 @@
 #include "drivers/printk.h"
 #include "lib/stdlib.h"
 #include "lib/string.h"
+#include "memory/buddy_allocator/buddy.h"
 #include "memory/consts.h"
 #include "memory/page.h"
 #include "memory/vmm.h"
@@ -88,25 +89,6 @@ void init_process(void)
         abort("Init: could not create a new process");
     }
 
-    proc_t* child = NULL;
-    for (int i = 0; i < NUM_PROC; i++) {
-        if (ptables[i].pid == pid) {
-            child = &ptables[i];
-            break;
-        }
-    }
-
-    printk("Found child 0x%x\n", child);
-
-    if (child) {
-        u32* child_pgdir = (u32*)child->pgdir;
-        printk("child pgdir 0x%x\n", child_pgdir);
-        printk("Right after fork - child pgdir[0] = 0x%x (should be 0x%x)\n",
-            child_pgdir[0], page_directory[0]);
-    }
-    printk("First\n");
-    process_list();
-
 #ifdef __TEST
     pid = do_exec("test", main_tests);
     if (pid < 0) {
@@ -122,7 +104,7 @@ void init_process(void)
             if (p->state == ZOMBIE && p->parent == current) {
                 p->state = UNUSED;
                 free_page(p->kstack);
-                // vmm_free_pagedir(p->pgdir);
+                vmm_free_pagedir(p->pgdir);
 
                 p->pgdir = NULL;
                 p->kstack = NULL;
