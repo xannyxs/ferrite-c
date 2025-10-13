@@ -46,30 +46,17 @@ inline proc_t* initproc(void) { return initial_proc; }
 
 void prepare_for_jmp(void)
 {
-    proc_t* current = myproc();
-    printk("Second\n");
-    printk("Child PID %d, pgdir=%x\n", current->pid, current->pgdir);
-
     void* page_kaddr = get_free_page();
     if (!page_kaddr) {
         abort("Out of physical memory for user code");
     }
 
     paddr_t paddr = V2P_WO((u32)page_kaddr);
-
-    printk("Page allocated: kaddr=%x, paddr=%x\n", page_kaddr, paddr);
-
     void* user_code_vaddr = (void*)0x10000000;
     void* user_stack_vaddr = (void*)0xBFFFF000;
 
     u32 user_init_addr = (u32)user_init;
     memcpy(page_kaddr, (void*)user_init_addr, PAGE_SIZE);
-
-    printk("Copied bytes. First 4 bytes: %02x %02x %02x %02x\n",
-        ((unsigned char*)page_kaddr)[0],
-        ((unsigned char*)page_kaddr)[1],
-        ((unsigned char*)page_kaddr)[2],
-        ((unsigned char*)page_kaddr)[3]);
 
     if (vmm_map_page((void*)paddr, user_code_vaddr, PTE_P | PTE_W | PTE_U) < 0) {
         abort("Failed to map user code page");
@@ -79,7 +66,6 @@ void prepare_for_jmp(void)
         abort("Failed to map user stack page");
     }
 
-    printk("Mapped user code and stack, jumping to usermode\n");
     jump_to_usermode(user_code_vaddr, (void*)0xBFFFFFFC);
 }
 
