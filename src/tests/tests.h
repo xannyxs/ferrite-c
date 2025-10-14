@@ -48,6 +48,8 @@ void main_tests(void);
 
 void buddy_tests(void);
 
+void socket_tests(void);
+
 #endif /* __TEST */
 
 #endif /* TESTS_H */

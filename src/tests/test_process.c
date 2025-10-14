@@ -1,6 +1,6 @@
 #ifdef __TEST
-#    include "sys/process.h"
-#    include "sys/timer.h"
+#    include "sys/process/process.h"
+#    include "sys/timer/timer.h"
 #    include "tests/tests.h"
 #    include "types.h"
 
