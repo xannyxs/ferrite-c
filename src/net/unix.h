@@ -1,6 +1,7 @@
 #ifndef UNIX_H
 #define UNIX_H
 
+#include "net/socket.h"
 #include "types.h"
 
 #define AF_UNIX 1
@@ -21,5 +22,7 @@ typedef struct unix_sock {
 } unix_sock_t;
 
 extern struct proto_ops unix_stream_ops;
+
+int unix_unregister_socket(socket_t* sock);
 
 #endif

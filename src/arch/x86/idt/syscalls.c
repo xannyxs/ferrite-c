@@ -161,10 +161,24 @@ SYSCALL_ATTR static s32 sys_listen(int fd, int backlog)
     return s->ops->listen(s, backlog);
 }
 
+SYSCALL_ATTR static s32 sys_close(s32 fd)
+{
+    file_t* f = getfd(fd);
+    if (!f) {
+        return -1;
+    }
+
+    return socket_close(f);
+}
+
 __attribute__((target("general-regs-only"))) void
 syscall_dispatcher_c(registers_t* reg)
 {
     switch (reg->eax) {
+    case SYS_CLOSE:
+        reg->eax = sys_close((s32)reg->ebx);
+        break;
+
     case SYS_EXIT:
         sys_exit((s32)reg->ebx);
         break;
@@ -208,7 +222,7 @@ syscall_dispatcher_c(registers_t* reg)
         break;
 
     case SYS_LISTEN:
-        reg->eax = sys_listen(reg->ebx, reg->ecx);
+        reg->eax = sys_listen((s32)reg->ebx, (s32)reg->ecx);
         break;
 
     case SYS_GETEUID:

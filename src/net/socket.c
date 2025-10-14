@@ -38,9 +38,33 @@ static int socket_write(struct file* f, void const* buf, size_t len)
     return 0;
 }
 
-static int socket_close(struct file* f)
+s32 socket_close(struct file* f)
 {
-    (void)f;
+    if (S_ISSOCK(f->f_inode->i_mode)) {
+        return -1;
+    }
+
+    socket_t* s = f->f_inode->u.i_socket;
+
+    if (!s || !s->ops || !s->ops->shutdown) {
+        return -1;
+    }
+
+    s->ops->shutdown(s, 0);
+
+    if (s->data) {
+        unix_sock_t* usock = (unix_sock_t*)s->data;
+
+        if (usock->path[0] != '\0') {
+            unix_unregister_socket(s);
+        }
+
+        kfree(s->data);
+        s->data = NULL;
+    }
+
+    kfree(s);
+
     return 0;
 }
 

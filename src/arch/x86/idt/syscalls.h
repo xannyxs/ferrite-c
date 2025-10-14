@@ -6,8 +6,8 @@
 enum syscalls_e {
     SYS_READ = 0,
     SYS_WRITE = 1,
-    SYS_OPEN = 5,
-    SYS_CLOSE = 6,
+    SYS_OPEN = 2,
+    SYS_CLOSE = 3,
     SYS_WAITPID = 7,
     SYS_CREAT = 8,
     SYS_LINK = 9,

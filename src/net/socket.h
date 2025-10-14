@@ -1,6 +1,7 @@
 #ifndef SOCKET_H
 #define SOCKET_H
 
+#include "sys/file/file.h"
 #include "types.h"
 
 #define SOCK_STREAM 1 /* Stream socket (TCP, Unix STREAM) */
@@ -35,8 +36,11 @@ struct proto_ops {
     int (*listen)(socket_t* s, int backlog);
     int (*connect)(socket_t* s, void* addr, int len);
     int (*accept)(socket_t* s, socket_t* newsock);
+    int (*shutdown)(socket_t* sock, int how);
 };
 
 s32 socket_create(s32 family, s16 type, s32 protocol);
+
+s32 socket_close(file_t* f);
 
 #endif
