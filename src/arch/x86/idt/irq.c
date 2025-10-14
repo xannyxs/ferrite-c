@@ -5,8 +5,8 @@
 #include "drivers/console.h"
 #include "drivers/keyboard.h"
 #include "drivers/printk.h"
-#include "sys/process.h"
-#include "sys/timer.h"
+#include "sys/process/process.h"
+#include "sys/timer/timer.h"
 #include "types.h"
 
 #include <stdbool.h>

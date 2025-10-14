@@ -2,14 +2,20 @@
 #include "arch/x86/idt/idt.h"
 #include "arch/x86/time/time.h"
 #include "drivers/printk.h"
-#include "sys/process.h"
+#include "net/socket.h"
+#include "sys/file/file.h"
+#include "sys/file/inode.h"
+#include "sys/file/stat.h"
+#include "sys/process/process.h"
 #include "sys/signal/signal.h"
-#include "sys/timer.h"
+#include "sys/timer/timer.h"
+#include "types.h"
 
 #include <stdbool.h>
 
-__attribute__((target("general-regs-only"))) static void
-sys_exit(s32 status)
+#define SYSCALL_ATTR __attribute__((target("general-regs-only"), warn_unused_result))
+
+__attribute__((target("general-regs-only"))) static void sys_exit(s32 status)
 {
     do_exit(status);
 }
@@ -38,22 +44,19 @@ sys_exit(s32 status)
 //     return 0;
 // }
 
-__attribute__((target("general-regs-only"), warn_unused_result)) static s32
-sys_fork(void)
+SYSCALL_ATTR static s32 sys_fork(void)
 {
     return do_fork("user process");
 }
 
-__attribute__((target("general-regs-only"), warn_unused_result)) static pid_t
-sys_waitpid(pid_t pid, s32* status, s32 options)
+SYSCALL_ATTR static pid_t sys_waitpid(pid_t pid, s32* status, s32 options)
 {
     (void)pid;
     (void)options;
     return do_wait(status);
 }
 
-__attribute__((target("general-regs-only"), warn_unused_result)) static time_t
-sys_time(time_t* tloc)
+SYSCALL_ATTR static time_t sys_time(time_t* tloc)
 {
     time_t current_time = getepoch();
 
@@ -64,20 +67,17 @@ sys_time(time_t* tloc)
     return current_time;
 }
 
-__attribute__((target("general-regs-only"), warn_unused_result)) static pid_t
-sys_getpid(void)
+SYSCALL_ATTR static pid_t sys_getpid(void)
 {
     return myproc()->pid;
 }
 
-__attribute__((target("general-regs-only"), warn_unused_result)) static uid_t
-sys_getuid(void)
+SYSCALL_ATTR static uid_t sys_getuid(void)
 {
     return getuid();
 }
 
-__attribute__((target("general-regs-only"), warn_unused_result)) static s32
-sys_kill(pid_t pid, s32 sig)
+SYSCALL_ATTR static s32 sys_kill(pid_t pid, s32 sig)
 {
     proc_t* caller = myproc();
     proc_t* target = find_process(pid);
@@ -96,14 +96,17 @@ sys_kill(pid_t pid, s32 sig)
     return -1;
 }
 
-__attribute__((target("general-regs-only"), warn_unused_result)) static uid_t
-sys_geteuid(void)
+SYSCALL_ATTR static s32 sys_socket(s32 family, s16 type, s32 protocol)
+{
+    return socket_create(family, type, protocol);
+}
+
+SYSCALL_ATTR static uid_t sys_geteuid(void)
 {
     return geteuid();
 }
 
-__attribute__((target("general-regs-only"), warn_unused_result)) static s32
-sys_setuid(uid_t uid)
+SYSCALL_ATTR static s32 sys_setuid(uid_t uid)
 {
     proc_t* p = myproc();
 
@@ -123,10 +126,39 @@ sys_setuid(uid_t uid)
     return -1;
 }
 
-// TODO: Create a valid nanosleep syscall
-__attribute__((target("general-regs-only"), warn_unused_result)) static s32 sys_nanosleep(void)
+SYSCALL_ATTR static s32 sys_nanosleep(void)
 {
     return knanosleep(1000);
+}
+
+SYSCALL_ATTR static s32 sys_bind(s32 fd, void* addr, s32 addrlen)
+{
+    file_t* f = getfd(fd);
+    if (!f || S_ISSOCK(f->f_inode->i_mode)) {
+        return -1;
+    }
+
+    socket_t* s = f->f_inode->u.i_socket;
+    if (!s || !s->ops || !s->ops->bind) {
+        return -1;
+    }
+
+    return s->ops->bind(s, addr, addrlen);
+}
+
+SYSCALL_ATTR static s32 sys_listen(int fd, int backlog)
+{
+    file_t* f = getfd(fd);
+    if (!f || S_ISSOCK(f->f_inode->i_mode)) {
+        return -1;
+    }
+
+    socket_t* s = f->f_inode->u.i_socket;
+    if (!s || !s->ops || !s->ops->bind) {
+        return -1;
+    }
+
+    return s->ops->listen(s, backlog);
 }
 
 __attribute__((target("general-regs-only"))) void
@@ -161,7 +193,22 @@ syscall_dispatcher_c(registers_t* reg)
         reg->eax = sys_kill((s32)reg->ebx, (s32)reg->ecx);
         break;
 
+    case SYS_SOCKET:
+        reg->eax = sys_socket((s32)reg->ebx, (s16)reg->ecx, (s32)reg->edx);
+        break;
+
+    case SYS_CONNECT:
+        break;
+
     case SYS_SIGNAL:
+        break;
+
+    case SYS_BIND:
+        reg->eax = sys_bind((s32)reg->ebx, (void*)reg->ecx, (s32)reg->edx);
+        break;
+
+    case SYS_LISTEN:
+        reg->eax = sys_listen(reg->ebx, reg->ecx);
         break;
 
     case SYS_GETEUID:

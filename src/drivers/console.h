@@ -1,7 +1,7 @@
 #ifndef CONSOLE_H
 #define CONSOLE_H
 
-#include "sys/process.h"
+#include "sys/process/process.h"
 #include "types.h"
 
 typedef struct exec {

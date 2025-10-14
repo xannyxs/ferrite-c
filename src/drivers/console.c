@@ -8,9 +8,9 @@
 #include "lib/stdlib.h"
 #include "lib/string.h"
 #include "memory/buddy_allocator/buddy.h"
-#include "sys/process.h"
+#include "sys/process/process.h"
 #include "sys/signal/signal.h"
-#include "sys/timer.h"
+#include "sys/timer/timer.h"
 #include "types.h"
 
 extern proc_t* current_proc;

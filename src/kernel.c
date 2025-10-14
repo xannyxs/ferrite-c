@@ -11,7 +11,7 @@
 #include "memory/pmm.h"
 #include "memory/vmalloc.h"
 #include "memory/vmm.h"
-#include "sys/process.h"
+#include "sys/process/process.h"
 #include "types.h"
 
 #include <stdbool.h>

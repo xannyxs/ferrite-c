@@ -664,6 +664,34 @@
       "-std=c17",
       "-march=i386",
       "-o",
+      "build/tests/test_buddy.o",
+      "src/tests/test_buddy.c"
+    ],
+    "directory": "/home/xannyx/Documents/ideaProjects/ferrite-c",
+    "file": "/home/xannyx/Documents/ideaProjects/ferrite-c/src/tests/test_buddy.c",
+    "output": "/home/xannyx/Documents/ideaProjects/ferrite-c/build/tests/test_buddy.o"
+  },
+  {
+    "arguments": [
+      "/nix/store/x3bl1vw9wvs2vjn1ijnrfi8y1j7fcnlc-i686-elf-gcc-wrapper-13.3.0/bin/i686-elf-gcc",
+      "-c",
+      "-I./src",
+      "-m32",
+      "-ffreestanding",
+      "-ggdb3",
+      "-O2",
+      "-Wall",
+      "-Wextra",
+      "-Werror",
+      "-fno-stack-protector",
+      "-D__DEBUG",
+      "-D__is_libk",
+      "-D__print_serial",
+      "-D__bochs",
+      "-pedantic",
+      "-std=c17",
+      "-march=i386",
+      "-o",
       "build/tests/test.o",
       "src/tests/test.c"
     ],
@@ -720,12 +748,12 @@
       "-std=c17",
       "-march=i386",
       "-o",
-      "build/sys/init.o",
-      "src/sys/init.c"
+      "build/net/socket.o",
+      "src/net/socket.c"
     ],
     "directory": "/home/xannyx/Documents/ideaProjects/ferrite-c",
-    "file": "/home/xannyx/Documents/ideaProjects/ferrite-c/src/sys/init.c",
-    "output": "/home/xannyx/Documents/ideaProjects/ferrite-c/build/sys/init.o"
+    "file": "/home/xannyx/Documents/ideaProjects/ferrite-c/src/net/socket.c",
+    "output": "/home/xannyx/Documents/ideaProjects/ferrite-c/build/net/socket.o"
   },
   {
     "arguments": [
@@ -748,12 +776,96 @@
       "-std=c17",
       "-march=i386",
       "-o",
-      "build/sys/process.o",
-      "src/sys/process.c"
+      "build/sys/process/init.o",
+      "src/sys/process/init.c"
     ],
     "directory": "/home/xannyx/Documents/ideaProjects/ferrite-c",
-    "file": "/home/xannyx/Documents/ideaProjects/ferrite-c/src/sys/process.c",
-    "output": "/home/xannyx/Documents/ideaProjects/ferrite-c/build/sys/process.o"
+    "file": "/home/xannyx/Documents/ideaProjects/ferrite-c/src/sys/process/init.c",
+    "output": "/home/xannyx/Documents/ideaProjects/ferrite-c/build/sys/process/init.o"
+  },
+  {
+    "arguments": [
+      "/nix/store/x3bl1vw9wvs2vjn1ijnrfi8y1j7fcnlc-i686-elf-gcc-wrapper-13.3.0/bin/i686-elf-gcc",
+      "-c",
+      "-I./src",
+      "-m32",
+      "-ffreestanding",
+      "-ggdb3",
+      "-O2",
+      "-Wall",
+      "-Wextra",
+      "-Werror",
+      "-fno-stack-protector",
+      "-D__DEBUG",
+      "-D__is_libk",
+      "-D__print_serial",
+      "-D__bochs",
+      "-pedantic",
+      "-std=c17",
+      "-march=i386",
+      "-o",
+      "build/sys/process/process.o",
+      "src/sys/process/process.c"
+    ],
+    "directory": "/home/xannyx/Documents/ideaProjects/ferrite-c",
+    "file": "/home/xannyx/Documents/ideaProjects/ferrite-c/src/sys/process/process.c",
+    "output": "/home/xannyx/Documents/ideaProjects/ferrite-c/build/sys/process/process.o"
+  },
+  {
+    "arguments": [
+      "/nix/store/x3bl1vw9wvs2vjn1ijnrfi8y1j7fcnlc-i686-elf-gcc-wrapper-13.3.0/bin/i686-elf-gcc",
+      "-c",
+      "-I./src",
+      "-m32",
+      "-ffreestanding",
+      "-ggdb3",
+      "-O2",
+      "-Wall",
+      "-Wextra",
+      "-Werror",
+      "-fno-stack-protector",
+      "-D__DEBUG",
+      "-D__is_libk",
+      "-D__print_serial",
+      "-D__bochs",
+      "-pedantic",
+      "-std=c17",
+      "-march=i386",
+      "-o",
+      "build/sys/process/shell.o",
+      "src/sys/process/shell.c"
+    ],
+    "directory": "/home/xannyx/Documents/ideaProjects/ferrite-c",
+    "file": "/home/xannyx/Documents/ideaProjects/ferrite-c/src/sys/process/shell.c",
+    "output": "/home/xannyx/Documents/ideaProjects/ferrite-c/build/sys/process/shell.o"
+  },
+  {
+    "arguments": [
+      "/nix/store/x3bl1vw9wvs2vjn1ijnrfi8y1j7fcnlc-i686-elf-gcc-wrapper-13.3.0/bin/i686-elf-gcc",
+      "-c",
+      "-I./src",
+      "-m32",
+      "-ffreestanding",
+      "-ggdb3",
+      "-O2",
+      "-Wall",
+      "-Wextra",
+      "-Werror",
+      "-fno-stack-protector",
+      "-D__DEBUG",
+      "-D__is_libk",
+      "-D__print_serial",
+      "-D__bochs",
+      "-pedantic",
+      "-std=c17",
+      "-march=i386",
+      "-o",
+      "build/sys/timer/timer.o",
+      "src/sys/timer/timer.c"
+    ],
+    "directory": "/home/xannyx/Documents/ideaProjects/ferrite-c",
+    "file": "/home/xannyx/Documents/ideaProjects/ferrite-c/src/sys/timer/timer.c",
+    "output": "/home/xannyx/Documents/ideaProjects/ferrite-c/build/sys/timer/timer.o"
   },
   {
     "arguments": [
@@ -804,12 +916,12 @@
       "-std=c17",
       "-march=i386",
       "-o",
-      "build/sys/shell.o",
-      "src/sys/shell.c"
+      "build/sys/file/inode.o",
+      "src/sys/file/inode.c"
     ],
     "directory": "/home/xannyx/Documents/ideaProjects/ferrite-c",
-    "file": "/home/xannyx/Documents/ideaProjects/ferrite-c/src/sys/shell.c",
-    "output": "/home/xannyx/Documents/ideaProjects/ferrite-c/build/sys/shell.o"
+    "file": "/home/xannyx/Documents/ideaProjects/ferrite-c/src/sys/file/inode.c",
+    "output": "/home/xannyx/Documents/ideaProjects/ferrite-c/build/sys/file/inode.o"
   },
   {
     "arguments": [
@@ -832,12 +944,12 @@
       "-std=c17",
       "-march=i386",
       "-o",
-      "build/sys/timer.o",
-      "src/sys/timer.c"
+      "build/sys/file/file.o",
+      "src/sys/file/file.c"
     ],
     "directory": "/home/xannyx/Documents/ideaProjects/ferrite-c",
-    "file": "/home/xannyx/Documents/ideaProjects/ferrite-c/src/sys/timer.c",
-    "output": "/home/xannyx/Documents/ideaProjects/ferrite-c/build/sys/timer.o"
+    "file": "/home/xannyx/Documents/ideaProjects/ferrite-c/src/sys/file/file.c",
+    "output": "/home/xannyx/Documents/ideaProjects/ferrite-c/build/sys/file/file.o"
   },
   {
     "arguments": [

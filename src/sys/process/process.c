@@ -1,4 +1,4 @@
-#include "sys/process.h"
+#include "sys/process/process.h"
 #include "arch/x86/gdt/gdt.h"
 #include "arch/x86/io.h"
 #include "arch/x86/memlayout.h"
@@ -10,7 +10,7 @@
 #include "memory/page.h"
 #include "memory/vmm.h"
 #include "sys/signal/signal.h"
-#include "sys/timer.h"
+#include "sys/timer/timer.h"
 #include "types.h"
 
 #include <stdbool.h>

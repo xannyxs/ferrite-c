@@ -1,7 +1,7 @@
 #ifndef SIGNAL_H
 #define SIGNAL_H
 
-#include "sys/process.h"
+#include "sys/process/process.h"
 #include "types.h"
 
 #define _NSIG 32

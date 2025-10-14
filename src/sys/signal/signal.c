@@ -1,6 +1,6 @@
 #include "sys/signal/signal.h"
 #include "drivers/printk.h"
-#include "sys/process.h"
+#include "sys/process/process.h"
 #include "types.h"
 
 extern proc_t ptables[NUM_PROC];
