@@ -3,35 +3,38 @@
 
 #include "arch/x86/idt/idt.h"
 
+#define SYSCALL_ATTR __attribute__((target("general-regs-only"), warn_unused_result))
+
+enum socket_subcalls_e {
+    SYS_SOCKET = 1,
+    SYS_BIND = 2,
+    SYS_CONNECT = 3,
+    SYS_LISTEN = 4,
+    SYS_ACCEPT = 5,
+};
+
 enum syscalls_e {
-    SYS_READ = 0,
-    SYS_WRITE = 1,
-    SYS_OPEN = 2,
-    SYS_CLOSE = 3,
+    SYS_EXIT = 1,
+    SYS_FORK = 2,
+    SYS_READ = 3,
+    SYS_WRITE = 4,
+    SYS_OPEN = 5,
+    SYS_CLOSE = 6,
     SYS_WAITPID = 7,
-    SYS_CREAT = 8,
-    SYS_LINK = 9,
-    SYS_UNLINK = 10,
-    SYS_EXECVE = 11,
-    SYS_CHDIR = 12,
     SYS_TIME = 13,
+    SYS_GETPID = 20,
     SYS_SETUID = 23,
     SYS_GETUID = 24,
-    SYS_ACCESS = 33,
-    SYS_NANOSLEEP = 35,
-    SYS_GETPID = 39,
-    SYS_SOCKET = 41,
-    SYS_CONNECT = 42,
-    SYS_BRK = 45,
+    SYS_KILL = 37,
     SYS_SIGNAL = 48,
-    SYS_BIND = 49,
-    SYS_LISTEN = 50,
-    SYS_FORK = 57,
-    SYS_EXIT = 60,
-    SYS_KILL = 62,
-    SYS_GETEUID = 107,
+    SYS_GETEUID = 49,
+    SYS_SOCKETCALL = 102,
+    SYS_NANOSLEEP = 162,
+
 };
 
 void syscall_dispatcher_c(registers_t*);
+
+int sys_socketcall(int call, unsigned long* args);
 
 #endif /* SYSCALLS_H */

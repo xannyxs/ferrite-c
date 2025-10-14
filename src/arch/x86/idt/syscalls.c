@@ -1,7 +1,8 @@
-#include "syscalls.h"
+#include "arch/x86/idt/syscalls.h"
 #include "arch/x86/idt/idt.h"
 #include "arch/x86/time/time.h"
 #include "drivers/printk.h"
+#include "lib/string.h"
 #include "net/socket.h"
 #include "sys/file/file.h"
 #include "sys/file/inode.h"
@@ -9,11 +10,10 @@
 #include "sys/process/process.h"
 #include "sys/signal/signal.h"
 #include "sys/timer/timer.h"
+#include "syscalls.h"
 #include "types.h"
 
 #include <stdbool.h>
-
-#define SYSCALL_ATTR __attribute__((target("general-regs-only"), warn_unused_result))
 
 __attribute__((target("general-regs-only"))) static void sys_exit(s32 status)
 {
@@ -96,11 +96,6 @@ SYSCALL_ATTR static s32 sys_kill(pid_t pid, s32 sig)
     return -1;
 }
 
-SYSCALL_ATTR static s32 sys_socket(s32 family, s16 type, s32 protocol)
-{
-    return socket_create(family, type, protocol);
-}
-
 SYSCALL_ATTR static uid_t sys_geteuid(void)
 {
     return geteuid();
@@ -131,36 +126,7 @@ SYSCALL_ATTR static s32 sys_nanosleep(void)
     return knanosleep(1000);
 }
 
-SYSCALL_ATTR static s32 sys_bind(s32 fd, void* addr, s32 addrlen)
-{
-    file_t* f = getfd(fd);
-    if (!f || S_ISSOCK(f->f_inode->i_mode)) {
-        return -1;
-    }
-
-    socket_t* s = f->f_inode->u.i_socket;
-    if (!s || !s->ops || !s->ops->bind) {
-        return -1;
-    }
-
-    return s->ops->bind(s, addr, addrlen);
-}
-
-SYSCALL_ATTR static s32 sys_listen(int fd, int backlog)
-{
-    file_t* f = getfd(fd);
-    if (!f || S_ISSOCK(f->f_inode->i_mode)) {
-        return -1;
-    }
-
-    socket_t* s = f->f_inode->u.i_socket;
-    if (!s || !s->ops || !s->ops->bind) {
-        return -1;
-    }
-
-    return s->ops->listen(s, backlog);
-}
-
+// TODO: Should not just work on sockets
 SYSCALL_ATTR static s32 sys_close(s32 fd)
 {
     file_t* f = getfd(fd);
@@ -168,23 +134,27 @@ SYSCALL_ATTR static s32 sys_close(s32 fd)
         return -1;
     }
 
-    return socket_close(f);
+    if (S_ISSOCK(f->f_inode->i_mode) == true) {
+        return socket_close(f);
+    }
+
+    return -1;
 }
 
 __attribute__((target("general-regs-only"))) void
 syscall_dispatcher_c(registers_t* reg)
 {
     switch (reg->eax) {
-    case SYS_CLOSE:
-        reg->eax = sys_close((s32)reg->ebx);
-        break;
-
     case SYS_EXIT:
         sys_exit((s32)reg->ebx);
         break;
 
     case SYS_FORK:
         reg->eax = sys_fork();
+        break;
+
+    case SYS_CLOSE:
+        reg->eax = sys_close((s32)reg->ebx);
         break;
 
     case SYS_WAITPID:
@@ -207,22 +177,11 @@ syscall_dispatcher_c(registers_t* reg)
         reg->eax = sys_kill((s32)reg->ebx, (s32)reg->ecx);
         break;
 
-    case SYS_SOCKET:
-        reg->eax = sys_socket((s32)reg->ebx, (s16)reg->ecx, (s32)reg->edx);
-        break;
-
-    case SYS_CONNECT:
+    case SYS_SOCKETCALL:
+        reg->eax = sys_socketcall((s32)reg->ebx, (unsigned long*)reg->ecx);
         break;
 
     case SYS_SIGNAL:
-        break;
-
-    case SYS_BIND:
-        reg->eax = sys_bind((s32)reg->ebx, (void*)reg->ecx, (s32)reg->edx);
-        break;
-
-    case SYS_LISTEN:
-        reg->eax = sys_listen((s32)reg->ebx, (s32)reg->ecx);
         break;
 
     case SYS_GETEUID:
