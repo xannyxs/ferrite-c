@@ -12,6 +12,7 @@ void main_tests(void)
     idt_tests();
     process_tests();
     buddy_tests();
+    socket_tests();
 
     printk("\n========== TEST RESULTS ==========\n");
     printk("Passed: %u\n", tests_passed);

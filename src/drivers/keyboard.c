@@ -1,5 +1,5 @@
 #include "drivers/console.h"
-#include "sys/process.h"
+#include "sys/process/process.h"
 #include "types.h"
 
 #include <stdbool.h>

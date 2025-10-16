@@ -1,13 +1,13 @@
 #include "arch/x86/gdt/gdt.h"
+#include "arch/x86/memlayout.h"
 #include "debug/debug.h"
 #include "drivers/printk.h"
 #include "lib/stdlib.h"
 #include "lib/string.h"
-#include "memory/buddy_allocator/buddy.h"
 #include "memory/consts.h"
 #include "memory/page.h"
 #include "memory/vmm.h"
-#include "sys/process.h"
+#include "sys/process/process.h"
 #include "types.h"
 
 #ifdef __TEST
@@ -42,8 +42,6 @@ __attribute__((naked)) void user_init(void)
 /* Public */
 
 inline proc_t* initproc(void) { return initial_proc; }
-
-#include "arch/x86/memlayout.h"
 
 void prepare_for_jmp(void)
 {

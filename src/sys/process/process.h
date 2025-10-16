@@ -2,20 +2,24 @@
 #define PROCESS_H
 
 #include "arch/x86/pit.h"
+#include "sys/file/file.h"
 #include "types.h"
 
+#define MAX_OPEN_FILES 64
 #define NUM_PROC 64
 #define TIME_QUANTUM (100 * HZ / 1000)
 #define ROOT_UID 0
 
 typedef s32 pid_t;
 typedef s32 uid_t;
+
 typedef enum { UNUSED,
     EMBRYO,
     SLEEPING,
     READY,
     RUNNING,
     ZOMBIE } procstate_e;
+
 typedef struct {
     u32 edi, esi, ebx, ebp, eip;
 } context_t;
@@ -36,6 +40,8 @@ typedef struct process {
     void* channel;
     u32 pending_signals;
     s32 status;
+
+    file_t* open_files[MAX_OPEN_FILES];
 
     struct process* parent;
     char name[16];

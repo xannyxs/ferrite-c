@@ -1,8 +1,8 @@
-#include "sys/timer.h"
+#include "sys/timer/timer.h"
 #include "arch/x86/io.h"
 #include "arch/x86/pit.h"
 #include "drivers/printk.h"
-#include "sys/process.h"
+#include "sys/process/process.h"
 
 #define NUM_TIMERS 16
 

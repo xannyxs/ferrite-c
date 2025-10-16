@@ -3,7 +3,7 @@
 #include "debug/panic.h"
 #include "drivers/printk.h"
 #include "memory/vmm.h"
-#include "sys/process.h"
+#include "sys/process/process.h"
 #include "types.h"
 
 #define KERNEL_MODE 0

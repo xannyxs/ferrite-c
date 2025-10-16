@@ -1,59 +1,66 @@
-#include "syscalls.h"
+#include "arch/x86/idt/syscalls.h"
 #include "arch/x86/idt/idt.h"
 #include "arch/x86/time/time.h"
 #include "drivers/printk.h"
-#include "sys/process.h"
+#include "lib/string.h"
+#include "net/socket.h"
+#include "sys/file/file.h"
+#include "sys/file/inode.h"
+#include "sys/file/stat.h"
+#include "sys/process/process.h"
 #include "sys/signal/signal.h"
-#include "sys/timer.h"
+#include "sys/timer/timer.h"
+#include "syscalls.h"
+#include "types.h"
 
 #include <stdbool.h>
 
-__attribute__((target("general-regs-only"))) static void
-sys_exit(s32 status)
+__attribute__((target("general-regs-only"))) static void sys_exit(s32 status)
 {
     do_exit(status);
 }
 
-// // TODO: Make _read function
-// __attribute__((target("general-regs-only"), warn_unused_result)) static s32
-// sys_read(s32 fd, void* buf, size_t count)
-// {
-//     (void)fd;
-//     (void)buf;
-//     (void)count;
-//
-//     printk("Read\n");
-//     return 0;
-// }
-//
-// // TODO: Make _write function
-// __attribute__((target("general-regs-only"), warn_unused_result)) static s32
-// sys_write(s32 fd, void* buf, size_t count)
-// {
-//     (void)fd;
-//     (void)buf;
-//     (void)count;
-//
-//     printk("Write\n");
-//     return 0;
-// }
+SYSCALL_ATTR static s32 sys_read(s32 fd, void* buf, size_t count)
+{
+    file_t* f = getfd(fd);
+    if (!f) {
+        return -1;
+    }
 
-__attribute__((target("general-regs-only"), warn_unused_result)) static s32
-sys_fork(void)
+    if (f->f_op && f->f_op->read) {
+        return f->f_op->read(f, buf, count);
+    }
+
+    return -1;
+}
+
+SYSCALL_ATTR static s32 sys_write(s32 fd, void* buf, size_t count)
+{
+    file_t* f = getfd(fd);
+    if (!f) {
+        return -1;
+    }
+
+    if (f->f_op && f->f_op->write) {
+        return f->f_op->write(f, buf, count);
+    }
+
+    return -1;
+}
+
+SYSCALL_ATTR static s32 sys_fork(void)
 {
     return do_fork("user process");
 }
 
-__attribute__((target("general-regs-only"), warn_unused_result)) static pid_t
-sys_waitpid(pid_t pid, s32* status, s32 options)
+SYSCALL_ATTR static pid_t sys_waitpid(pid_t pid, s32* status, s32 options)
 {
     (void)pid;
     (void)options;
     return do_wait(status);
 }
 
-__attribute__((target("general-regs-only"), warn_unused_result)) static time_t
-sys_time(time_t* tloc)
+SYSCALL_ATTR static time_t sys_time(time_t* tloc)
 {
     time_t current_time = getepoch();
 
@@ -64,20 +71,17 @@ sys_time(time_t* tloc)
     return current_time;
 }
 
-__attribute__((target("general-regs-only"), warn_unused_result)) static pid_t
-sys_getpid(void)
+SYSCALL_ATTR static pid_t sys_getpid(void)
 {
     return myproc()->pid;
 }
 
-__attribute__((target("general-regs-only"), warn_unused_result)) static uid_t
-sys_getuid(void)
+SYSCALL_ATTR static uid_t sys_getuid(void)
 {
     return getuid();
 }
 
-__attribute__((target("general-regs-only"), warn_unused_result)) static s32
-sys_kill(pid_t pid, s32 sig)
+SYSCALL_ATTR static s32 sys_kill(pid_t pid, s32 sig)
 {
     proc_t* caller = myproc();
     proc_t* target = find_process(pid);
@@ -96,14 +100,12 @@ sys_kill(pid_t pid, s32 sig)
     return -1;
 }
 
-__attribute__((target("general-regs-only"), warn_unused_result)) static uid_t
-sys_geteuid(void)
+SYSCALL_ATTR static uid_t sys_geteuid(void)
 {
     return geteuid();
 }
 
-__attribute__((target("general-regs-only"), warn_unused_result)) static s32
-sys_setuid(uid_t uid)
+SYSCALL_ATTR static s32 sys_setuid(uid_t uid)
 {
     proc_t* p = myproc();
 
@@ -123,10 +125,27 @@ sys_setuid(uid_t uid)
     return -1;
 }
 
-// TODO: Create a valid nanosleep syscall
-__attribute__((target("general-regs-only"), warn_unused_result)) static s32 sys_nanosleep(void)
+SYSCALL_ATTR static s32 sys_nanosleep(void)
 {
     return knanosleep(1000);
+}
+
+SYSCALL_ATTR static s32 sys_close(s32 fd)
+{
+    file_t* f = getfd(fd);
+    if (!f) {
+        return -1;
+    }
+
+    myproc()->open_files[fd] = NULL;
+
+    s32 result = 0;
+    if (f->f_op && f->f_op->close) {
+        result = f->f_op->close(f);
+    }
+
+    file_put(f);
+    return result;
 }
 
 __attribute__((target("general-regs-only"))) void
@@ -139,6 +158,18 @@ syscall_dispatcher_c(registers_t* reg)
 
     case SYS_FORK:
         reg->eax = sys_fork();
+        break;
+
+    case SYS_READ:
+        reg->eax = sys_read((s32)reg->ebx, (void*)reg->ecx, reg->edx);
+        break;
+
+    case SYS_WRITE:
+        reg->eax = sys_write((s32)reg->ebx, (void*)reg->ecx, reg->edx);
+        break;
+
+    case SYS_CLOSE:
+        reg->eax = sys_close((s32)reg->ebx);
         break;
 
     case SYS_WAITPID:
@@ -159,6 +190,10 @@ syscall_dispatcher_c(registers_t* reg)
 
     case SYS_KILL:
         reg->eax = sys_kill((s32)reg->ebx, (s32)reg->ecx);
+        break;
+
+    case SYS_SOCKETCALL:
+        reg->eax = sys_socketcall((s32)reg->ebx, (unsigned long*)reg->ecx);
         break;
 
     case SYS_SIGNAL:
