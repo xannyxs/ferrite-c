@@ -27,9 +27,9 @@ struct file_operations {
     off_t (*lseek)(s32 fd, off_t offset, s32 whence);
 };
 
-void __dealloc_file(void* ptr);
+void file_put(file_t* f);
 
-struct file* __alloc_file(void);
+struct file* file_get(void);
 
 file_t* getfd(s32 fd);
 

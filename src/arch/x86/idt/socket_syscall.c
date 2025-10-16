@@ -12,7 +12,7 @@
 SYSCALL_ATTR static s32 sys_bind(s32 fd, void* addr, s32 addrlen)
 {
     file_t* f = getfd(fd);
-    if (!f || S_ISSOCK(f->f_inode->i_mode)) {
+    if (!f || !S_ISSOCK(f->f_inode->i_mode)) {
         return -1;
     }
 
@@ -27,7 +27,7 @@ SYSCALL_ATTR static s32 sys_bind(s32 fd, void* addr, s32 addrlen)
 SYSCALL_ATTR static s32 sys_listen(int fd, int backlog)
 {
     file_t* f = getfd(fd);
-    if (!f || S_ISSOCK(f->f_inode->i_mode)) {
+    if (!f || !S_ISSOCK(f->f_inode->i_mode)) {
         return -1;
     }
 
@@ -42,7 +42,7 @@ SYSCALL_ATTR static s32 sys_listen(int fd, int backlog)
 SYSCALL_ATTR static s32 sys_connect(s32 fd, void* addr, size_t addrlen)
 {
     file_t* f = getfd(fd);
-    if (!f || S_ISSOCK(f->f_inode->i_mode)) {
+    if (!f || !S_ISSOCK(f->f_inode->i_mode)) {
         return -1;
     }
 
@@ -65,7 +65,7 @@ static int sys_accept(int fd, void* addr, int const* addrlen)
     (void)addrlen;
 
     file_t* f = getfd(fd);
-    if (!f || S_ISSOCK(f->f_inode->i_mode)) {
+    if (!f || !S_ISSOCK(f->f_inode->i_mode)) {
         return -1;
     }
 
@@ -84,7 +84,7 @@ static int sys_accept(int fd, void* addr, int const* addrlen)
         kfree(newsock);
     }
 
-    struct inode* inode = __alloc_inode(S_IFSOCK | 0666);
+    struct inode* inode = inode_get(S_IFSOCK | 0666);
     if (!inode) {
         if (newsock->data) {
             kfree(newsock->data);
@@ -97,13 +97,9 @@ static int sys_accept(int fd, void* addr, int const* addrlen)
     inode->u.i_socket = newsock;
     newsock->inode = inode;
 
-    struct file* newfile = __alloc_file();
+    struct file* newfile = file_get();
     if (!newfile) {
-        if (newsock->data) {
-            kfree(newsock->data);
-        }
-        kfree(newsock);
-        __dealloc_inode(inode);
+        inode_put(inode);
         return -1;
     }
 
@@ -122,13 +118,7 @@ static int sys_accept(int fd, void* addr, int const* addrlen)
         }
     }
 
-    __dealloc_inode(inode);
-    __dealloc_file(f);
-
-    if (newsock->data) {
-        kfree(newsock->data);
-    }
-    kfree(newsock);
+    file_put(f);
     return -1;
 }
 

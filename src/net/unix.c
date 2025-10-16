@@ -1,7 +1,9 @@
 #include "net/unix.h"
+#include "drivers/printk.h"
 #include "lib/string.h"
 #include "memory/kmalloc.h"
 #include "net/socket.h"
+#include "sys/file/inode.h"
 #include "types.h"
 
 #define MAX_UNIX_SOCKETS 64
@@ -161,7 +163,7 @@ static int unix_connect(socket_t* s, void* addr, int len)
 
     s->conn = server;
     server->conn = s;
-    server->state = SS_CONNECTING;
+    s->state = SS_CONNECTING;
 
     return 0;
 }
@@ -215,6 +217,9 @@ static int unix_recvmsg(socket_t* s, void* buf, size_t len)
 
 static int unix_sendmsg(socket_t* s, void const* buf, size_t len)
 {
+    printk("  [SENDMSG] socket=0x%x, state=%d, conn=0x%x\n",
+        s, s->state, s->conn);
+
     if (s->state != SS_CONNECTED) {
         return -1;
     }
@@ -246,11 +251,7 @@ static int unix_shutdown(socket_t* s, int how)
     (void)how;
 
     s->state = SS_DISCONNECTING;
-
-    if (s->conn) {
-        kfree(s->conn);
-        s->conn = NULL;
-    }
+    s->conn = NULL;
 
     return 0;
 }

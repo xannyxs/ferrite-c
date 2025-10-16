@@ -15,8 +15,8 @@ typedef struct inode {
     } u;
 } inode_t;
 
-inode_t* __alloc_inode(u16 mode);
+inode_t* inode_get(u16 mode);
 
-void __dealloc_inode(void* ptr);
+void inode_put(inode_t* n);
 
 #endif

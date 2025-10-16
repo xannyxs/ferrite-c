@@ -20,29 +20,33 @@ __attribute__((target("general-regs-only"))) static void sys_exit(s32 status)
     do_exit(status);
 }
 
-// // TODO: Make _read function
-// __attribute__((target("general-regs-only"), warn_unused_result)) static s32
-// sys_read(s32 fd, void* buf, size_t count)
-// {
-//     (void)fd;
-//     (void)buf;
-//     (void)count;
-//
-//     printk("Read\n");
-//     return 0;
-// }
-//
-// // TODO: Make _write function
-// __attribute__((target("general-regs-only"), warn_unused_result)) static s32
-// sys_write(s32 fd, void* buf, size_t count)
-// {
-//     (void)fd;
-//     (void)buf;
-//     (void)count;
-//
-//     printk("Write\n");
-//     return 0;
-// }
+SYSCALL_ATTR static s32 sys_read(s32 fd, void* buf, size_t count)
+{
+    file_t* f = getfd(fd);
+    if (!f) {
+        return -1;
+    }
+
+    if (f->f_op && f->f_op->read) {
+        return f->f_op->read(f, buf, count);
+    }
+
+    return -1;
+}
+
+SYSCALL_ATTR static s32 sys_write(s32 fd, void* buf, size_t count)
+{
+    file_t* f = getfd(fd);
+    if (!f) {
+        return -1;
+    }
+
+    if (f->f_op && f->f_op->write) {
+        return f->f_op->write(f, buf, count);
+    }
+
+    return -1;
+}
 
 SYSCALL_ATTR static s32 sys_fork(void)
 {
@@ -126,7 +130,6 @@ SYSCALL_ATTR static s32 sys_nanosleep(void)
     return knanosleep(1000);
 }
 
-// TODO: Should not just work on sockets
 SYSCALL_ATTR static s32 sys_close(s32 fd)
 {
     file_t* f = getfd(fd);
@@ -134,11 +137,15 @@ SYSCALL_ATTR static s32 sys_close(s32 fd)
         return -1;
     }
 
-    if (S_ISSOCK(f->f_inode->i_mode) == true) {
-        return socket_close(f);
+    myproc()->open_files[fd] = NULL;
+
+    s32 result = 0;
+    if (f->f_op && f->f_op->close) {
+        result = f->f_op->close(f);
     }
 
-    return -1;
+    file_put(f);
+    return result;
 }
 
 __attribute__((target("general-regs-only"))) void
@@ -151,6 +158,14 @@ syscall_dispatcher_c(registers_t* reg)
 
     case SYS_FORK:
         reg->eax = sys_fork();
+        break;
+
+    case SYS_READ:
+        reg->eax = sys_read((s32)reg->ebx, (void*)reg->ecx, reg->edx);
+        break;
+
+    case SYS_WRITE:
+        reg->eax = sys_write((s32)reg->ebx, (void*)reg->ecx, reg->edx);
         break;
 
     case SYS_CLOSE:

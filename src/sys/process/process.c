@@ -9,6 +9,7 @@
 #include "memory/consts.h"
 #include "memory/page.h"
 #include "memory/vmm.h"
+#include "sys/file/file.h"
 #include "sys/signal/signal.h"
 #include "sys/timer/timer.h"
 #include "types.h"
@@ -151,6 +152,19 @@ void do_exit(s32 status)
     }
 
     cli();
+
+    for (s32 fd = 0; fd < MAX_OPEN_FILES; fd += 1) {
+        file_t* f = p->open_files[fd];
+        if (f) {
+            p->open_files[fd] = NULL;
+
+            if (f->f_op && f->f_op->close) {
+                f->f_op->close(f);
+            }
+
+            file_put(f);
+        }
+    }
 
     p->status = status;
     wakeup(p->parent);

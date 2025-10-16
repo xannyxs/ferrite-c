@@ -1,6 +1,7 @@
 #include "sys/file/file.h"
 #include "lib/string.h"
 #include "memory/kmalloc.h"
+#include "sys/file/inode.h"
 #include "sys/process/process.h"
 #include "types.h"
 
@@ -11,10 +12,14 @@ file_t* getfd(s32 fd)
         return NULL;
     }
 
+    if (fd < 0 || fd > MAX_OPEN_FILES) {
+        return NULL;
+    }
+
     return p->open_files[fd];
 }
 
-file_t* __alloc_file(void)
+file_t* file_get(void)
 {
     file_t* f = kmalloc(sizeof(file_t));
     if (!f) {
@@ -26,7 +31,18 @@ file_t* __alloc_file(void)
     return f;
 }
 
-void __dealloc_file(void* ptr)
+void file_put(file_t* f)
 {
-    kfree(ptr);
+    if (!f) {
+        return;
+    }
+
+    f->f_count -= 1;
+    if (f->f_count == 0) {
+        if (f->f_inode) {
+            inode_put(f->f_inode);
+        }
+
+        kfree(f);
+    }
 }

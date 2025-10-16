@@ -28,11 +28,11 @@ __attribute__((naked)) void user_init(void)
     __asm__ volatile(
         "xchg %bx, %bx;"
 
-        "mov $39, %eax;" // SYS_GETPID in EAX
+        "mov $20, %eax;" // SYS_GETPID in EAX
         "int $0x80;"
 
         "mov %eax, %ebx;" // Save the PID in EBX for the next call
-        "mov $60, %eax;"  // SYS_EXIT in EAX
+        "mov $1, %eax;"   // SYS_EXIT in EAX
         "int $0x80;"
 
         ".hang:"

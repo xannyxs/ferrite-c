@@ -21,48 +21,62 @@ static struct file_operations socket_fops = {
 
 static int socket_read(struct file* f, void* buf, size_t len)
 {
-    (void)f;
-    (void)buf;
-    (void)len;
-
-    return 0;
-}
-
-static int socket_write(struct file* f, void const* buf, size_t len)
-{
-    (void)f;
-    (void)buf;
-    (void)len;
-
-    return 0;
-}
-
-s32 socket_close(struct file* f)
-{
-    if (S_ISSOCK(f->f_inode->i_mode)) {
+    if (!f->f_inode || !S_ISSOCK(f->f_inode->i_mode)) {
         return -1;
     }
 
     socket_t* s = f->f_inode->u.i_socket;
-
-    if (!s || !s->ops || !s->ops->shutdown) {
+    if (!s) {
         return -1;
     }
 
-    s->ops->shutdown(s, 0);
+    if (s->ops && s->ops->read) {
+        return s->ops->read(s, buf, len);
+    }
+
+    return -1;
+}
+
+static int socket_write(struct file* f, void const* buf, size_t len)
+{
+    if (!f->f_inode || !S_ISSOCK(f->f_inode->i_mode)) {
+        return -1;
+    }
+
+    socket_t* s = f->f_inode->u.i_socket;
+    if (!s) {
+        return -1;
+    }
+
+    if (s->ops && s->ops->write) {
+        return s->ops->write(s, buf, len);
+    }
+
+    return -1;
+}
+
+s32 socket_close(struct file* f)
+{
+    if (!f || !S_ISSOCK(f->f_inode->i_mode)) {
+        return -1;
+    }
+
+    socket_t* s = f->f_inode->u.i_socket;
+    if (!s) {
+        return -1;
+    }
+
+    if (s->ops && s->ops->shutdown) {
+        s->ops->shutdown(s, 0);
+    }
 
     if (s->data) {
         unix_sock_t* usock = (unix_sock_t*)s->data;
-
         if (usock->path[0] != '\0') {
             unix_unregister_socket(s);
+            usock->path[0] = '\0';
         }
-
-        kfree(s->data);
-        s->data = NULL;
     }
-
-    kfree(s);
 
     return 0;
 }
@@ -102,7 +116,7 @@ s32 socket_create(s32 family, s16 type, s32 protocol)
         return -1;
     }
 
-    struct inode* inode = __alloc_inode(S_IFSOCK | 0666);
+    struct inode* inode = inode_get(S_IFSOCK | 0666);
     if (!inode) {
         if (s->data) {
             kfree(s->data);
@@ -115,10 +129,9 @@ s32 socket_create(s32 family, s16 type, s32 protocol)
     inode->u.i_socket = s;
     s->inode = inode;
 
-    struct file* file = __alloc_file();
+    struct file* file = file_get();
     if (!file) {
-        kfree(s);
-        __dealloc_inode(inode);
+        inode_put(inode);
         return -1;
     }
 
@@ -131,9 +144,7 @@ s32 socket_create(s32 family, s16 type, s32 protocol)
 
     proc_t* p = myproc();
     if (!p) {
-        kfree(s);
-        __dealloc_file(file);
-        __dealloc_inode(inode);
+        file_put(file);
         return -1;
     }
 
@@ -144,8 +155,6 @@ s32 socket_create(s32 family, s16 type, s32 protocol)
         }
     }
 
-    kfree(s);
-    __dealloc_file(file);
-    __dealloc_inode(inode);
+    file_put(file);
     return -1;
 }
