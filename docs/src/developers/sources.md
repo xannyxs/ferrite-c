@@ -28,3 +28,8 @@
 - [nixpkgs Cross-Compilation](https://nix.dev/tutorials/cross-compilation.html) - Build system setup
 - [x86 and amd64 instruction reference](https://www.felixcloutier.com/x86/) - Derived from the December 2023 version of the Intel® 64
 - [syscall x86_32](https://syscalls.mebeim.net/?table=x86/32/ia32/v4.0) - Syscall of Linux
+
+## Filesystem
+
+- [Ext2 Documentation (SO to Wayback Machine)](https://web.archive.org/web/20250812194235/http://www.nongnu.org/ext2-doc/ext2.html#superblock)
+- [OSDev Ext2](https://wiki.osdev.org/Ext2)
