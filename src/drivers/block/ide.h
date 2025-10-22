@@ -4,7 +4,7 @@
 #include "types.h"
 
 typedef struct {
-    u8 master; // Master (1) or slave (0)?
+    u8 drive; // Master (0) / Slave (1)
 
     u32 lba28_sectors;
 

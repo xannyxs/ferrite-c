@@ -82,7 +82,7 @@ static void print_devices(void)
 
         if (d[i].d_type == BLOCK_DEVICE_IDE) {
             ata_drive_t* drive = (ata_drive_t*)d[i].d_data;
-            printk("| %s | ", drive->master ? "Master" : "Slave ");
+            printk("| %s | ", drive->drive ? "Slave " : "Master ");
             printk("%u sectors ", drive->lba28_sectors);
 
             u32 size_mb = (drive->lba28_sectors * 512) / (1024 * 1024);

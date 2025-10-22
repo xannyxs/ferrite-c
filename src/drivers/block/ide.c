@@ -46,8 +46,7 @@ static int device_type(u16 device)
 
 static ata_drive_t* detect_harddrives(u8 master)
 {
-    // cli? To ensure no intertuprs
-    u8 select = (master ? 0xa0 : 0xb0);
+    u8 select = (master ? 0xb0 : 0xa0);
     outb(ATA_ADDR + 6, select);
 
     outb(ATA_ADDR + 2, 0);
@@ -101,7 +100,7 @@ static ata_drive_t* detect_harddrives(u8 master)
 
     parse_vender_name(ata_drive);
     ata_drive->lba28_sectors = ata_data[60] | ((u32)ata_data[61] << 16);
-    ata_drive->master = master;
+    ata_drive->drive = master;
 
     if (ata_data[83] & (1 << 10)) {
         printk("supports lba48 mode. Ignore for now...\n");
@@ -142,7 +141,7 @@ s32 ide_read(block_device_t* d, u32 lba, u32 count, void* buf, size_t len)
         return -1;
     }
 
-    outb(0x1F6, 0xE0 | (ata->master << 4) | ((lba >> 24) & 0x0F));
+    outb(0x1F6, 0xE0 | (ata->drive << 4) | ((lba >> 24) & 0x0F));
     outb(0x1F1, 0x00);
 
     outb(0x1F2, (u8)count);
@@ -179,14 +178,18 @@ s32 ide_read(block_device_t* d, u32 lba, u32 count, void* buf, size_t len)
 s32 ide_write(
     block_device_t* d, u32 lba, u32 count, void const* buf, size_t len)
 {
-    ata_drive_t* ata = (ata_drive_t*)d->d_data;
-
+    if (!d->d_data) {
+        printk("d_data is NULL\n", d->d_data);
+        return -1;
+    }
     if (len < count * 512) {
         printk("Buffer too small\n");
         return -1;
     }
 
-    outb(0x1F6, 0xE0 | (ata->master << 4) | ((lba >> 24) & 0x0F));
+    ata_drive_t* ata = (ata_drive_t*)d->d_data;
+
+    outb(0x1F6, 0xE0 | (ata->drive << 4) | ((lba >> 24) & 0x0F));
     outb(0x1F1, 0x00);
 
     outb(0x1F2, (u8)count);
@@ -207,8 +210,16 @@ s32 ide_write(
             return -1;
         }
 
-        while (!(status & 0x08)) {
+        int timeout = 1000;
+        status = inb(0x1F7);
+        while ((status & 0x08) == 0 && timeout > 0) {
             status = inb(ATA_ADDR + 7);
+            timeout--;
+        }
+
+        if (timeout == 0) {
+            printk("Timeout waiting for DRQ\n");
+            return -1;
         }
 
         for (int i = 0; i < 256; i += 1) {
@@ -233,4 +244,13 @@ void ide_init(void)
     if (d) {
         register_block_device(BLOCK_DEVICE_IDE, d);
     }
+
+    u8 test_data[512] = "Hello from sector 0!";
+    block_device_t* dev = get_device(0);
+    dev->d_op->write(dev, 0, 1, test_data, 512);
+
+    u8 read_buffer[512];
+    dev->d_op->read(dev, 0, 1, read_buffer, 512);
+
+    printk("Read back: %s\n", read_buffer);
 }
