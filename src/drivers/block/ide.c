@@ -120,6 +120,29 @@ static ata_drive_t* detect_harddrives(u8 master)
 
 /* Public */
 
+u32 read_from_ata_data(void)
+{
+    u16 word = ata_data[106];
+
+    if ((word & 0xC000) != 0x4000) {
+        printk("Word 106 not valid, assuming 512-byte sectors\n");
+        return 512;
+    }
+
+    if (!(word & (1 << 12))) {
+        printk("Logical sector size not reported, assuming 512 bytes\n");
+        return 512;
+    }
+
+    u32 sector_size_words = ata_data[117] | ((u32)ata_data[118] << 16);
+    if (sector_size_words == 0) {
+        printk("Sector size is 0, assuming 512 bytes\n");
+        return 512;
+    }
+
+    return sector_size_words * 2;
+}
+
 static s32 ide_read(
     block_device_t* d, u32 lba, u32 count, void* buf, size_t len);
 static s32 ide_write(

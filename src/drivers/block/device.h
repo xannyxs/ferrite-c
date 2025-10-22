@@ -14,6 +14,8 @@ typedef enum {
 } block_device_type_e;
 
 typedef struct {
+    u32 sector_size;
+
     void* d_data;
     block_device_type_e d_type;
     struct device_operations* d_op;
