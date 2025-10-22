@@ -267,13 +267,4 @@ void ide_init(void)
     if (d) {
         register_block_device(BLOCK_DEVICE_IDE, d);
     }
-
-    u8 test_data[512] = "Hello from sector 0!";
-    block_device_t* dev = get_device(0);
-    dev->d_op->write(dev, 0, 1, test_data, 512);
-
-    u8 read_buffer[512];
-    dev->d_op->read(dev, 0, 1, read_buffer, 512);
-
-    printk("Read back: %s\n", read_buffer);
 }

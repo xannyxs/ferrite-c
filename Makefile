@@ -40,6 +40,7 @@ $(ODIR)/%.o: $(SDIR)/%.asm
 
 disk-img:
 	qemu-img create -f raw $(DISK_IMG) 10M
+	mkfs.ext2 $(DISK_IMG)
 
 iso: all
 	mkdir -p isodir/boot/grub
