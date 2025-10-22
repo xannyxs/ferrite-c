@@ -1,6 +1,7 @@
 #ifndef INODE_H
 #define INODE_H
 
+#include "fs/ext2/ext2.h"
 #include "types.h"
 
 struct socket;
@@ -11,7 +12,7 @@ typedef struct inode {
 
     union {
         struct socket* i_socket;
-        // struct file inode*; (WIP)
+        struct ext2_inode* i_ext2;
     } u;
 } inode_t;
 
