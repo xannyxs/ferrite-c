@@ -4,6 +4,7 @@
 #include "arch/x86/pic.h"
 #include "arch/x86/pit.h"
 #include "arch/x86/time/rtc.h"
+#include "drivers/block/ide.h"
 #include "drivers/video/vga.h"
 #include "lib/stdlib.h"
 #include "memory/buddy_allocator/buddy.h"
@@ -41,6 +42,8 @@ __attribute__((noreturn)) void kmain(u32 magic, multiboot_info_t* mbd)
     buddy_init();
     memblock_deactivate();
     vmalloc_init();
+
+    ide_init();
 
     init_ptables();
 
