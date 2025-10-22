@@ -156,8 +156,8 @@ void handle_signal(void)
 
             default:
                 // Unknown signal
-                printk("Process %d: unknown signal %d, ignoring\n", current_proc->pid,
-                    sig);
+                printk("Process %d: unknown signal %d, ignoring\n",
+                    current_proc->pid, sig);
                 break;
             }
         }

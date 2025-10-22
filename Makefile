@@ -18,7 +18,9 @@ ASM_SOURCES = $(shell find $(SDIR) -type f -name '*.asm')
 C_OBJECTS = $(patsubst $(SDIR)/%.c,$(ODIR)/%.o,$(C_SOURCES))
 ASM_OBJECTS = $(patsubst $(SDIR)/%.asm,$(ODIR)/%.o,$(ASM_SOURCES))
 
-QEMUFLAGS = -serial stdio -m 16 -cpu 486
+DISK_IMG = disk.img
+QEMUFLAGS = -serial stdio -m 16 -cpu 486 -drive file=disk.img,format=raw,if=ide
+
 
 all: $(NAME)
 
@@ -36,13 +38,16 @@ $(ODIR)/%.o: $(SDIR)/%.asm
 	@mkdir -p $(dir $@)
 	@$(AS) $(ASFLAGS) $< -o $@
 
+disk-img:
+	qemu-img create -f raw $(DISK_IMG) 10M
+
 iso: all
 	mkdir -p isodir/boot/grub
 	cp $(NAME) isodir/boot/$(NAME)
 	cp grub.cfg isodir/boot/grub/grub.cfg
 	grub-mkrescue -o kernel.iso isodir
 
-run: iso 
+run: iso disk-img
 	qemu-system-i386 -cdrom kernel.iso $(QEMUFLAGS)
 
 debug_bochs: QEMUFLAGS += -s -S
@@ -63,6 +68,7 @@ clean:
 
 fclean:
 	@echo "FCLEAN"
+	@rm -rf $(DISK_IMG)
 	@rm -rf $(ODIR) $(NAME) isodir kernel.iso
 
 re:

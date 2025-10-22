@@ -13,9 +13,8 @@ char buf[1024];
 
 /* Private */
 
-__attribute__((target("general-regs-only"))) static char*
-simple_number(char* str, long num, s32 base, bool is_signed, s32 width,
-    bool zero_pad)
+__attribute__((target("general-regs-only"))) static char* simple_number(
+    char* str, long num, s32 base, bool is_signed, s32 width, bool zero_pad)
 {
     char tmp[36];
     s32 i = 0;
@@ -60,8 +59,8 @@ simple_number(char* str, long num, s32 base, bool is_signed, s32 width,
     return str;
 }
 
-__attribute__((target("general-regs-only"))) static s32
-kfmt(char* buf, char const* fmt, va_list args)
+__attribute__((target("general-regs-only"))) static s32 kfmt(
+    char* buf, char const* fmt, va_list args)
 {
     char* str = buf;
     for (; *fmt; ++fmt) {
@@ -120,8 +119,8 @@ kfmt(char* buf, char const* fmt, va_list args)
         }
         case 'x':
         case 'X': {
-            str = simple_number(str, va_arg(args, unsigned long), 16, 0, width,
-                zero_pad);
+            str = simple_number(
+                str, va_arg(args, unsigned long), 16, 0, width, zero_pad);
             break;
         }
         case 'd':
@@ -152,8 +151,7 @@ kfmt(char* buf, char const* fmt, va_list args)
 
 /* Public */
 
-__attribute__((target("general-regs-only"))) s32 printk(char const* fmt,
-    ...)
+__attribute__((target("general-regs-only"))) s32 printk(char const* fmt, ...)
 {
     cli();
 

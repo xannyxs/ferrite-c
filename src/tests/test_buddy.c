@@ -82,7 +82,8 @@ TEST(buddy_alignment)
         printk("    Block size: %u (0x%x)\n", block_size, block_size);
         printk("    Block address: 0x%x\n", block);
         printk("    Alignment mask: 0x%x\n", block_size - 1);
-        printk("    block & (block_size - 1) = 0x%x\n", block & (block_size - 1));
+        printk(
+            "    block & (block_size - 1) = 0x%x\n", block & (block_size - 1));
 
         if ((block & (block_size - 1)) != 0) {
             printk("    *** MISALIGNED! ***\n");
@@ -91,8 +92,8 @@ TEST(buddy_alignment)
         ASSERT((block & (block_size - 1)) == 0,
             "Block should be aligned to its size");
 
-        printk("  Order %u (size %u): %x - aligned correctly\n",
-            order, block_size, block);
+        printk("  Order %u (size %u): %x - aligned correctly\n", order,
+            block_size, block);
 
         buddy_dealloc(block, order);
     }
@@ -190,7 +191,8 @@ TEST(buddy_fragmentation_recovery)
 
     // Now try to allocate a larger block that requires coalescing
     paddr_t large = (paddr_t)buddy_alloc(2); // 4 pages
-    ASSERT(large != 0, "Should be able to allocate large block after coalescing");
+    ASSERT(
+        large != 0, "Should be able to allocate large block after coalescing");
 
     printk("  Successfully allocated 4-page block at %x\n", large);
     buddy_dealloc(large, 2);
@@ -232,9 +234,11 @@ TEST(buddy_split_and_merge)
         size_t block_size = PAGE_SIZE << 2;
         printk("  Blocks came from split - checking buddy relationship\n");
         ASSERT((lower ^ upper) == block_size, "Blocks should be buddies");
-        ASSERT(upper == lower + block_size, "Upper should be one block_size away");
+        ASSERT(
+            upper == lower + block_size, "Upper should be one block_size away");
     } else {
-        printk("  Blocks came from different sources (allocator had other free blocks)\n");
+        printk("  Blocks came from different sources (allocator had other free "
+               "blocks)\n");
     }
 
     // Free them and try to get the original large block back

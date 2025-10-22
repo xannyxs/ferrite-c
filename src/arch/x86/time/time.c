@@ -30,8 +30,8 @@ time_t to_epoch(rtc_time_t* t)
     }
 
     for (u8 m = 1; m < t->month; ++m) {
-        u32 const days_in_month[] = { 0, 31, 28, 31, 30, 31, 30,
-            31, 31, 30, 31, 30, 31 };
+        u32 const days_in_month[]
+            = { 0, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };
         days_since_epoch += days_in_month[m];
         if (m == 2 && is_leap(full_year)) {
             days_since_epoch++;
@@ -40,7 +40,8 @@ time_t to_epoch(rtc_time_t* t)
 
     days_since_epoch += t->day - 1;
 
-    unsigned long long epoch_seconds = (days_since_epoch * 86400ULL) + (t->hour * 3600ULL) + (t->minute * 60ULL) + t->second;
+    unsigned long long epoch_seconds = (days_since_epoch * 86400ULL)
+        + (t->hour * 3600ULL) + (t->minute * 60ULL) + t->second;
 
     return epoch_seconds;
 }
@@ -69,8 +70,8 @@ void from_epoch(time_t epoch, rtc_time_t* t)
     t->year = (current_year >= 2000) ? (current_year - 2000) : 0;
 
     for (t->month = 1; t->month <= 12; ++t->month) {
-        u32 const days_in_month[] = { 0, 31, 28, 31, 30, 31, 30,
-            31, 31, 30, 31, 30, 31 };
+        u32 const days_in_month[]
+            = { 0, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };
         unsigned int days_this_month = days_in_month[t->month];
         if (t->month == 2 && is_leap(current_year)) {
             days_this_month++;

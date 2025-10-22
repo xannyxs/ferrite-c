@@ -1,5 +1,6 @@
 # Project
 docs/book
+*.img
 *.ini
 isodir
 *.iso

@@ -77,16 +77,11 @@ proc_t* __alloc_proc(void)
 inline proc_t* myproc(void) { return current_proc; }
 
 // Real UID: actual user who started the process (for accounting/auditing)
-inline uid_t getuid(void)
-{
-    return current_proc->uid;
-}
+inline uid_t getuid(void) { return current_proc->uid; }
 
-// Effective UID: determines permissions for system access (files, syscalls, etc.)
-inline uid_t geteuid(void)
-{
-    return current_proc->euid;
-}
+// Effective UID: determines permissions for system access (files, syscalls,
+// etc.)
+inline uid_t geteuid(void) { return current_proc->euid; }
 
 inline proc_t* find_process(pid_t pid)
 {

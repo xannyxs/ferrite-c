@@ -48,10 +48,7 @@ SYSCALL_ATTR static s32 sys_write(s32 fd, void* buf, size_t count)
     return -1;
 }
 
-SYSCALL_ATTR static s32 sys_fork(void)
-{
-    return do_fork("user process");
-}
+SYSCALL_ATTR static s32 sys_fork(void) { return do_fork("user process"); }
 
 SYSCALL_ATTR static pid_t sys_waitpid(pid_t pid, s32* status, s32 options)
 {
@@ -71,15 +68,9 @@ SYSCALL_ATTR static time_t sys_time(time_t* tloc)
     return current_time;
 }
 
-SYSCALL_ATTR static pid_t sys_getpid(void)
-{
-    return myproc()->pid;
-}
+SYSCALL_ATTR static pid_t sys_getpid(void) { return myproc()->pid; }
 
-SYSCALL_ATTR static uid_t sys_getuid(void)
-{
-    return getuid();
-}
+SYSCALL_ATTR static uid_t sys_getuid(void) { return getuid(); }
 
 SYSCALL_ATTR static s32 sys_kill(pid_t pid, s32 sig)
 {
@@ -100,10 +91,7 @@ SYSCALL_ATTR static s32 sys_kill(pid_t pid, s32 sig)
     return -1;
 }
 
-SYSCALL_ATTR static uid_t sys_geteuid(void)
-{
-    return geteuid();
-}
+SYSCALL_ATTR static uid_t sys_geteuid(void) { return geteuid(); }
 
 SYSCALL_ATTR static s32 sys_setuid(uid_t uid)
 {
@@ -125,10 +113,7 @@ SYSCALL_ATTR static s32 sys_setuid(uid_t uid)
     return -1;
 }
 
-SYSCALL_ATTR static s32 sys_nanosleep(void)
-{
-    return knanosleep(1000);
-}
+SYSCALL_ATTR static s32 sys_nanosleep(void) { return knanosleep(1000); }
 
 SYSCALL_ATTR static s32 sys_close(s32 fd)
 {
@@ -148,8 +133,8 @@ SYSCALL_ATTR static s32 sys_close(s32 fd)
     return result;
 }
 
-__attribute__((target("general-regs-only"))) void
-syscall_dispatcher_c(registers_t* reg)
+__attribute__((target("general-regs-only"))) void syscall_dispatcher_c(
+    registers_t* reg)
 {
     switch (reg->eax) {
     case SYS_EXIT:

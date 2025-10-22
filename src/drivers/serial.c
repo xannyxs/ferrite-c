@@ -10,8 +10,7 @@ static u8 is_transmit_empty(void) { return inb(PORT + 5) & 0x20; }
 
 static void serial_write_byte(u8 a)
 {
-    while (is_transmit_empty() == 0) {
-    }
+    while (is_transmit_empty() == 0) { }
 
     outb(PORT, a);
 }
@@ -35,8 +34,8 @@ void serial_init(void)
     outb(PORT + 2, 0xc7); // Enable FIFO, clear them, with 14-byte threshold
     outb(PORT + 4, 0x0b); // IRQs enabled, RTS/DSR set
     outb(PORT + 4, 0x1e); // Set in loopback mode, test the serial chip
-    outb(PORT, 0xae);     // Test serial chip (send byte 0xAE and check if serial
-                          // returns same byte)
+    outb(PORT, 0xae); // Test serial chip (send byte 0xAE and check if serial
+                      // returns same byte)
 
     if (inb(PORT) != 0xae) {
         abort("Port unusable");

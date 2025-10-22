@@ -12,12 +12,10 @@
 static int socket_read(struct file* f, void* buf, size_t len);
 static int socket_write(struct file* f, void const* buf, size_t len);
 
-static struct file_operations socket_fops = {
-    .read = socket_read,
+static struct file_operations socket_fops = { .read = socket_read,
     .write = socket_write,
     .close = socket_close,
-    .lseek = NULL
-};
+    .lseek = NULL };
 
 static int socket_read(struct file* f, void* buf, size_t len)
 {

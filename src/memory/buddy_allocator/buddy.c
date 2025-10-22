@@ -162,16 +162,9 @@ static inline void buddy_list_add(vaddr_t vaddr, u32 k)
 
 /* Public */
 
-u32 buddy_get_max_order(void)
-{
-    return g_buddy.max_order;
-}
+u32 buddy_get_max_order(void) { return g_buddy.max_order; }
 
-size_t buddy_get_total_memory(void)
-{
-
-    return g_buddy.size;
-}
+size_t buddy_get_total_memory(void) { return g_buddy.size; }
 
 void buddy_dealloc(paddr_t paddr, u32 order)
 {
@@ -197,7 +190,8 @@ void buddy_dealloc(paddr_t paddr, u32 order)
 
         mark_allocated(buddy_vaddr, current_order);
 
-        current_paddr = (current_paddr < buddy_paddr) ? current_paddr : buddy_paddr;
+        current_paddr
+            = (current_paddr < buddy_paddr) ? current_paddr : buddy_paddr;
         current_order += 1;
     }
 
@@ -257,7 +251,8 @@ void buddy_init(void)
     size_t temp_size = end_vaddr - temp_base;
     u32 temp_max_order = floor_log2(temp_size / PAGE_SIZE);
 
-    g_buddy.base = ALIGN((u32)g_buddy.map + g_buddy.map_size, PAGE_SIZE << temp_max_order);
+    g_buddy.base = ALIGN(
+        (u32)g_buddy.map + g_buddy.map_size, PAGE_SIZE << temp_max_order);
     g_buddy.size = end_vaddr - g_buddy.base;
     if (g_buddy.size < PAGE_SIZE) {
         abort("Not enough memory for the buddy pool");

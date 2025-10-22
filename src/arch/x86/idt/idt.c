@@ -46,9 +46,8 @@ void (*const EXCEPTION_STUBS[NUM_EXCEPTION_HANDLERS])(void) = {
     x87_fpu_exception_stub,
 };
 
-interrupt_hardware_t const HARDWARE_HANDLERS[NUM_HARDWARE_HANDLERS] = {
-    { 0x20, irq_stub_0 }, { 0x21, irq_stub_1 }, { 0x27, irq_stub_7 }
-};
+interrupt_hardware_t const HARDWARE_HANDLERS[NUM_HARDWARE_HANDLERS]
+    = { { 0x20, irq_stub_0 }, { 0x21, irq_stub_1 }, { 0x27, irq_stub_7 } };
 
 static void idt_set_gate(u32 num, u32 handler, u32 attributes)
 {
@@ -69,7 +68,8 @@ void idt_init(void)
 
     // Hardware Interrupts
     for (s32 i = 0; i < NUM_HARDWARE_HANDLERS; i += 1) {
-        idt_set_gate(HARDWARE_HANDLERS[i].hex, (u32)HARDWARE_HANDLERS[i].f, 0x8E);
+        idt_set_gate(
+            HARDWARE_HANDLERS[i].hex, (u32)HARDWARE_HANDLERS[i].f, 0x8E);
     }
 
     // Syscalls

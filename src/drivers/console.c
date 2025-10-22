@@ -3,6 +3,8 @@
 #include "arch/x86/entry.h"
 #include "arch/x86/time/rtc.h"
 #include "arch/x86/time/time.h"
+#include "drivers/block/device.h"
+#include "drivers/block/ide.h"
 #include "drivers/printk.h"
 #include "drivers/video/vga.h"
 #include "lib/stdlib.h"
@@ -46,7 +48,63 @@ static void print_help(void)
     printk("  memory  - Show the current memory allocation of the buddy "
            "allocator\n");
     printk("  top     - Show all active processes\n");
+    printk("  devices - Show all found devices\n");
     printk("  help    - Show this help message\n");
+}
+
+static void print_devices(void)
+{
+    block_device_t* d = get_devices();
+
+    int found = 0;
+    for (int i = 0; i < MAX_BLOCK_DEVICES; i += 1) {
+        if (!d[i].d_data) {
+            continue;
+        }
+
+        found++;
+        printk("[%d] ", i);
+
+        switch (d[i].d_type) {
+        case BLOCK_DEVICE_IDE:
+            printk("IDE   ");
+            break;
+        case BLOCK_DEVICE_SATA:
+            printk("SATA  ");
+            break;
+        case BLOCK_DEVICE_NVME:
+            printk("NVME  ");
+            break;
+        default:
+            printk("UNKNOWN ");
+            break;
+        }
+
+        if (d[i].d_type == BLOCK_DEVICE_IDE) {
+            ata_drive_t* drive = (ata_drive_t*)d[i].d_data;
+            printk("| %s | ", drive->drive ? "Slave " : "Master ");
+            printk("%u sectors ", drive->lba28_sectors);
+
+            u32 size_mb = (drive->lba28_sectors * 512) / (1024 * 1024);
+            printk("(%u MB) ", size_mb);
+
+            if (drive->supports_lba48) {
+                printk("| LBA48 ");
+            }
+
+            if (drive->name[0]) {
+                printk("| Model: %s", drive->name);
+            }
+        }
+
+        printk("\n");
+    }
+
+    if (found == 0) {
+        printk("No block devices found.\n");
+    } else {
+        printk("Total: %d device(s)\n", found);
+    }
 }
 
 static void print_idt(void)
@@ -66,9 +124,8 @@ static void print_time(void)
 
     // print the time in a standard format (e.g., hh:mm:ss dd/mm/yy)
     printk("current time: %u%u:%u%u:%u%u %u%u/%u%u/%u\n", t.hour / 10,
-        t.hour % 10, t.minute / 10, t.minute % 10, t.second / 10,
-        t.second % 10, t.day / 10, t.day % 10, t.month / 10, t.month % 10,
-        t.year);
+        t.hour % 10, t.minute / 10, t.minute % 10, t.second / 10, t.second % 10,
+        t.day / 10, t.day % 10, t.month / 10, t.month % 10, t.year);
 }
 
 static void print_epoch(void)
@@ -96,17 +153,18 @@ static void exec_abort(void) { abort("Test abort"); }
 
 static void execute_buffer(void)
 {
-    static exec_t const command_table[] = {
-        { "reboot", reboot }, { "gdt", print_gdt }, { "memory", print_buddy },
-        { "clear", vga_init }, { "help", print_help }, { "panic", exec_abort },
-        { "idt", print_idt }, { "time", print_time }, { "epoch", print_epoch },
-        { "top", process_list }, { "sleep", exec_sleep }, { NULL, NULL }
-    };
+    static exec_t const command_table[] = { { "reboot", reboot },
+        { "gdt", print_gdt }, { "memory", print_buddy }, { "clear", vga_init },
+        { "help", print_help }, { "panic", exec_abort }, { "idt", print_idt },
+        { "time", print_time }, { "epoch", print_epoch },
+        { "top", process_list }, { "devices", print_devices },
+        { "sleep", exec_sleep }, { NULL, NULL } };
 
     printk("\n");
 
     for (s32 cmd = 0; command_table[cmd].cmd; cmd++) {
-        if (command_table[cmd].f && strcmp(buffer, command_table[cmd].cmd) == 0) {
+        if (command_table[cmd].f
+            && strcmp(buffer, command_table[cmd].cmd) == 0) {
             command_table[cmd].f();
             break;
         }
