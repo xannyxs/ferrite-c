@@ -15,9 +15,11 @@
 #define CLOCK_TICK_FACTOR 20    /* Factor of both 1000000 and CLOCK_TICK_RATE */
 #define LATCH ((CLOCK_TICK_RATE + HZ / 2) / HZ)
 
-#define FINETUNE                                                                                                             \
-    (((((LATCH * HZ - CLOCK_TICK_RATE) << SHIFT_HZ) * (1000000 / CLOCK_TICK_FACTOR) / (CLOCK_TICK_RATE / CLOCK_TICK_FACTOR)) \
-         << (SHIFT_SCALE - SHIFT_HZ))                                                                                        \
+#define FINETUNE                                    \
+    (((((LATCH * HZ - CLOCK_TICK_RATE) << SHIFT_HZ) \
+          * (1000000 / CLOCK_TICK_FACTOR)           \
+          / (CLOCK_TICK_RATE / CLOCK_TICK_FACTOR))  \
+         << (SHIFT_SCALE - SHIFT_HZ))               \
         / HZ)
 
 static inline void set_pit_count(u32 const count)

@@ -25,18 +25,17 @@ extern void jump_to_usermode(void* entry, void* user_stack);
 
 __attribute__((naked)) void user_init(void)
 {
-    __asm__ volatile(
-        "xchg %bx, %bx;"
+    __asm__ volatile("xchg %bx, %bx;"
 
-        "mov $20, %eax;" // SYS_GETPID in EAX
-        "int $0x80;"
+                     "mov $20, %eax;" // SYS_GETPID in EAX
+                     "int $0x80;"
 
-        "mov %eax, %ebx;" // Save the PID in EBX for the next call
-        "mov $1, %eax;"   // SYS_EXIT in EAX
-        "int $0x80;"
+                     "mov %eax, %ebx;" // Save the PID in EBX for the next call
+                     "mov $1, %eax;"   // SYS_EXIT in EAX
+                     "int $0x80;"
 
-        ".hang:"
-        "jmp .hang");
+                     ".hang:"
+                     "jmp .hang");
 }
 
 /* Public */
@@ -57,7 +56,8 @@ void prepare_for_jmp(void)
     u32 user_init_addr = (u32)user_init;
     memcpy(page_kaddr, (void*)user_init_addr, PAGE_SIZE);
 
-    if (vmm_map_page((void*)paddr, user_code_vaddr, PTE_P | PTE_W | PTE_U) < 0) {
+    if (vmm_map_page((void*)paddr, user_code_vaddr, PTE_P | PTE_W | PTE_U)
+        < 0) {
         abort("Failed to map user code page");
     }
 

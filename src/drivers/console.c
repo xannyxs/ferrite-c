@@ -124,9 +124,8 @@ static void print_time(void)
 
     // print the time in a standard format (e.g., hh:mm:ss dd/mm/yy)
     printk("current time: %u%u:%u%u:%u%u %u%u/%u%u/%u\n", t.hour / 10,
-        t.hour % 10, t.minute / 10, t.minute % 10, t.second / 10,
-        t.second % 10, t.day / 10, t.day % 10, t.month / 10, t.month % 10,
-        t.year);
+        t.hour % 10, t.minute / 10, t.minute % 10, t.second / 10, t.second % 10,
+        t.day / 10, t.day % 10, t.month / 10, t.month % 10, t.year);
 }
 
 static void print_epoch(void)
@@ -154,17 +153,18 @@ static void exec_abort(void) { abort("Test abort"); }
 
 static void execute_buffer(void)
 {
-    static exec_t const command_table[] = {
-        { "reboot", reboot }, { "gdt", print_gdt }, { "memory", print_buddy },
-        { "clear", vga_init }, { "help", print_help }, { "panic", exec_abort },
-        { "idt", print_idt }, { "time", print_time }, { "epoch", print_epoch },
-        { "top", process_list }, { "devices", print_devices }, { "sleep", exec_sleep }, { NULL, NULL }
-    };
+    static exec_t const command_table[] = { { "reboot", reboot },
+        { "gdt", print_gdt }, { "memory", print_buddy }, { "clear", vga_init },
+        { "help", print_help }, { "panic", exec_abort }, { "idt", print_idt },
+        { "time", print_time }, { "epoch", print_epoch },
+        { "top", process_list }, { "devices", print_devices },
+        { "sleep", exec_sleep }, { NULL, NULL } };
 
     printk("\n");
 
     for (s32 cmd = 0; command_table[cmd].cmd; cmd++) {
-        if (command_table[cmd].f && strcmp(buffer, command_table[cmd].cmd) == 0) {
+        if (command_table[cmd].f
+            && strcmp(buffer, command_table[cmd].cmd) == 0) {
             command_table[cmd].f();
             break;
         }

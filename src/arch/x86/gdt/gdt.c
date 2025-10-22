@@ -14,8 +14,7 @@ static descriptor_pointer_t gdt_ptr;
 
 /* Private */
 
-static void gdt_set_gate(u32 num, u32 base, u32 limit,
-    u8 access, u8 gran)
+static void gdt_set_gate(u32 num, u32 base, u32 limit, u8 access, u8 gran)
 {
     gdt_entries[num].lower_base = (base & 0xFFFF);
     gdt_entries[num].middle_base = (base >> 16) & 0xFF;
@@ -39,10 +38,7 @@ static void tss_init(void)
 
 /* Public */
 
-void tss_set_stack(u32 stack)
-{
-    tss_entry.esp0 = stack;
-}
+void tss_set_stack(u32 stack) { tss_entry.esp0 = stack; }
 
 void gdt_init(void)
 {

@@ -39,10 +39,7 @@ void check_timers(void)
     }
 }
 
-s32 ksleep(s32 seconds)
-{
-    return knanosleep(seconds * 1000);
-}
+s32 ksleep(s32 seconds) { return knanosleep(seconds * 1000); }
 
 /*
  * Sleep for specified seconds by blocking current process.

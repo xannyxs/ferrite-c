@@ -14,11 +14,11 @@ typedef struct buddy_node {
 typedef struct {
     vaddr_t base; // Starting physical address of the managed memory.
     size_t size;  // Total size of the managed memory in bytes.
-    buddy_node_t*
-        free_lists[MAX_ORDER + 1]; // Array of free lists, indexed by block order.
-    u8* map;                       // Bitmap to track block states for efficient merging.
-    size_t map_size;               // Size of the state bitmap in bytes.
-    u8 max_order;                  // Actual max order, calculated from the total memory size.
+    buddy_node_t* free_lists[MAX_ORDER
+        + 1];        // Array of free lists, indexed by block order.
+    u8* map;         // Bitmap to track block states for efficient merging.
+    size_t map_size; // Size of the state bitmap in bytes.
+    u8 max_order;    // Actual max order, calculated from the total memory size.
 } buddy_allocator_t;
 
 void buddy_init(void);

@@ -120,7 +120,8 @@ static int unix_bind(socket_t* s, void* addr, s32 addrlen)
     struct sockaddr_un* sun = (struct sockaddr_un*)addr;
     unix_sock_t* usock = (unix_sock_t*)s->data;
 
-    if ((u32)addrlen < sizeof(struct sockaddr_un) || sun->sun_family != AF_UNIX) {
+    if ((u32)addrlen < sizeof(struct sockaddr_un)
+        || sun->sun_family != AF_UNIX) {
         return -1;
     }
 
@@ -206,8 +207,8 @@ static int unix_recvmsg(socket_t* s, void* buf, size_t len)
     memcpy(buf, usock->buffer, to_read);
 
     if (to_read < usock->buf_len) {
-        memmove(usock->buffer, usock->buffer + to_read,
-            usock->buf_len - to_read);
+        memmove(
+            usock->buffer, usock->buffer + to_read, usock->buf_len - to_read);
     }
 
     usock->buf_len -= to_read;
@@ -217,8 +218,8 @@ static int unix_recvmsg(socket_t* s, void* buf, size_t len)
 
 static int unix_sendmsg(socket_t* s, void const* buf, size_t len)
 {
-    printk("  [SENDMSG] socket=0x%x, state=%d, conn=0x%x\n",
-        s, s->state, s->conn);
+    printk(
+        "  [SENDMSG] socket=0x%x, state=%d, conn=0x%x\n", s, s->state, s->conn);
 
     if (s->state != SS_CONNECTED) {
         return -1;

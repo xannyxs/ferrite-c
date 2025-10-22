@@ -13,12 +13,7 @@
 typedef s32 pid_t;
 typedef s32 uid_t;
 
-typedef enum { UNUSED,
-    EMBRYO,
-    SLEEPING,
-    READY,
-    RUNNING,
-    ZOMBIE } procstate_e;
+typedef enum { UNUSED, EMBRYO, SLEEPING, READY, RUNNING, ZOMBIE } procstate_e;
 
 typedef struct {
     u32 edi, esi, ebx, ebp, eip;

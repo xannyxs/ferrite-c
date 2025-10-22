@@ -106,7 +106,10 @@ static ata_drive_t* detect_harddrives(u8 master)
     if (ata_data[83] & (1 << 10)) {
         printk("supports lba48 mode. Ignore for now...\n");
 
-        ata_drive->lba48_sectors = (unsigned long long)ata_data[100] | ((unsigned long long)ata_data[101] << 16) | ((unsigned long long)ata_data[102] << 32) | ((unsigned long long)ata_data[103] << 48);
+        ata_drive->lba48_sectors = (unsigned long long)ata_data[100]
+            | ((unsigned long long)ata_data[101] << 16)
+            | ((unsigned long long)ata_data[102] << 32)
+            | ((unsigned long long)ata_data[103] << 48);
         ata_drive->supports_lba48 = 1;
     } else {
         ata_drive->lba48_sectors = 0;
@@ -118,8 +121,10 @@ static ata_drive_t* detect_harddrives(u8 master)
 
 /* Public */
 
-static s32 ide_read(block_device_t* d, u32 lba, u32 count, void* buf, size_t len);
-static s32 ide_write(block_device_t* d, u32 lba, u32 count, void const* buf, size_t len);
+static s32 ide_read(
+    block_device_t* d, u32 lba, u32 count, void* buf, size_t len);
+static s32 ide_write(
+    block_device_t* d, u32 lba, u32 count, void const* buf, size_t len);
 static void ide_shutdown(block_device_t* d);
 
 struct device_operations ide_device_ops = {
@@ -171,7 +176,8 @@ s32 ide_read(block_device_t* d, u32 lba, u32 count, void* buf, size_t len)
     return 0;
 }
 
-s32 ide_write(block_device_t* d, u32 lba, u32 count, void const* buf, size_t len)
+s32 ide_write(
+    block_device_t* d, u32 lba, u32 count, void const* buf, size_t len)
 {
     ata_drive_t* ata = (ata_drive_t*)d->d_data;
 
@@ -214,10 +220,7 @@ s32 ide_write(block_device_t* d, u32 lba, u32 count, void const* buf, size_t len
     return 0;
 }
 
-void ide_shutdown(block_device_t* d)
-{
-    (void)d;
-}
+void ide_shutdown(block_device_t* d) { (void)d; }
 
 void ide_init(void)
 {

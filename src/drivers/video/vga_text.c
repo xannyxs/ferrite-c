@@ -14,8 +14,8 @@ static inline u8 vga_entry_color(enum vga_color fg, enum vga_color bg)
     return fg | bg << 4;
 }
 
-__attribute__((target("general-regs-only"))) static inline u16
-vga_entry(u8 uc, u8 color)
+__attribute__((target("general-regs-only"))) static inline u16 vga_entry(
+    u8 uc, u8 color)
 {
     return (u16)uc | (u16)color << 8;
 }
@@ -49,8 +49,8 @@ void vga_init(void)
 
 void vga_setcolor(vga_color_t color) { terminal_color = color; }
 
-__attribute__((target("general-regs-only"))) void
-vga_putentryat(char c, u8 color, size_t x, size_t y)
+__attribute__((target("general-regs-only"))) void vga_putentryat(
+    char c, u8 color, size_t x, size_t y)
 {
     size_t const index = (y * VGA_WIDTH) + x;
     terminal_buffer[index] = vga_entry(c, color);
@@ -81,16 +81,16 @@ __attribute__((target("general-regs-only"))) void vga_putchar(char c)
     }
 }
 
-__attribute__((target("general-regs-only"))) void vga_write(char const* data,
-    size_t size)
+__attribute__((target("general-regs-only"))) void vga_write(
+    char const* data, size_t size)
 {
     for (size_t i = 0; i < size; i++) {
         vga_putchar(data[i]);
     }
 }
 
-__attribute__((target("general-regs-only"))) void
-vga_writestring(char const* data)
+__attribute__((target("general-regs-only"))) void vga_writestring(
+    char const* data)
 {
     vga_write(data, strlen(data));
 }

@@ -7,15 +7,9 @@ block_device_t block_devices[MAX_BLOCK_DEVICES];
 
 /* Public */
 
-block_device_t* get_devices(void)
-{
-    return block_devices;
-}
+block_device_t* get_devices(void) { return block_devices; }
 
-block_device_t* get_device(int index)
-{
-    return &block_devices[index];
-}
+block_device_t* get_device(int index) { return &block_devices[index]; }
 
 void register_block_device(block_device_type_e type, void* data)
 {

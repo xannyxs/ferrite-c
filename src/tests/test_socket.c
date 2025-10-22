@@ -27,11 +27,10 @@ static inline int k_socket(int family, int type, int protocol)
     args[1] = type;
     args[2] = protocol;
 
-    __asm__ volatile(
-        "int $0x80"
-        : "=a"(ret)
-        : "a"(SYS_SOCKETCALL), "b"(SYS_SOCKET), "c"(args)
-        : "memory");
+    __asm__ volatile("int $0x80"
+                     : "=a"(ret)
+                     : "a"(SYS_SOCKETCALL), "b"(SYS_SOCKET), "c"(args)
+                     : "memory");
     return ret;
 }
 
@@ -39,11 +38,10 @@ static inline int k_bind(int sockfd, void* addr, int addrlen)
 {
     int ret;
     unsigned long args[3] = { sockfd, (unsigned long)addr, addrlen };
-    __asm__ volatile(
-        "int $0x80"
-        : "=a"(ret)
-        : "a"(SYS_SOCKETCALL), "b"(SYS_BIND), "c"(args)
-        : "memory");
+    __asm__ volatile("int $0x80"
+                     : "=a"(ret)
+                     : "a"(SYS_SOCKETCALL), "b"(SYS_BIND), "c"(args)
+                     : "memory");
     return ret;
 }
 
@@ -51,11 +49,10 @@ static inline int k_listen(int sockfd, int backlog)
 {
     int ret;
     unsigned long args[2] = { sockfd, backlog };
-    __asm__ volatile(
-        "int $0x80"
-        : "=a"(ret)
-        : "a"(SYS_SOCKETCALL), "b"(SYS_LISTEN), "c"(args)
-        : "memory");
+    __asm__ volatile("int $0x80"
+                     : "=a"(ret)
+                     : "a"(SYS_SOCKETCALL), "b"(SYS_LISTEN), "c"(args)
+                     : "memory");
     return ret;
 }
 
@@ -63,11 +60,10 @@ static inline int k_connect(int sockfd, void* addr, int addrlen)
 {
     int ret;
     unsigned long args[3] = { sockfd, (unsigned long)addr, addrlen };
-    __asm__ volatile(
-        "int $0x80"
-        : "=a"(ret)
-        : "a"(SYS_SOCKETCALL), "b"(SYS_CONNECT), "c"(args)
-        : "memory");
+    __asm__ volatile("int $0x80"
+                     : "=a"(ret)
+                     : "a"(SYS_SOCKETCALL), "b"(SYS_CONNECT), "c"(args)
+                     : "memory");
     return ret;
 }
 
@@ -75,21 +71,19 @@ static inline int k_accept(int sockfd)
 {
     int ret;
     unsigned long args[3] = { sockfd, 0, 0 };
-    __asm__ volatile(
-        "int $0x80"
-        : "=a"(ret)
-        : "a"(SYS_SOCKETCALL), "b"(SYS_ACCEPT), "c"(args)
-        : "memory");
+    __asm__ volatile("int $0x80"
+                     : "=a"(ret)
+                     : "a"(SYS_SOCKETCALL), "b"(SYS_ACCEPT), "c"(args)
+                     : "memory");
     return ret;
 }
 
 static inline int k_read(int fd, void* buf, size_t len)
 {
     int ret;
-    __asm__ volatile(
-        "int $0x80"
-        : "=a"(ret)
-        : "a"(3), "b"(fd), "c"(buf), "d"(len) // SYS_READ = 3
+    __asm__ volatile("int $0x80"
+                     : "=a"(ret)
+                     : "a"(3), "b"(fd), "c"(buf), "d"(len) // SYS_READ = 3
     );
     return ret;
 }
@@ -97,20 +91,18 @@ static inline int k_read(int fd, void* buf, size_t len)
 static inline int k_write(int fd, void const* buf, size_t len)
 {
     int ret;
-    __asm__ volatile(
-        "int $0x80"
-        : "=a"(ret)
-        : "a"(4), "b"(fd), "c"(buf), "d"(len) // SYS_WRITE = 4
+    __asm__ volatile("int $0x80"
+                     : "=a"(ret)
+                     : "a"(4), "b"(fd), "c"(buf), "d"(len) // SYS_WRITE = 4
     );
     return ret;
 }
 
 static inline void k_exit(int status)
 {
-    __asm__ volatile(
-        "int $0x80"
-        :
-        : "a"(1), "b"(status) // SYS_EXIT = 1
+    __asm__ volatile("int $0x80"
+                     :
+                     : "a"(1), "b"(status) // SYS_EXIT = 1
     );
     __builtin_unreachable();
 }
@@ -132,10 +124,8 @@ TEST(socket_create)
 
 static void server_process_simple(void)
 {
-    struct sockaddr_un addr = {
-        .sun_family = AF_UNIX,
-        .sun_path = "/tmp/test_simple"
-    };
+    struct sockaddr_un addr
+        = { .sun_family = AF_UNIX, .sun_path = "/tmp/test_simple" };
 
     int sockfd = k_socket(AF_UNIX, SOCK_STREAM, 0);
     if (sockfd < 0) {
@@ -192,10 +182,8 @@ static void server_process_simple(void)
 
 static void client_process_simple(void)
 {
-    struct sockaddr_un addr = {
-        .sun_family = AF_UNIX,
-        .sun_path = "/tmp/test_simple"
-    };
+    struct sockaddr_un addr
+        = { .sun_family = AF_UNIX, .sun_path = "/tmp/test_simple" };
 
     int sockfd = k_socket(AF_UNIX, SOCK_STREAM, 0);
     if (sockfd < 0) {
@@ -262,10 +250,8 @@ TEST(socket_client_server)
 
 static void server_process_multi(void)
 {
-    struct sockaddr_un addr = {
-        .sun_family = AF_UNIX,
-        .sun_path = "/tmp/test_multi"
-    };
+    struct sockaddr_un addr
+        = { .sun_family = AF_UNIX, .sun_path = "/tmp/test_multi" };
 
     int sockfd = k_socket(AF_UNIX, SOCK_STREAM, 0);
     if (sockfd < 0) {
@@ -322,10 +308,8 @@ static void server_process_multi(void)
 
 static void client_process_multi(void)
 {
-    struct sockaddr_un addr = {
-        .sun_family = AF_UNIX,
-        .sun_path = "/tmp/test_multi"
-    };
+    struct sockaddr_un addr
+        = { .sun_family = AF_UNIX, .sun_path = "/tmp/test_multi" };
 
     int sockfd = k_socket(AF_UNIX, SOCK_STREAM, 0);
     if (sockfd < 0) {
@@ -396,10 +380,8 @@ TEST(socket_connection_refused)
 {
     printk("  Testing connection refused...\n");
 
-    struct sockaddr_un addr = {
-        .sun_family = AF_UNIX,
-        .sun_path = "/tmp/nonexistent"
-    };
+    struct sockaddr_un addr
+        = { .sun_family = AF_UNIX, .sun_path = "/tmp/nonexistent" };
 
     int sockfd = k_socket(AF_UNIX, SOCK_STREAM, 0);
     ASSERT(sockfd >= 0, "socket() should succeed");

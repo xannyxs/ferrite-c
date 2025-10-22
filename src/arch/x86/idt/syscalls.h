@@ -3,7 +3,8 @@
 
 #include "arch/x86/idt/idt.h"
 
-#define SYSCALL_ATTR __attribute__((target("general-regs-only"), warn_unused_result))
+#define SYSCALL_ATTR \
+    __attribute__((target("general-regs-only"), warn_unused_result))
 
 enum socket_subcalls_e {
     SYS_SOCKET = 1,
