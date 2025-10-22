@@ -1,9 +1,11 @@
 #ifndef FS_EXT2_H
 #define FS_EXT2_H
 
+#include "drivers/block/device.h"
 #include "types.h"
 
 #define EXT2_MAGIC 0xEF53
+#define MAX_EXT2_MOUNTS 8
 
 typedef struct {
     u32 s_inodes_count;
@@ -70,5 +72,19 @@ typedef struct {
 typedef struct ext2_inode {
     size_t size;
 } ext2_inode_t;
+
+typedef struct {
+    block_device_t* s_device;
+    ext2_super_t s_superblock;
+    ext2_inode_t s_inode;
+} ext2_mount_t;
+
+/* Super Block Functions */
+
+s32 ext2_read_superblock(block_device_t* d, ext2_super_t* super);
+
+/* EXT2 */
+
+void ext2_init(void);
 
 #endif /* FS_EXT2_H */

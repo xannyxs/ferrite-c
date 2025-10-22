@@ -6,6 +6,7 @@
 #include "arch/x86/time/rtc.h"
 #include "drivers/block/ide.h"
 #include "drivers/video/vga.h"
+#include "fs/ext2/ext2.h"
 #include "lib/stdlib.h"
 #include "memory/buddy_allocator/buddy.h"
 #include "memory/memblock.h"
@@ -44,6 +45,7 @@ __attribute__((noreturn)) void kmain(u32 magic, multiboot_info_t* mbd)
     vmalloc_init();
 
     ide_init();
+    ext2_init();
 
     init_ptables();
 
