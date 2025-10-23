@@ -28,7 +28,9 @@ s32 ext2_mount(block_device_t* d)
     }
 
     m->m_device = d;
-    ext2_read_superblock(d, &m->m_superblock);
+    if (ext2_read_superblock(d, &m->m_superblock) < 0) {
+        return -1;
+    }
 
     m->num_block_groups = CEIL_DIV(
         m->m_superblock.s_blocks_count, m->m_superblock.s_blocks_per_group);
@@ -40,9 +42,15 @@ s32 ext2_mount(block_device_t* d)
         return -1;
     }
 
-    ext2_read_block_descriptor_table(d, m->m_block_group, m->num_block_groups);
+    if (ext2_read_block_descriptor_table(
+            d, m->m_block_group, m->num_block_groups)
+        < 0) {
+        return -1;
+    }
 
-    ext2_read_inode(2, m, d);
+    if (ext2_read_inode(2, m, d) < 0) {
+        return -1;
+    }
 
     return 0;
 }

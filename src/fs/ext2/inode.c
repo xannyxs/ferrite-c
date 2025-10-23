@@ -36,7 +36,8 @@ s32 ext2_read_inode(u32 index, ext2_mount_t* m, block_device_t* d)
 
     offset = addr % d->sector_size;
     if (offset > d->sector_size) {
-        abort("Something went wrong");
+        printk("Offset it bigger than sector size\n");
+        return -1;
     }
     memcpy(&m->m_inode, &buff[offset], sizeof(ext2_inode_t));
 
