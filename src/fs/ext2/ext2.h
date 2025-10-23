@@ -7,6 +7,14 @@
 #define EXT2_MAGIC 0xEF53
 #define MAX_EXT2_MOUNTS 8
 
+#define FIFO 0x1000
+#define CHARACTER_DEVICE 0x2000
+#define DIRECTORY 0x4000
+#define BLOCK_DEVICE 0x6000
+#define REGULAR_FILE 0x8000
+#define SYMBOLIC_LINK 0xA000
+#define UNIX_SOCKET 0xC000
+
 typedef struct {
     u32 s_inodes_count;
     u32 s_blocks_count;
@@ -69,19 +77,71 @@ typedef struct {
     u8 __reserved[760];
 } __attribute__((packed)) ext2_super_t;
 
+typedef struct ext2_block_group_descriptor {
+    u32 bg_block_bitmap;
+    u32 bg_inode_bitmap;
+    u32 bg_inode_table;
+    u16 bg_free_blocks_count;
+    u16 bg_free_inodes_count;
+    u16 bg_used_dirs_count;
+    u16 bg_pad;
+
+    u8 __reserved[12];
+} __attribute__((packed)) ext2_block_group_descriptor_t;
+
 typedef struct ext2_inode {
-    size_t size;
+    u16 i_mode;
+    u16 i_uid;
+    u32 i_size;
+    u32 i_atime;
+    u32 i_ctime;
+    u32 i_mtime;
+    u32 i_dtime;
+    u16 i_gid;
+    u16 i_links_count;
+    u32 i_blocks;
+    u32 i_flags;
+    u32 i_osd1;
+    u32 i_block[15];
+    u32 i_generation;
+    u32 i_file_acl;
+    u32 i_dir_acl;
+    u32 i_faddr;
+    u8 i_osd2[12];
+
+    u8 __extended[128];
 } ext2_inode_t;
 
 typedef struct {
-    block_device_t* s_device;
-    ext2_super_t s_superblock;
-    ext2_inode_t s_inode;
+    block_device_t* m_device;
+
+    ext2_super_t m_superblock;
+    ext2_inode_t m_inode;
+
+    u32 num_block_groups;
+    ext2_block_group_descriptor_t* m_block_group;
 } ext2_mount_t;
+
+typedef struct {
+    u32 inode;
+    u16 rec_len;
+    u8 name_len;
+    u8 file_type;
+    u8 name[];
+} ext2_directory_t;
 
 /* Super Block Functions */
 
 s32 ext2_read_superblock(block_device_t* d, ext2_super_t* super);
+
+/* inode Functions */
+
+s32 ext2_read_inode(u32 index, ext2_mount_t* m, block_device_t* d);
+
+/* Block Group Descriptor Table Functions */
+
+s32 ext2_read_block_descriptor_table(block_device_t* d,
+    ext2_block_group_descriptor_t* bgd, u32 num_blocks_groups);
 
 /* EXT2 */
 

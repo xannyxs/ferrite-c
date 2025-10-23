@@ -159,7 +159,7 @@ s32 ide_read(block_device_t* d, u32 lba, u32 count, void* buf, size_t len)
 {
     ata_drive_t* ata = (ata_drive_t*)d->d_data;
 
-    if (len < count * 512) {
+    if (len < count * d->sector_size) {
         printk("Buffer too small\n");
         return -1;
     }
