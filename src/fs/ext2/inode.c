@@ -1,12 +1,12 @@
 #include "drivers/block/device.h"
 #include "drivers/printk.h"
 #include "fs/ext2/ext2.h"
-#include "lib/stdlib.h"
 #include "lib/string.h"
 #include "types.h"
 
-s32 ext2_read_inode(u32 index, ext2_mount_t* m, block_device_t* d)
+s32 ext2_read_inode(u32 index, ext2_inode_t* inode, ext2_mount_t* m)
 {
+    block_device_t* d = m->m_device;
     if (!d) {
         printk("%s: device is NULL\n", __func__);
         return -1;
@@ -39,7 +39,7 @@ s32 ext2_read_inode(u32 index, ext2_mount_t* m, block_device_t* d)
         printk("Offset it bigger than sector size\n");
         return -1;
     }
-    memcpy(&m->m_inode, &buff[offset], sizeof(ext2_inode_t));
+    memcpy(inode, &buff[offset], sizeof(ext2_inode_t));
 
     return 0;
 }

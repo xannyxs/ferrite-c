@@ -8,6 +8,17 @@
 
 ext2_mount_t ext2_mounts[MAX_EXT2_MOUNTS];
 
+struct inode_t {
+    s32 something;
+};
+
+struct inode_t* ext2_lookup(struct inode_t* parent_dir, char const* name)
+{
+    (void)parent_dir;
+    (void)name;
+    return NULL;
+}
+
 s32 ext2_mount(block_device_t* d)
 {
     if (!d) {
@@ -48,9 +59,22 @@ s32 ext2_mount(block_device_t* d)
         return -1;
     }
 
-    if (ext2_read_inode(2, m, d) < 0) {
+    if (ext2_read_inode(2, &m->m_inode, m) < 0) {
         return -1;
     }
+
+    ext2_entry_t* entry = ext2_read_directory("lost+found", m);
+    if (!entry) {
+        printk("Not found\n");
+        return -1;
+    }
+
+    ext2_inode_t inode;
+    if (ext2_read_inode(entry->inode, &inode, m) < 0) {
+        return -1;
+    }
+
+    printk("%d\n", inode.i_size);
 
     return 0;
 }
@@ -59,8 +83,8 @@ void ext2_umount(void) { }
 
 // TODO:
 // Should I already mount
-// get_device is always 0. Should be depending on where the main disk is to run
-// where the user left off
+// get_device is always 0. Should be depending on where the main disk is
+// to run where the user left off
 void ext2_init(void)
 {
     if (sizeof(ext2_super_t) != 1024) {
@@ -68,5 +92,7 @@ void ext2_init(void)
     }
 
     block_device_t* d = get_device(0);
-    ext2_mount(d);
+    if (ext2_mount(d) < 0) {
+        abort("Error occured in ext2_mount");
+    }
 }

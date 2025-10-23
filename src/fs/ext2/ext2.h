@@ -110,7 +110,15 @@ typedef struct ext2_inode {
     u8 i_osd2[12];
 
     u8 __extended[128];
-} ext2_inode_t;
+} __attribute__((packed)) ext2_inode_t;
+
+typedef struct {
+    u32 inode;
+    u16 rec_len;
+    u8 name_len;
+    u8 file_type;
+    u8 name[];
+} __attribute__((packed)) ext2_entry_t;
 
 typedef struct {
     block_device_t* m_device;
@@ -122,21 +130,13 @@ typedef struct {
     ext2_block_group_descriptor_t* m_block_group;
 } ext2_mount_t;
 
-typedef struct {
-    u32 inode;
-    u16 rec_len;
-    u8 name_len;
-    u8 file_type;
-    u8 name[];
-} ext2_directory_t;
-
 /* Super Block Functions */
 
 s32 ext2_read_superblock(block_device_t* d, ext2_super_t* super);
 
 /* inode Functions */
 
-s32 ext2_read_inode(u32 index, ext2_mount_t* m, block_device_t* d);
+s32 ext2_read_inode(u32 index, ext2_inode_t* inode, ext2_mount_t* m);
 
 /* Block Group Descriptor Table Functions */
 
@@ -144,6 +144,8 @@ s32 ext2_read_block_descriptor_table(block_device_t* d,
     ext2_block_group_descriptor_t* bgd, u32 num_blocks_groups);
 
 /* EXT2 */
+
+ext2_entry_t* ext2_read_directory(char* entry_name, ext2_mount_t* m);
 
 void ext2_init(void);
 
