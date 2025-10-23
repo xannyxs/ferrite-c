@@ -15,13 +15,13 @@ s32 ext2_read_superblock(block_device_t* d, ext2_super_t* super)
         return -1;
     }
 
-    u32 size = sizeof(ext2_super_t) / d->sector_size;
+    u32 count = sizeof(ext2_super_t) / d->sector_size;
     u32 block_pos = 1024 / d->sector_size;
 
-    if (d->d_op->read(d, block_pos, size, super, sizeof(ext2_super_t)) < 0) {
+    if (d->d_op->read(d, block_pos, count, super, sizeof(ext2_super_t)) < 0) {
         printk("%s: failed to read from device (LBA %u, "
                "count %u)\n",
-            __func__, block_pos, size);
+            __func__, block_pos, count);
         return -1;
     }
 
