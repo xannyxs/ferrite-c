@@ -5,14 +5,8 @@
 #include "memory/kmalloc.h"
 #include "types.h"
 
-s32 ext2_entry_find(char* path, ext2_mount_t* m)
-{
-    (void)path;
-    (void)m;
-    return 0;
-}
-
-ext2_entry_t* ext2_read_directory(char* entry_name, ext2_mount_t* m)
+ext2_entry_t* ext2_read_directory(
+    char const* entry_name, ext2_inode_t inode, ext2_mount_t* m)
 {
     block_device_t* d = m->m_device;
     if (!d) {
@@ -25,9 +19,7 @@ ext2_entry_t* ext2_read_directory(char* entry_name, ext2_mount_t* m)
         return NULL;
     }
 
-    ext2_inode_t inode = m->m_inode;
     ext2_super_t s = m->m_superblock;
-
     u32 addr = inode.i_block[0] * (1024 << s.s_log_block_size);
     u32 sector_pos = addr / d->sector_size;
 

@@ -145,7 +145,8 @@ s32 ext2_read_block_descriptor_table(block_device_t* d,
 
 /* EXT2 */
 
-ext2_entry_t* ext2_read_directory(char* entry_name, ext2_mount_t* m);
+ext2_entry_t* ext2_read_directory(
+    char const* entry_name, ext2_inode_t inode, ext2_mount_t* m);
 
 void ext2_init(void);
 
