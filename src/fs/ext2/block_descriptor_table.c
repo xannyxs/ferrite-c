@@ -4,9 +4,10 @@
 #include "lib/math.h"
 #include "types.h"
 
-s32 ext2_read_block_descriptor_table(block_device_t* d,
-    ext2_block_group_descriptor_t* bgd, u32 num_blocks_groups)
+s32 ext2_read_bgd_table(
+    ext2_mount_t* m, ext2_block_group_descriptor_t* bgd, u32 num_block_groups)
 {
+    block_device_t* d = m->m_device;
     if (!d) {
         printk("%s: device is NULL\n", __func__);
         return -1;
@@ -18,7 +19,7 @@ s32 ext2_read_block_descriptor_table(block_device_t* d,
     }
 
     u32 amount_of_bytes
-        = num_blocks_groups * sizeof(ext2_block_group_descriptor_t);
+        = num_block_groups * sizeof(ext2_block_group_descriptor_t);
     u32 size = CEIL_DIV(amount_of_bytes, d->sector_size);
     u32 bgd_pos = CEIL_DIV(1024 + sizeof(ext2_super_t), d->sector_size);
 

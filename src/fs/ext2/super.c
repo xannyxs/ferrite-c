@@ -3,8 +3,9 @@
 #include "fs/ext2/ext2.h"
 #include "types.h"
 
-s32 ext2_read_superblock(block_device_t* d, ext2_super_t* super)
+s32 ext2_read_superblock(ext2_mount_t* m, ext2_super_t* super)
 {
+    block_device_t* d = m->m_device;
     if (!d) {
         printk("%s: device is NULL\n", __func__);
         return -1;

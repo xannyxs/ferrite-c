@@ -22,9 +22,9 @@ struct inode_t* ext2_lookup(struct inode_t* parent_dir, char const* name)
     ext2_mount_t* m = &ext2_mounts[0];
 
     ext2_inode_t parent_inode = { 0 };
-    ext2_read_inode(parent_dir->i_ino, &parent_inode, m);
+    ext2_read_inode(m, parent_dir->i_ino, &parent_inode);
 
-    ext2_entry_t* entry = ext2_read_directory(name, parent_inode, m);
+    ext2_entry_t* entry = ext2_read_entry(m, &parent_inode, name);
     if (!entry) {
         return NULL;
     }
@@ -33,7 +33,7 @@ struct inode_t* ext2_lookup(struct inode_t* parent_dir, char const* name)
     if (!found_inode) {
         return NULL;
     }
-    ext2_read_inode(entry->inode, found_inode, m);
+    ext2_read_inode(m, entry->inode, found_inode);
 
     struct inode_t* new = kmalloc(sizeof(inode_t));
     if (!new) {
@@ -69,7 +69,7 @@ s32 ext2_mount(block_device_t* d)
     }
 
     m->m_device = d;
-    if (ext2_read_superblock(d, &m->m_superblock) < 0) {
+    if (ext2_read_superblock(m, &m->m_superblock) < 0) {
         return -1;
     }
 
@@ -83,13 +83,11 @@ s32 ext2_mount(block_device_t* d)
         return -1;
     }
 
-    if (ext2_read_block_descriptor_table(
-            d, m->m_block_group, m->num_block_groups)
-        < 0) {
+    if (ext2_read_bgd_table(m, m->m_block_group, m->num_block_groups) < 0) {
         return -1;
     }
 
-    if (ext2_read_inode(2, &m->m_inode, m) < 0) {
+    if (ext2_read_inode(m, 2, &m->m_inode) < 0) {
         return -1;
     }
 

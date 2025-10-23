@@ -4,7 +4,7 @@
 #include "lib/string.h"
 #include "types.h"
 
-s32 ext2_read_inode(u32 index, ext2_inode_t* inode, ext2_mount_t* m)
+s32 ext2_read_inode(ext2_mount_t* m, u32 inode_num, ext2_inode_t* inode)
 {
     block_device_t* d = m->m_device;
     if (!d) {
@@ -18,11 +18,11 @@ s32 ext2_read_inode(u32 index, ext2_inode_t* inode, ext2_mount_t* m)
     }
 
     ext2_super_t* s = &m->m_superblock;
-    u32 block_group = (index - 1) / s->s_inodes_per_group;
+    u32 block_group = (inode_num - 1) / s->s_inodes_per_group;
     ext2_block_group_descriptor_t* bgd = &m->m_block_group[block_group];
 
     u32 block_size = (1024 << s->s_log_block_size);
-    u32 offset = (index - 1) * s->s_inode_size;
+    u32 offset = (inode_num - 1) * s->s_inode_size;
     u32 addr = (bgd->bg_inode_table * block_size) + offset;
     u32 sector_pos = addr / d->sector_size;
 

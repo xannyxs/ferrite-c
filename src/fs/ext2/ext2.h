@@ -131,23 +131,23 @@ typedef struct {
 } ext2_mount_t;
 
 /* Super Block Functions */
-
-s32 ext2_read_superblock(block_device_t* d, ext2_super_t* super);
-
-/* inode Functions */
-
-s32 ext2_read_inode(u32 index, ext2_inode_t* inode, ext2_mount_t* m);
+s32 ext2_read_superblock(ext2_mount_t* m, ext2_super_t* super);
 
 /* Block Group Descriptor Table Functions */
+s32 ext2_read_bgd_table(
+    ext2_mount_t* m, ext2_block_group_descriptor_t* bgd, u32 num_block_groups);
 
-s32 ext2_read_block_descriptor_table(block_device_t* d,
-    ext2_block_group_descriptor_t* bgd, u32 num_blocks_groups);
+/* Inode Functions */
+s32 ext2_read_inode(ext2_mount_t* m, u32 inode_num, ext2_inode_t* inode);
 
-/* EXT2 */
+/* Directory Functions */
+ext2_entry_t* ext2_read_entry(
+    ext2_mount_t* m, ext2_inode_t* dir_inode, char const* entry_name);
 
-ext2_entry_t* ext2_read_directory(
-    char const* entry_name, ext2_inode_t inode, ext2_mount_t* m);
+/* VFS Interface */
+struct inode_t* ext2_lookup(struct inode_t* parent_dir, char const* name);
 
+/* Initialization */
 void ext2_init(void);
 
 #endif /* FS_EXT2_H */

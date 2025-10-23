@@ -5,8 +5,8 @@
 #include "memory/kmalloc.h"
 #include "types.h"
 
-ext2_entry_t* ext2_read_directory(
-    char const* entry_name, ext2_inode_t inode, ext2_mount_t* m)
+ext2_entry_t* ext2_read_entry(
+    ext2_mount_t* m, ext2_inode_t* dir_inode, char const* entry_name)
 {
     block_device_t* d = m->m_device;
     if (!d) {
@@ -20,11 +20,13 @@ ext2_entry_t* ext2_read_directory(
     }
 
     ext2_super_t s = m->m_superblock;
-    u32 addr = inode.i_block[0] * (1024 << s.s_log_block_size);
+    u32 addr = dir_inode->i_block[0] * (1024 << s.s_log_block_size);
     u32 sector_pos = addr / d->sector_size;
 
     u8* buff = kmalloc(1024);
-    if (d->d_op->read(d, sector_pos, inode.i_blocks, buff, inode.i_size) < 0) {
+    if (d->d_op->read(
+            d, sector_pos, dir_inode->i_blocks, buff, dir_inode->i_size)
+        < 0) {
         printk("%s: failed to read from device (LBA %u, "
                "count %u)\n",
             __func__, sector_pos, 1);
@@ -32,7 +34,7 @@ ext2_entry_t* ext2_read_directory(
     }
 
     u32 offset = 0;
-    while (offset < inode.i_size) {
+    while (offset < dir_inode->i_size) {
         ext2_entry_t* entry = (ext2_entry_t*)&buff[offset];
         offset += entry->rec_len;
 
