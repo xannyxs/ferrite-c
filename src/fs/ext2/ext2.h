@@ -141,11 +141,8 @@ s32 ext2_read_bgd_table(
 s32 ext2_read_inode(ext2_mount_t* m, u32 inode_num, ext2_inode_t* inode);
 
 /* Directory Functions */
-ext2_entry_t* ext2_read_entry(
-    ext2_mount_t* m, ext2_inode_t* dir_inode, char const* entry_name);
-
-/* VFS Interface */
-struct inode_t* ext2_lookup(struct inode_t* parent_dir, char const* name);
+s32 ext2_read_entry(ext2_mount_t* m, ext2_entry_t** entry, u32 inode_num,
+    char const* entry_name);
 
 /* Initialization */
 void ext2_init(void);

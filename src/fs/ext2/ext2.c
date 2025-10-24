@@ -1,6 +1,7 @@
 #include "fs/ext2/ext2.h"
 #include "drivers/block/device.h"
 #include "drivers/printk.h"
+#include "fs/vfs.h"
 #include "lib/math.h"
 #include "lib/stdlib.h"
 #include "lib/string.h"
@@ -10,33 +11,76 @@
 
 ext2_mount_t ext2_mounts[MAX_EXT2_MOUNTS];
 
-struct inode_t {
-    u32 i_ino;
-    u32 i_mode;
-    u32 size;
-    void* fs_specific;
+static vfs_inode_t* ext2_lookup(vfs_inode_t* inode, char const* name);
+static vfs_inode_t* ext2_inode_get(u32 inode_num);
+static void ext2_inode_put(vfs_inode_t* inode);
+
+static struct inode_operations ext2_fops = {
+    .lookup = ext2_lookup,
+    .inode_get = ext2_inode_get,
+    .inode_put = ext2_inode_put,
 };
 
-struct inode_t* ext2_lookup(struct inode_t* parent_dir, char const* name)
+vfs_inode_t* ext2_inode_get(u32 inode_num)
 {
     ext2_mount_t* m = &ext2_mounts[0];
-
-    ext2_inode_t parent_inode = { 0 };
-    ext2_read_inode(m, parent_dir->i_ino, &parent_inode);
-
-    ext2_entry_t* entry = ext2_read_entry(m, &parent_inode, name);
-    if (!entry) {
-        return NULL;
-    }
 
     ext2_inode_t* found_inode = kmalloc(sizeof(ext2_inode_t));
     if (!found_inode) {
         return NULL;
     }
-    ext2_read_inode(m, entry->inode, found_inode);
 
-    struct inode_t* new = kmalloc(sizeof(inode_t));
+    if (ext2_read_inode(m, inode_num, found_inode) < 0) {
+        kfree(found_inode);
+        return NULL;
+    }
+
+    vfs_inode_t* new = kmalloc(sizeof(vfs_inode_t));
     if (!new) {
+        kfree(found_inode);
+        return NULL;
+    }
+
+    new->i_ino = inode_num;
+    new->size = found_inode->i_size;
+    new->i_mode = found_inode->i_mode;
+    new->fs_specific = (void*)found_inode;
+    new->i_op = &ext2_fops;
+
+    return new;
+}
+
+void ext2_inode_put(vfs_inode_t* inode)
+{
+    if (inode) {
+        kfree(inode);
+    }
+}
+
+vfs_inode_t* ext2_lookup(vfs_inode_t* inode, char const* name)
+{
+    ext2_entry_t* entry = NULL;
+    ext2_mount_t* m = &ext2_mounts[0];
+
+    if (ext2_read_entry(m, &entry, inode->i_ino, name) < 0) {
+        return NULL;
+    }
+
+    ext2_inode_t* found_inode = kmalloc(sizeof(ext2_inode_t));
+    if (!found_inode) {
+        kfree(entry);
+        return NULL;
+    }
+
+    if (ext2_read_inode(m, entry->inode, found_inode) < 0) {
+        kfree(entry);
+        kfree(found_inode);
+        return NULL;
+    }
+
+    vfs_inode_t* new = kmalloc(sizeof(inode_t));
+    if (!new) {
+        kfree(entry);
         kfree(found_inode);
         return NULL;
     }
@@ -45,6 +89,9 @@ struct inode_t* ext2_lookup(struct inode_t* parent_dir, char const* name)
     new->size = found_inode->i_size;
     new->i_mode = found_inode->i_mode;
     new->fs_specific = (void*)found_inode;
+    new->i_op = &ext2_fops;
+
+    kfree(entry);
 
     return new;
 }
@@ -111,20 +158,14 @@ void ext2_init(void)
         abort("Error occured in ext2_mount");
     }
 
-    struct inode_t inode = { 0 };
-    inode.i_mode = 1;
-    inode.i_ino = 2;
-    inode.size = 1024;
-    inode.fs_specific = NULL;
-
-    struct inode_t* result1 = ext2_lookup(&inode, ".");
+    vfs_inode_t* result1 = ext2_lookup(2, ".");
     if (result1) {
         printk("Found '.': inode=%u, size=%u\n", result1->i_ino, result1->size);
     } else {
         printk("Failed to find '.'\n");
     }
 
-    struct inode_t* result2 = ext2_lookup(&inode, "lost+found");
+    vfs_inode_t* result2 = ext2_lookup(result1->i_ino, "lost+found");
     if (result2) {
         printk("Found 'lost+found': inode=%u, size=%u\n", result2->i_ino,
             result2->size);
