@@ -32,5 +32,7 @@ s32 ext2_read_superblock(ext2_mount_t* m, ext2_super_t* super)
         return -1;
     }
 
+    m->m_block_size = (1024 << super->s_log_block_size);
+
     return 0;
 }

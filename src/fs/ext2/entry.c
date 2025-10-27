@@ -22,8 +22,7 @@ s32 ext2_read_entry(ext2_mount_t* m, ext2_entry_t** entry, u32 inode_num,
     ext2_inode_t dir_inode = { 0 };
     ext2_read_inode(m, inode_num, &dir_inode);
 
-    ext2_super_t s = m->m_superblock;
-    u32 addr = dir_inode.i_block[0] * (1024 << s.s_log_block_size);
+    u32 addr = dir_inode.i_block[0] * m->m_block_size;
     u32 sector_pos = addr / d->sector_size;
 
     u8 buff[1024];
