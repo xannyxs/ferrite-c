@@ -1,7 +1,6 @@
 #ifndef FS_VFS_H
 #define FS_VFS_H
 
-#include "fs/ext2/ext2.h"
 #include "types.h"
 
 typedef struct {
@@ -17,6 +16,9 @@ struct inode_operations {
     vfs_inode_t* (*lookup)(vfs_inode_t* inode, char const*);
     vfs_inode_t* (*inode_get)(u32 inode_num);
     void (*inode_put)(vfs_inode_t*);
+
+    int (*read)(vfs_inode_t* vfs, void* buff, u32 offset, u32 len);
+    int (*write)(vfs_inode_t* vfs, void const* buff, u32 offset, u32 len);
 };
 
 #endif /* FS_VFS_H */

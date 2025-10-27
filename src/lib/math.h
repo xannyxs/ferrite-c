@@ -10,6 +10,8 @@
 #define ALIGN(x, a) (((x) + ((a) - 1)) & ~((a) - 1))
 #define CEIL_DIV(a, b) (((a + b - 1) / b))
 
+#define min(a, b) ((a) < (b) ? (a) : (b))
+
 /**
  * @brief  Calculates the base-2 logarithm of n, rounded down (floor).
  */
