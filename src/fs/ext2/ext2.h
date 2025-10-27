@@ -126,6 +126,7 @@ typedef struct {
     ext2_super_t m_superblock;
     ext2_inode_t m_inode;
 
+    u32 m_block_size;
     u32 num_block_groups;
     ext2_block_group_descriptor_t* m_block_group;
 } ext2_mount_t;
@@ -137,14 +138,37 @@ s32 ext2_read_superblock(ext2_mount_t* m, ext2_super_t* super);
 s32 ext2_read_bgd_table(
     ext2_mount_t* m, ext2_block_group_descriptor_t* bgd, u32 num_block_groups);
 
+s32 ext2_write_bgd(ext2_mount_t* m, u32 bgd_index);
+
+/* Block Functions */
+int mark_block_allocated(ext2_mount_t* m, u32 block_num);
+
+int mark_block_free(ext2_mount_t* m, u32 block_num);
+
+s32 ext2_write_block(ext2_mount_t* m, u32 block_num, void const* buff);
+
 /* Inode Functions */
 s32 ext2_read_inode(ext2_mount_t* m, u32 inode_num, ext2_inode_t* inode);
+
+s32 ext2_write_inode(ext2_mount_t* m, u32 inode_num, ext2_inode_t* inode);
+
+int find_free_inode(ext2_mount_t* m);
+
+int mark_inode_allocated(ext2_mount_t* m, u32 inode_num);
+
+int mark_inode_free(ext2_mount_t* m, u32 inode_num);
 
 /* Directory Functions */
 s32 ext2_read_entry(ext2_mount_t* m, ext2_entry_t** entry, u32 inode_num,
     char const* entry_name);
 
-/* Initialization */
+/* General Functio */
+int find_free_bit_in_bitmap(u8 const* bitmap, u32 size);
+
+int read_block(ext2_mount_t* m, u8* buff, u32 block_num);
+
+int find_free_block(ext2_mount_t* m);
+
 void ext2_init(void);
 
 #endif /* FS_EXT2_H */
