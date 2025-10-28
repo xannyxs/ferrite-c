@@ -5,7 +5,7 @@
 #include "lib/string.h"
 #include "types.h"
 
-s32 ext2_write_bgd(ext2_mount_t* m, u32 bgd_index)
+s32 ext2_block_group_descriptors_write(ext2_mount_t* m, u32 bgd_index)
 {
     block_device_t* d = m->m_device;
     if (!d) {
@@ -40,8 +40,11 @@ s32 ext2_write_bgd(ext2_mount_t* m, u32 bgd_index)
     return 0;
 }
 
-s32 ext2_read_bgd_table(
-    ext2_mount_t* m, ext2_block_group_descriptor_t* bgd, u32 num_block_groups)
+s32 ext2_block_group_descriptors_read_all(
+    ext2_mount_t* m,
+    ext2_block_group_descriptor_t* bgd,
+    u32 num_block_groups
+)
 {
     block_device_t* d = m->m_device;
     if (!d) {
@@ -60,9 +63,11 @@ s32 ext2_read_bgd_table(
     u32 bgd_pos = CEIL_DIV(1024 + sizeof(ext2_super_t), d->sector_size);
 
     if (d->d_op->read(d, bgd_pos, size, bgd, size * d->sector_size) < 0) {
-        printk("%s: failed to read from device (LBA %u, "
-               "count %u)\n",
-            __func__, bgd_pos, size);
+        printk(
+            "%s: failed to read from device (LBA %u, "
+            "count %u)\n",
+            __func__, bgd_pos, size
+        );
         return -1;
     }
 

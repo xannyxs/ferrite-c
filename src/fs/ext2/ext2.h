@@ -135,10 +135,10 @@ typedef struct {
 s32 ext2_read_superblock(ext2_mount_t* m, ext2_super_t* super);
 
 /* Block Group Descriptor Table Functions */
-s32 ext2_read_bgd_table(
+s32 ext2_block_group_descriptors_read_all(
     ext2_mount_t* m, ext2_block_group_descriptor_t* bgd, u32 num_block_groups);
 
-s32 ext2_write_bgd(ext2_mount_t* m, u32 bgd_index);
+s32 ext2_block_group_descriptors_write(ext2_mount_t* m, u32 bgd_index);
 
 /* Block Functions */
 int mark_block_allocated(ext2_mount_t* m, u32 block_num);
