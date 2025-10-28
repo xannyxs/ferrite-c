@@ -136,7 +136,10 @@ s32 ext2_read_superblock(ext2_mount_t* m, ext2_super_t* super);
 
 /* Block Group Descriptor Table Functions */
 s32 ext2_block_group_descriptors_read_all(
-    ext2_mount_t* m, ext2_block_group_descriptor_t* bgd, u32 num_block_groups);
+    ext2_mount_t* m,
+    ext2_block_group_descriptor_t* bgd,
+    u32 num_block_groups
+);
 
 s32 ext2_block_group_descriptors_write(ext2_mount_t* m, u32 bgd_index);
 
@@ -159,8 +162,12 @@ int mark_inode_allocated(ext2_mount_t* m, u32 inode_num);
 int mark_inode_free(ext2_mount_t* m, u32 inode_num);
 
 /* Directory Functions */
-s32 ext2_read_entry(ext2_mount_t* m, ext2_entry_t** entry, u32 inode_num,
-    char const* entry_name);
+s32 ext2_read_entry(
+    ext2_mount_t* m,
+    ext2_entry_t** entry,
+    u32 inode_num,
+    char const* entry_name
+);
 
 /* General Functio */
 int find_free_bit_in_bitmap(u8 const* bitmap, u32 size);

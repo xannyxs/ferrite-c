@@ -51,7 +51,8 @@ void visualize_paging(u32 limit_mb, u32 detailed_mb)
 
         } else {
             printk(
-                "VAddr 0x%x - 0x%x: [X]\n", base_vaddr, base_vaddr + 0x3FFFFF);
+                "VAddr 0x%x - 0x%x: [X]\n", base_vaddr, base_vaddr + 0x3FFFFF
+            );
         }
 
         if ((pd_index + 1) * 4 == detailed_mb) {
@@ -113,8 +114,8 @@ void* vmm_unmap_page(void* vaddr)
  * @return 0 on success.
  * @return -1 if the mapping already exists.
  */
-__attribute__((warn_unused_result)) s32 vmm_map_page(
-    void* paddr, void* vaddr, u32 flags)
+__attribute__((warn_unused_result)) s32
+vmm_map_page(void* paddr, void* vaddr, u32 flags)
 {
     if (!paddr) {
         paddr = buddy_alloc(0);

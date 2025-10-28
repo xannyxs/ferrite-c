@@ -40,8 +40,8 @@ void exception_dispatcher_c(registers_t* reg)
     EXCEPTION_HANDLERS[reg->int_no](reg, reg->err_code);
 }
 
-__attribute__((target("general-regs-only"))) void divide_by_zero_handler(
-    registers_t* regs, u32 error_code)
+__attribute__((target("general-regs-only"))) void
+divide_by_zero_handler(registers_t* regs, u32 error_code)
 {
     (void)error_code;
     if ((regs->cs & 3) == KERNEL_MODE) {
@@ -51,8 +51,8 @@ __attribute__((target("general-regs-only"))) void divide_by_zero_handler(
     do_exit(-1);
 }
 
-__attribute__((target("general-regs-only"))) void debug_interrupt_handler(
-    registers_t* regs, u32 error_code)
+__attribute__((target("general-regs-only"))) void
+debug_interrupt_handler(registers_t* regs, u32 error_code)
 {
     (void)error_code;
     (void)regs;
@@ -68,16 +68,16 @@ non_maskable_interrupt_handler(registers_t* regs, u32 error_code)
     panic(regs, "Non Maskable Interrupt");
 }
 
-__attribute__((target("general-regs-only"))) void breakpoint_handler(
-    registers_t* regs, u32 error_code)
+__attribute__((target("general-regs-only"))) void
+breakpoint_handler(registers_t* regs, u32 error_code)
 {
     (void)error_code;
     (void)regs;
     BOCHS_MAGICBREAK();
 }
 
-__attribute__((target("general-regs-only"))) void overflow_handler(
-    registers_t* regs, u32 error_code)
+__attribute__((target("general-regs-only"))) void
+overflow_handler(registers_t* regs, u32 error_code)
 {
     (void)regs;
     (void)error_code;
@@ -86,8 +86,8 @@ __attribute__((target("general-regs-only"))) void overflow_handler(
     __asm__ volatile("cli; hlt");
 }
 
-__attribute__((target("general-regs-only"))) void bound_range_exceeded_handler(
-    registers_t* regs, u32 error_code)
+__attribute__((target("general-regs-only"))) void
+bound_range_exceeded_handler(registers_t* regs, u32 error_code)
 {
     (void)regs;
     (void)error_code;
@@ -96,8 +96,8 @@ __attribute__((target("general-regs-only"))) void bound_range_exceeded_handler(
     __asm__ volatile("cli; hlt");
 }
 
-__attribute__((target("general-regs-only"))) void invalid_opcode(
-    registers_t* regs, u32 error_code)
+__attribute__((target("general-regs-only"))) void
+invalid_opcode(registers_t* regs, u32 error_code)
 {
     (void)error_code;
     if ((regs->cs & 3) == 0) {
@@ -110,8 +110,8 @@ __attribute__((target("general-regs-only"))) void invalid_opcode(
 // NOTE:
 // This exception is primarily used to handle FPU context switching. Without an
 // FPU, the CPU won't generate this fault for floating-point instructions.
-__attribute__((target("general-regs-only"))) void device_not_available(
-    registers_t* regs, u32 error_code)
+__attribute__((target("general-regs-only"))) void
+device_not_available(registers_t* regs, u32 error_code)
 {
     (void)error_code;
     (void)regs;
@@ -127,8 +127,8 @@ void x87_fpu_exception(registers_t* regs, u32 error_code)
     __asm__ volatile("cli; hlt");
 }
 
-__attribute__((target("general-regs-only"))) void reserved_by_cpu(
-    registers_t* regs, u32 error_code)
+__attribute__((target("general-regs-only"))) void
+reserved_by_cpu(registers_t* regs, u32 error_code)
 {
     (void)error_code;
     (void)regs;
@@ -136,16 +136,16 @@ __attribute__((target("general-regs-only"))) void reserved_by_cpu(
 
 // --- Handlers that HAVE an error code ---
 
-__attribute__((target("general-regs-only"))) void double_fault(
-    registers_t* regs, u32 error_code)
+__attribute__((target("general-regs-only"))) void
+double_fault(registers_t* regs, u32 error_code)
 {
     (void)error_code;
     (void)error_code;
     panic(regs, "Double Fault");
 }
 
-__attribute__((target("general-regs-only"))) void invalid_tss(
-    registers_t* regs, u32 error_code)
+__attribute__((target("general-regs-only"))) void
+invalid_tss(registers_t* regs, u32 error_code)
 {
     (void)error_code;
     (void)error_code;
@@ -153,8 +153,8 @@ __attribute__((target("general-regs-only"))) void invalid_tss(
     panic(regs, "Invalid TSS");
 }
 
-__attribute__((target("general-regs-only"))) void segment_not_present(
-    registers_t* regs, u32 error_code)
+__attribute__((target("general-regs-only"))) void
+segment_not_present(registers_t* regs, u32 error_code)
 {
     (void)error_code;
     (void)regs;
@@ -163,8 +163,8 @@ __attribute__((target("general-regs-only"))) void segment_not_present(
     __asm__ volatile("cli; hlt");
 }
 
-__attribute__((target("general-regs-only"))) void stack_segment_fault(
-    registers_t* regs, u32 error_code)
+__attribute__((target("general-regs-only"))) void
+stack_segment_fault(registers_t* regs, u32 error_code)
 {
     (void)error_code;
     (void)regs;
@@ -172,8 +172,8 @@ __attribute__((target("general-regs-only"))) void stack_segment_fault(
     __asm__ volatile("cli; hlt");
 }
 
-__attribute__((target("general-regs-only"))) void general_protection_fault(
-    registers_t* regs, u32 error_code)
+__attribute__((target("general-regs-only"))) void
+general_protection_fault(registers_t* regs, u32 error_code)
 {
     printk("=== GPF ===\n");
     printk("error_code: %x\n", error_code);
@@ -182,8 +182,10 @@ __attribute__((target("general-regs-only"))) void general_protection_fault(
     printk("eflags: %x\n", regs->eflags);
 
     if (error_code) {
-        printk("External: %d, Table: %d, Index: %d\n", error_code & 1,
-            (error_code >> 1) & 3, error_code >> 3);
+        printk(
+            "External: %d, Table: %d, Index: %d\n", error_code & 1,
+            (error_code >> 1) & 3, error_code >> 3
+        );
     }
 
     panic(regs, "General Protection Fault");
@@ -191,8 +193,8 @@ __attribute__((target("general-regs-only"))) void general_protection_fault(
 
 #define USER_SPACE_END 0xC0000000
 
-__attribute__((target("general-regs-only"))) void page_fault(
-    registers_t* regs, u32 error_code)
+__attribute__((target("general-regs-only"))) void
+page_fault(registers_t* regs, u32 error_code)
 {
     u32 fault_addr;
     __asm__ volatile("movl %%cr2, %0" : "=r"(fault_addr));
@@ -208,8 +210,10 @@ __attribute__((target("general-regs-only"))) void page_fault(
         }
     }
 
-    printk("Page Fault: addr=%x, error=%x, cs=%x\n", fault_addr, error_code,
-        regs->cs);
+    printk(
+        "Page Fault: addr=%x, error=%x, cs=%x\n", fault_addr, error_code,
+        regs->cs
+    );
     printk("Faulting instruction at: 0x%x\n", regs->eip);
     panic(regs, "Page Fault");
     __builtin_unreachable();

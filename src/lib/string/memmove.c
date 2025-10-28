@@ -1,7 +1,7 @@
 #include "types.h"
 
-__attribute__((target("general-regs-only"))) void* memmove(
-    void* dest, void const* src, size_t len)
+__attribute__((target("general-regs-only"))) void*
+memmove(void* dest, void const* src, size_t len)
 {
     char* str_dest = dest;
     char* str_src = (char*)src;

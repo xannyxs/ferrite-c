@@ -5,8 +5,8 @@
 
 #include <stdbool.h>
 
-__attribute__((target("general-regs-only"))) static void save_stack(
-    u32 stack_pointer)
+__attribute__((target("general-regs-only"))) static void
+save_stack(u32 stack_pointer)
 {
     printk("\n--- STACK DUMP ---\n");
     u32* stack = (u32*)stack_pointer;
@@ -31,8 +31,8 @@ __attribute__((target("general-regs-only"))) static void clean_registers(void)
                      : "eax", "ebx", "ecx", "edx", "esi", "edi");
 }
 
-__attribute__((target("general-regs-only"), noreturn)) void panic(
-    registers_t* regs, char const* msg)
+__attribute__((target("general-regs-only"), noreturn)) void
+panic(registers_t* regs, char const* msg)
 {
     cli();
 

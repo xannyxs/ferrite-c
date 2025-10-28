@@ -201,16 +201,21 @@ int ext2_read(vfs_inode_t* vfs, void* buff, u32 offset, u32 len)
         u32 sector_pos = addr / d->sector_size;
 
         if (d->d_op->read(
-                d, sector_pos, inode->i_blocks, block_buffer, block_size)
+                d, sector_pos, inode->i_blocks, block_buffer, block_size
+            )
             < 0) {
-            printk("%s: failed to read from device (LBA %u, "
-                   "count %u)\n",
-                __func__, sector_pos, 1);
+            printk(
+                "%s: failed to read from device (LBA %u, "
+                "count %u)\n",
+                __func__, sector_pos, 1
+            );
             return -1;
         }
 
-        memcpy((u8*)buff + bytes_copied, block_buffer + offset_in_block,
-            bytes_to_copy);
+        memcpy(
+            (u8*)buff + bytes_copied, block_buffer + offset_in_block,
+            bytes_to_copy
+        );
         bytes_copied += bytes_to_copy;
         current_file_offset += bytes_to_copy;
     }
@@ -318,7 +323,8 @@ s32 ext2_mount(block_device_t* d)
     }
 
     m->num_block_groups = CEIL_DIV(
-        m->m_superblock.s_blocks_count, m->m_superblock.s_blocks_per_group);
+        m->m_superblock.s_blocks_count, m->m_superblock.s_blocks_per_group
+    );
     u32 bgd_bytes = m->num_block_groups * sizeof(ext2_block_group_descriptor_t);
     u32 bgd_sectors = CEIL_DIV(bgd_bytes, d->sector_size);
 

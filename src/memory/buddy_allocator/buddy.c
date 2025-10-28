@@ -31,8 +31,10 @@ static int buddy_get_bit(int bit_index)
 void buddy_visualize(void)
 {
     printk("\n--- Buddy Allocator Visualization ---\n");
-    printk("  Base Address: 0x%x | Total Size: %u KB | Max Order: %u\n",
-        (void*)g_buddy.base, g_buddy.size / 1024, g_buddy.max_order);
+    printk(
+        "  Base Address: 0x%x | Total Size: %u KB | Max Order: %u\n",
+        (void*)g_buddy.base, g_buddy.size / 1024, g_buddy.max_order
+    );
     printk("-------------------------------------\n");
 
     printk("  Free Lists by Order:\n");
@@ -44,8 +46,10 @@ void buddy_visualize(void)
             node = node->next;
         }
         int pages_per_block = 1 << i;
-        printk("    Order %d (%d pages): %d free blocks\n", i, pages_per_block,
-            free_block_count);
+        printk(
+            "    Order %d (%d pages): %d free blocks\n", i, pages_per_block,
+            free_block_count
+        );
     }
     printk("-------------------------------------\n");
 
@@ -252,7 +256,8 @@ void buddy_init(void)
     u32 temp_max_order = floor_log2(temp_size / PAGE_SIZE);
 
     g_buddy.base = ALIGN(
-        (u32)g_buddy.map + g_buddy.map_size, PAGE_SIZE << temp_max_order);
+        (u32)g_buddy.map + g_buddy.map_size, PAGE_SIZE << temp_max_order
+    );
     g_buddy.size = end_vaddr - g_buddy.base;
     if (g_buddy.size < PAGE_SIZE) {
         abort("Not enough memory for the buddy pool");

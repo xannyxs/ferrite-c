@@ -33,7 +33,8 @@ int mark_inode_bitmap(ext2_mount_t* m, u32 inode_num, bool allocate)
     u32 sectors_per_block = m->m_block_size / m->m_device->sector_size;
     u32 sector_num = bgd->bg_inode_bitmap * sectors_per_block;
     if (m->m_device->d_op->write(
-            m->m_device, sector_num, sectors_per_block, bitmap, m->m_block_size)
+            m->m_device, sector_num, sectors_per_block, bitmap, m->m_block_size
+        )
         < 0) {
         return -1;
     }
@@ -145,9 +146,11 @@ s32 ext2_read_inode(ext2_mount_t* m, u32 inode_num, ext2_inode_t* inode)
 
     u8 buff[d->sector_size];
     if (d->d_op->read(d, sector_pos, 1, buff, d->sector_size) < 0) {
-        printk("%s: failed to read from device (LBA %u, "
-               "count %u)\n",
-            __func__, sector_pos, 1);
+        printk(
+            "%s: failed to read from device (LBA %u, "
+            "count %u)\n",
+            __func__, sector_pos, 1
+        );
         return -1;
     }
 

@@ -48,8 +48,10 @@ void rtc_init(void)
     outb(0x71, prev_b & ~0x40); // Write back with bit 6 (PIE) cleared
 
     rtc_read_time(&time);
-    printk("RTC Time: 20%d-%d-%d %d:%d:%d\n", time.year, time.month, time.day,
-        time.hour, time.minute, time.second);
+    printk(
+        "RTC Time: 20%d-%d-%d %d:%d:%d\n", time.year, time.month, time.day,
+        time.hour, time.minute, time.second
+    );
 
     time_t epoch = to_epoch(&time);
     setepoch(epoch);

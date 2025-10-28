@@ -15,12 +15,14 @@ void process_list(void)
     printk("---  --------  ----------------  ----  --------------\n");
     for (s32 i = 0; i < NUM_PROC; i += 1) {
         if (ptables[i].state != UNUSED) {
-            char const* state_str[] = { "UNUSED", "EMBRYO", "SLEEPING", "READY",
-                "RUNNING", "ZOMBIE" };
+            char const* state_str[] = { "UNUSED", "EMBRYO",  "SLEEPING",
+                                        "READY",  "RUNNING", "ZOMBIE" };
             pid_t ppid = ptables[i].parent ? ptables[i].parent->pid : 0;
-            printk("%3d  %8s  %16s  %4d  0x%08x\n", ptables[i].pid,
+            printk(
+                "%3d  %8s  %16s  %4d  0x%08x\n", ptables[i].pid,
                 state_str[ptables[i].state], ptables[i].name, ppid,
-                ptables[i].parent);
+                ptables[i].parent
+            );
         }
     }
 }

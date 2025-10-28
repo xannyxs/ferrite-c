@@ -5,8 +5,12 @@
 #include "memory/kmalloc.h"
 #include "types.h"
 
-s32 ext2_read_entry(ext2_mount_t* m, ext2_entry_t** entry, u32 inode_num,
-    char const* entry_name)
+s32 ext2_read_entry(
+    ext2_mount_t* m,
+    ext2_entry_t** entry,
+    u32 inode_num,
+    char const* entry_name
+)
 {
     block_device_t* d = m->m_device;
     if (!d) {
@@ -28,9 +32,11 @@ s32 ext2_read_entry(ext2_mount_t* m, ext2_entry_t** entry, u32 inode_num,
     u8 buff[1024];
     if (d->d_op->read(d, sector_pos, dir_inode.i_blocks, buff, dir_inode.i_size)
         < 0) {
-        printk("%s: failed to read from device (LBA %u, "
-               "count %u)\n",
-            __func__, sector_pos, 1);
+        printk(
+            "%s: failed to read from device (LBA %u, "
+            "count %u)\n",
+            __func__, sector_pos, 1
+        );
         return -1;
     }
 

@@ -143,10 +143,10 @@ u32 read_from_ata_data(void)
     return sector_size_words * 2;
 }
 
-static s32 ide_read(
-    block_device_t* d, u32 lba, u32 count, void* buf, size_t len);
-static s32 ide_write(
-    block_device_t* d, u32 lba, u32 count, void const* buf, size_t len);
+static s32
+ide_read(block_device_t* d, u32 lba, u32 count, void* buf, size_t len);
+static s32
+ide_write(block_device_t* d, u32 lba, u32 count, void const* buf, size_t len);
 static void ide_shutdown(block_device_t* d);
 
 struct device_operations ide_device_ops = {
@@ -199,7 +199,12 @@ s32 ide_read(block_device_t* d, u32 lba, u32 count, void* buf, size_t len)
 }
 
 s32 ide_write(
-    block_device_t* d, u32 lba, u32 count, void const* buf, size_t len)
+    block_device_t* d,
+    u32 lba,
+    u32 count,
+    void const* buf,
+    size_t len
+)
 {
     if (!d->d_data) {
         printk("d_data is NULL\n", d->d_data);

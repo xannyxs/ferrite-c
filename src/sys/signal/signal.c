@@ -91,8 +91,9 @@ s32 do_kill(pid_t pid, s32 sig)
         p->state = READY;
     }
 
-    printk("Process %d sent signal %d to process %d\n", current_proc->pid, sig,
-        pid);
+    printk(
+        "Process %d sent signal %d to process %d\n", current_proc->pid, sig, pid
+    );
 
     return 0;
 }
@@ -156,14 +157,18 @@ void handle_signal(void)
 
             default:
                 // Unknown signal
-                printk("Process %d: unknown signal %d, ignoring\n",
-                    current_proc->pid, sig);
+                printk(
+                    "Process %d: unknown signal %d, ignoring\n",
+                    current_proc->pid, sig
+                );
                 break;
             }
         }
 
-        printk("Process %d handling signal %d with custom handler\n",
-            current_proc->pid, sig);
+        printk(
+            "Process %d handling signal %d with custom handler\n",
+            current_proc->pid, sig
+        );
         handler(sig);
     }
 }

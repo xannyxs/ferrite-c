@@ -20,15 +20,19 @@ s32 ext2_read_superblock(ext2_mount_t* m, ext2_super_t* super)
     u32 block_pos = 1024 / d->sector_size;
 
     if (d->d_op->read(d, block_pos, count, super, sizeof(ext2_super_t)) < 0) {
-        printk("%s: failed to read from device (LBA %u, "
-               "count %u)\n",
-            __func__, block_pos, count);
+        printk(
+            "%s: failed to read from device (LBA %u, "
+            "count %u)\n",
+            __func__, block_pos, count
+        );
         return -1;
     }
 
     if (super->s_magic != EXT2_MAGIC) {
-        printk("%s: invalid magic (expected 0x%x, got 0x%x)\n", __func__,
-            EXT2_MAGIC, super->s_magic);
+        printk(
+            "%s: invalid magic (expected 0x%x, got 0x%x)\n", __func__,
+            EXT2_MAGIC, super->s_magic
+        );
         return -1;
     }
 

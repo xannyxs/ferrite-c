@@ -83,17 +83,22 @@ TEST(buddy_alignment)
         printk("    Block address: 0x%x\n", block);
         printk("    Alignment mask: 0x%x\n", block_size - 1);
         printk(
-            "    block & (block_size - 1) = 0x%x\n", block & (block_size - 1));
+            "    block & (block_size - 1) = 0x%x\n", block & (block_size - 1)
+        );
 
         if ((block & (block_size - 1)) != 0) {
             printk("    *** MISALIGNED! ***\n");
         }
 
-        ASSERT((block & (block_size - 1)) == 0,
-            "Block should be aligned to its size");
+        ASSERT(
+            (block & (block_size - 1)) == 0,
+            "Block should be aligned to its size"
+        );
 
-        printk("  Order %u (size %u): %x - aligned correctly\n", order,
-            block_size, block);
+        printk(
+            "  Order %u (size %u): %x - aligned correctly\n", order, block_size,
+            block
+        );
 
         buddy_dealloc(block, order);
     }
@@ -192,7 +197,8 @@ TEST(buddy_fragmentation_recovery)
     // Now try to allocate a larger block that requires coalescing
     paddr_t large = (paddr_t)buddy_alloc(2); // 4 pages
     ASSERT(
-        large != 0, "Should be able to allocate large block after coalescing");
+        large != 0, "Should be able to allocate large block after coalescing"
+    );
 
     printk("  Successfully allocated 4-page block at %x\n", large);
     buddy_dealloc(large, 2);
@@ -235,7 +241,8 @@ TEST(buddy_split_and_merge)
         printk("  Blocks came from split - checking buddy relationship\n");
         ASSERT((lower ^ upper) == block_size, "Blocks should be buddies");
         ASSERT(
-            upper == lower + block_size, "Upper should be one block_size away");
+            upper == lower + block_size, "Upper should be one block_size away"
+        );
     } else {
         printk("  Blocks came from different sources (allocator had other free "
                "blocks)\n");
@@ -270,8 +277,10 @@ TEST(buddy_mixed_workload)
     paddr_t medium1 = (paddr_t)buddy_alloc(1);
     paddr_t small2 = (paddr_t)buddy_alloc(0);
 
-    ASSERT(small1 != 0 && large1 != 0 && medium1 != 0 && small2 != 0,
-        "All allocations should succeed");
+    ASSERT(
+        small1 != 0 && large1 != 0 && medium1 != 0 && small2 != 0,
+        "All allocations should succeed"
+    );
 
     printk("  Allocated mixed sizes successfully\n");
 
@@ -296,8 +305,10 @@ TEST(buddy_max_order_allocation)
         printk("  Successfully allocated max order block at %x\n", max_block);
 
         size_t block_size = PAGE_SIZE << max_order;
-        ASSERT((max_block & (block_size - 1)) == 0,
-            "Max order block should be properly aligned");
+        ASSERT(
+            (max_block & (block_size - 1)) == 0,
+            "Max order block should be properly aligned"
+        );
 
         buddy_dealloc(max_block, max_order);
     } else {
