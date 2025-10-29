@@ -36,7 +36,7 @@ int mark_block_bitmap(ext2_mount_t* m, u32 block_num, bool allocate)
         return -1;
     }
 
-    return ext2_write_bgd(m, bgd_index);
+    return ext2_block_group_descriptors_write(m, bgd_index);
 }
 
 inline int mark_block_allocated(ext2_mount_t* m, u32 block_num)

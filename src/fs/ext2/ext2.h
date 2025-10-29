@@ -132,7 +132,9 @@ typedef struct {
 } ext2_mount_t;
 
 /* Super Block Functions */
-s32 ext2_read_superblock(ext2_mount_t* m, ext2_super_t* super);
+s32 ext2_superblock_read(ext2_mount_t* m);
+
+s32 ext2_superblock_write(ext2_mount_t* m);
 
 /* Block Group Descriptor Table Functions */
 s32 ext2_block_group_descriptors_read_all(

@@ -23,11 +23,27 @@ int mark_inode_bitmap(ext2_mount_t* m, u32 inode_num, bool allocate)
     u32 bit_index = local_inode_index % 8;
 
     if (allocate) {
+        if (bitmap[byte_index] & (1 << bit_index)) {
+            printk(
+                "%s: Warning: inode %u already allocated\n", __func__, inode_num
+            );
+            return -1;
+        }
+
         bitmap[byte_index] |= (1 << bit_index);
         bgd->bg_free_inodes_count--;
+        m->m_superblock.s_free_inodes_count--;
     } else {
+        if (!(bitmap[byte_index] & (1 << bit_index))) {
+            printk(
+                "%s: Warning: inode %u already freed\n", __func__, inode_num
+            );
+            return -1;
+        }
+
         bitmap[byte_index] &= ~(1 << bit_index);
         bgd->bg_free_inodes_count++;
+        m->m_superblock.s_free_inodes_count++;
     }
 
     u32 sectors_per_block = m->m_block_size / m->m_device->sector_size;
@@ -39,7 +55,15 @@ int mark_inode_bitmap(ext2_mount_t* m, u32 inode_num, bool allocate)
         return -1;
     }
 
-    return ext2_write_bgd(m, bgd_index);
+    if (ext2_block_group_descriptors_write(m, bgd_index) < 0) {
+        return -1;
+    }
+
+    if (ext2_superblock_write(m) < 0) {
+        return -1;
+    }
+
+    return 0;
 }
 
 inline int mark_inode_allocated(ext2_mount_t* m, u32 inode_num)

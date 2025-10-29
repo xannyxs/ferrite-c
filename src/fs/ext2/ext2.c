@@ -138,15 +138,15 @@ int ext2_write(vfs_inode_t* vfs, void const* buff, u32 offset, u32 len)
         return -1;
     }
 
-    node.i_gid = 0;
-    node.i_uid = 0;
+    node->i_gid = 0;
+    node->i_uid = 0;
 
-    node.i_ctime = (u32)getepoch();
-    node.i_mode = vfs->i_mode;
-    node.i_size = vfs->size;
-    node.i_links_count = 1;
-    node.i_blocks = m->m_block_size / 512;
-    node.i_block[0] = free_block;
+    node->i_ctime = (u32)getepoch();
+    node->i_mode = vfs->i_mode;
+    node->i_size = vfs->size;
+    node->i_links_count = 1;
+    node->i_blocks = m->m_block_size / 512;
+    node->i_block[0] = free_block;
 
     if (ext2_write_inode(m, free_node, node) < 0) {
         return -1;
@@ -318,7 +318,7 @@ s32 ext2_mount(block_device_t* d)
     }
 
     m->m_device = d;
-    if (ext2_read_superblock(m, &m->m_superblock) < 0) {
+    if (ext2_superblock_read(m) < 0) {
         return -1;
     }
 
@@ -333,7 +333,10 @@ s32 ext2_mount(block_device_t* d)
         return -1;
     }
 
-    if (ext2_read_bgd_table(m, m->m_block_group, m->num_block_groups) < 0) {
+    if (ext2_block_group_descriptors_read_all(
+            m, m->m_block_group, m->num_block_groups
+        )
+        < 0) {
         return -1;
     }
 
