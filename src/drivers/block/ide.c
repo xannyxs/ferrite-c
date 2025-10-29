@@ -210,7 +210,7 @@ s32 ide_write(
         printk("d_data is NULL\n", d->d_data);
         return -1;
     }
-    if (len < count * 512) {
+    if (len < count * d->sector_size) {
         printk("Buffer too small\n");
         return -1;
     }
