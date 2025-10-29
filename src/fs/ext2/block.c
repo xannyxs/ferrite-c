@@ -96,11 +96,10 @@ s32 read_block(ext2_mount_t* m, u8* buff, u32 block_num)
         return -1;
     }
 
-    u32 sectors_per_block = m->m_block_size / d->sector_size;
-    u32 sector_num = block_num * sectors_per_block;
+    u32 count = m->m_block_size / d->sector_size;
+    u32 sector_pos = block_num * count;
 
-    if (d->d_op->read(d, sector_num, sectors_per_block, buff, m->m_block_size)
-        < 0) {
+    if (d->d_op->read(d, sector_pos, count, buff, m->m_block_size) < 0) {
         return -1;
     }
 
