@@ -103,7 +103,7 @@ int find_free_inode(ext2_mount_t* m)
         return -1;
     }
 
-    return (s32)(bit + (s.s_inodes_per_group * i));
+    return (s32)(bit + (s.s_inodes_per_group * i) + 1);
 }
 
 s32 ext2_write_inode(ext2_mount_t* m, u32 inode_num, ext2_inode_t* inode)

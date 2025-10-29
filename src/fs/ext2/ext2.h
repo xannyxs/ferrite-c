@@ -150,7 +150,13 @@ int mark_block_allocated(ext2_mount_t* m, u32 block_num);
 
 int mark_block_free(ext2_mount_t* m, u32 block_num);
 
-s32 ext2_write_block(ext2_mount_t* m, u32 block_num, void const* buff);
+s32 ext2_write_block(
+    ext2_mount_t* m,
+    u32 block_num,
+    void const* buff,
+    u32 offset,
+    u32 len
+);
 
 /* Inode Functions */
 s32 ext2_read_inode(ext2_mount_t* m, u32 inode_num, ext2_inode_t* inode);
@@ -170,6 +176,8 @@ s32 ext2_read_entry(
     u32 inode_num,
     char const* entry_name
 );
+
+s32 ext2_entry_write(ext2_mount_t* m, ext2_entry_t* entry, u32 parent_ino);
 
 /* General Functio */
 int find_free_bit_in_bitmap(u8 const* bitmap, u32 size);

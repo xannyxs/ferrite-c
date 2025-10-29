@@ -5,11 +5,14 @@
 
 typedef struct {
     u32 i_ino;
+    u32 i_parent_ino;
     u32 i_mode;
-    u32 size;
+    u32 i_size;
 
-    void* fs_specific;
+    void* i_fs_specific;
     struct inode_operations* i_op;
+
+    u8 i_name[];
 } vfs_inode_t;
 
 struct inode_operations {

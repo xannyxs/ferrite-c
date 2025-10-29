@@ -46,67 +46,8 @@ inline int find_free_bit_in_bitmap(u8 const* bitmap, u32 size)
     return -1;
 }
 
-int read_block(ext2_mount_t* m, u8* buff, u32 block_num)
-{
-    block_device_t* d = m->m_device;
-    if (!d) {
-        printk("%s: device is NULL\n", __func__);
-        return -1;
-    }
-
-    if (!d->d_op || !d->d_op->read) {
-        printk("%s: device has no write operation\n", __func__);
-        return -1;
-    }
-
-    u32 sectors_per_block = m->m_block_size / d->sector_size;
-    u32 sector_num = block_num * sectors_per_block;
-
-    if (d->d_op->read(d, sector_num, sectors_per_block, buff, m->m_block_size)
-        < 0) {
-        return -1;
-    }
-
-    return 0;
-}
-
-int find_free_block(ext2_mount_t* m)
-{
-    ext2_super_t s = m->m_superblock;
-    ext2_block_group_descriptor_t* bgd = NULL;
-
-    u32 i;
-    u32 bgd_count = CEIL_DIV(s.s_blocks_count, s.s_blocks_per_group);
-    for (i = 0; i < bgd_count; i += 1) {
-        if (m->m_block_group[i].bg_free_blocks_count != 0) {
-            bgd = &m->m_block_group[i];
-            break;
-        }
-    }
-
-    if (!bgd) {
-        printk("%s: No free block\n", __func__);
-        return -1;
-    }
-
-    u8 bitmap[m->m_block_size];
-    if (read_block(m, bitmap, bgd->bg_block_bitmap) < 0) {
-        return -1;
-    }
-
-    int bit = find_free_bit_in_bitmap(bitmap, m->m_block_size);
-    if (bit < 0) {
-        return -1;
-    }
-
-    return (s32)(bit + (s.s_blocks_per_group * i));
-}
-
 int ext2_write(vfs_inode_t* vfs, void const* buff, u32 offset, u32 len)
 {
-    (void)offset;
-    (void)len;
-
     ext2_mount_t* m = &ext2_mounts[0];
     block_device_t* d = m->m_device;
     if (!d) {
@@ -119,22 +60,72 @@ int ext2_write(vfs_inode_t* vfs, void const* buff, u32 offset, u32 len)
         return -1;
     }
 
-    s32 free_block = find_free_block(m);
-    if (free_block < 0) {
-        printk("%s: Could not find free block\n", __func__);
-        return -1;
+    s32 block_num = 0;
+    s32 node_num = 0;
+    ext2_inode_t* node = NULL;
+    ext2_entry_t* tmp = NULL;
+
+    if (ext2_read_entry(m, &tmp, vfs->i_ino, (char*)vfs->i_name) == 0) {
+        if (!vfs->i_fs_specific) {
+            kfree(tmp);
+            return -1;
+        }
+
+        node = vfs->i_fs_specific;
+        node_num = (s32)vfs->i_ino;
+
+        u32 block_index = offset / m->m_block_size;
+        if (node->i_block[block_index] == 0) {
+            block_num = find_free_block(m);
+            if (block_num < 0) {
+                return -1;
+            }
+            if (mark_block_allocated(m, block_num) < 0) {
+                return -1;
+            }
+            node->i_block[block_index] = block_num;
+        } else {
+            block_num = (s32)node->i_block[block_index];
+        }
+
+        u32 offset_in_block = offset % m->m_block_size;
+        if (offset + len > node->i_size) {
+            node->i_size = offset + len;
+        }
+
+        if (ext2_write_inode(m, node_num, node) < 0) {
+            return -1;
+        }
+
+        if (ext2_write_block(m, block_num, buff, offset_in_block, len) < 0) {
+            return -1;
+        }
+
+        kfree(tmp);
+        return 0;
     }
 
-    s32 free_node = find_free_inode(m);
-    if (free_node < 0) {
+    // TODO: Offset should be used to skip blocks. (sparse file)
+    node_num = find_free_inode(m);
+    if (node_num < 0) {
         printk("%s: Could not find free inode\n", __func__);
         return -1;
     }
-    mark_inode_allocated(m, free_node);
-    mark_block_allocated(m, free_block);
+    if (mark_inode_allocated(m, node_num) < 0) {
+        return -1;
+    }
 
-    ext2_inode_t* node = kmalloc(sizeof(ext2_inode_t));
-    if (ext2_read_inode(m, free_node, node) < 0) {
+    block_num = find_free_block(m);
+    if (block_num < 0) {
+        printk("%s: Could not find free block\n", __func__);
+        return -1;
+    }
+    if (mark_block_allocated(m, block_num) < 0) {
+        return -1;
+    }
+
+    node = kmalloc(sizeof(ext2_inode_t));
+    if (!node) {
         return -1;
     }
 
@@ -143,20 +134,30 @@ int ext2_write(vfs_inode_t* vfs, void const* buff, u32 offset, u32 len)
 
     node->i_ctime = (u32)getepoch();
     node->i_mode = vfs->i_mode;
-    node->i_size = vfs->size;
+    node->i_size = vfs->i_size;
     node->i_links_count = 1;
     node->i_blocks = m->m_block_size / 512;
-    node->i_block[0] = free_block;
+    node->i_block[0] = block_num;
+    vfs->i_fs_specific = node;
 
-    if (ext2_write_inode(m, free_node, node) < 0) {
+    ext2_entry_t entry = { 0 };
+
+    entry.inode = node_num;
+    entry.file_type = vfs->i_mode;
+    entry.name_len = strlen((char*)vfs->i_name);
+    memcpy(entry.name, vfs->i_name, entry.name_len);
+
+    if (ext2_entry_write(m, &entry, vfs->i_parent_ino) < 0) {
         return -1;
     }
 
-    if (ext2_write_block(m, free_block, buff) < 0) {
+    if (ext2_write_inode(m, node_num, node) < 0) {
         return -1;
     }
 
-    vfs->fs_specific = node;
+    if (ext2_write_block(m, block_num, buff, 0, len) < 0) {
+        return -1;
+    }
 
     return 0;
 }
@@ -175,10 +176,10 @@ int ext2_read(vfs_inode_t* vfs, void* buff, u32 offset, u32 len)
         return -1;
     }
 
-    if (!vfs->fs_specific) {
+    if (!vfs->i_fs_specific) {
         return -1;
     }
-    ext2_inode_t* inode = (ext2_inode_t*)vfs->fs_specific;
+    ext2_inode_t* inode = (ext2_inode_t*)vfs->i_fs_specific;
     if (S_ISREG(inode->i_mode)) {
         printk("%s: not a regular file\n", __func__);
         return -1;
@@ -244,9 +245,9 @@ vfs_inode_t* ext2_inode_get(u32 inode_num)
     }
 
     new->i_ino = inode_num;
-    new->size = found_inode->i_size;
+    new->i_size = found_inode->i_size;
     new->i_mode = found_inode->i_mode;
-    new->fs_specific = (void*)found_inode;
+    new->i_fs_specific = (void*)found_inode;
     new->i_op = &ext2_fops;
 
     return new;
@@ -254,8 +255,8 @@ vfs_inode_t* ext2_inode_get(u32 inode_num)
 
 void ext2_inode_put(vfs_inode_t* inode)
 {
-    if (inode && inode->fs_specific) {
-        kfree(inode->fs_specific);
+    if (inode && inode->i_fs_specific) {
+        kfree(inode->i_fs_specific);
     }
 }
 
@@ -288,9 +289,9 @@ vfs_inode_t* ext2_lookup(vfs_inode_t* inode, char const* name)
     }
 
     new->i_ino = entry->inode;
-    new->size = found_inode->i_size;
+    new->i_size = found_inode->i_size;
     new->i_mode = found_inode->i_mode;
-    new->fs_specific = (void*)found_inode;
+    new->i_fs_specific = (void*)found_inode;
     new->i_op = &ext2_fops;
 
     kfree(entry);
@@ -365,12 +366,16 @@ void ext2_init(void)
     }
 
     vfs_inode_t node = { 0 };
+    node.i_parent_ino = 2;
     node.i_ino = 2;
-    node.size = 1000;
+    node.i_size = 1000;
+    memcpy(node.i_name, "test.txt", 9);
 
     vfs_inode_t* result1 = ext2_lookup(&node, ".");
     if (result1) {
-        printk("Found '.': inode=%u, size=%u\n", result1->i_ino, result1->size);
+        printk(
+            "Found '.': inode=%u, size=%u\n", result1->i_ino, result1->i_size
+        );
     } else {
         printk("Failed to find '.'\n");
     }
@@ -378,6 +383,15 @@ void ext2_init(void)
     char* buff = "Hello this is a test";
     if (ext2_write(&node, buff, 0, strlen(buff)) < 0) {
         printk("Error in write\n");
-        return;
+    }
+
+    vfs_inode_t* result2 = ext2_lookup(&node, "something");
+    if (result2) {
+        printk(
+            "Found 'something': inode=%u, size=%u\n", result2->i_ino,
+            result2->i_size
+        );
+    } else {
+        printk("Failed to find 'something'\n");
     }
 }
