@@ -120,10 +120,33 @@ static ata_drive_t* detect_harddrives(u8 master)
 
 /* Public */
 
-static s32 ide_read(
-    block_device_t* d, u32 lba, u32 count, void* buf, size_t len);
-static s32 ide_write(
-    block_device_t* d, u32 lba, u32 count, void const* buf, size_t len);
+u32 read_from_ata_data(void)
+{
+    u16 word = ata_data[106];
+
+    if ((word & 0xC000) != 0x4000) {
+        printk("Word 106 not valid, assuming 512-byte sectors\n");
+        return 512;
+    }
+
+    if (!(word & (1 << 12))) {
+        printk("Logical sector size not reported, assuming 512 bytes\n");
+        return 512;
+    }
+
+    u32 sector_size_words = ata_data[117] | ((u32)ata_data[118] << 16);
+    if (sector_size_words == 0) {
+        printk("Sector size is 0, assuming 512 bytes\n");
+        return 512;
+    }
+
+    return sector_size_words * 2;
+}
+
+static s32
+ide_read(block_device_t* d, u32 lba, u32 count, void* buf, size_t len);
+static s32
+ide_write(block_device_t* d, u32 lba, u32 count, void const* buf, size_t len);
 static void ide_shutdown(block_device_t* d);
 
 struct device_operations ide_device_ops = {
@@ -136,7 +159,7 @@ s32 ide_read(block_device_t* d, u32 lba, u32 count, void* buf, size_t len)
 {
     ata_drive_t* ata = (ata_drive_t*)d->d_data;
 
-    if (len < count * 512) {
+    if (len < count * d->sector_size) {
         printk("Buffer too small\n");
         return -1;
     }
@@ -176,13 +199,18 @@ s32 ide_read(block_device_t* d, u32 lba, u32 count, void* buf, size_t len)
 }
 
 s32 ide_write(
-    block_device_t* d, u32 lba, u32 count, void const* buf, size_t len)
+    block_device_t* d,
+    u32 lba,
+    u32 count,
+    void const* buf,
+    size_t len
+)
 {
     if (!d->d_data) {
         printk("d_data is NULL\n", d->d_data);
         return -1;
     }
-    if (len < count * 512) {
+    if (len < count * d->sector_size) {
         printk("Buffer too small\n");
         return -1;
     }
@@ -244,13 +272,4 @@ void ide_init(void)
     if (d) {
         register_block_device(BLOCK_DEVICE_IDE, d);
     }
-
-    u8 test_data[512] = "Hello from sector 0!";
-    block_device_t* dev = get_device(0);
-    dev->d_op->write(dev, 0, 1, test_data, 512);
-
-    u8 read_buffer[512];
-    dev->d_op->read(dev, 0, 1, read_buffer, 512);
-
-    printk("Read back: %s\n", read_buffer);
 }

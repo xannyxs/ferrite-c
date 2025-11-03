@@ -38,8 +38,9 @@ $(ODIR)/%.o: $(SDIR)/%.asm
 	@mkdir -p $(dir $@)
 	@$(AS) $(ASFLAGS) $< -o $@
 
-disk-img:
+$(DISK_IMG):
 	qemu-img create -f raw $(DISK_IMG) 10M
+	mkfs.ext2 $(DISK_IMG)
 
 iso: all
 	mkdir -p isodir/boot/grub
@@ -47,7 +48,7 @@ iso: all
 	cp grub.cfg isodir/boot/grub/grub.cfg
 	grub-mkrescue -o kernel.iso isodir
 
-run: iso disk-img
+run: iso $(DISK_IMG)
 	qemu-system-i386 -cdrom kernel.iso $(QEMUFLAGS)
 
 debug_bochs: QEMUFLAGS += -s -S

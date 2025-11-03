@@ -1,14 +1,18 @@
 ---
+AlignAfterOpenBracket: BlockIndent
 AlignEscapedNewlines: Left
 AlignTrailingComments:
     Kind: Always
     OverEmptyLines: 0
+AllowAllParametersOfDeclarationOnNextLine: false
 BasedOnStyle: WebKit
+BinPackParameters: false
 BraceWrapping:
     AfterFunction: true
 BreakBeforeBraces: Custom
 BreakBeforeInheritanceComma: true
 BreakConstructorInitializers: BeforeComma
+ColumnLimit: 80
 IndentPPDirectives: AfterHash
 IndentRequiresClause: false
 InsertNewlineAtEOF: true
@@ -19,4 +23,3 @@ RemoveSemicolon: true
 RequiresClausePosition: WithFollowing
 RequiresExpressionIndentation: OuterScope
 SpaceAfterTemplateKeyword: false
-ColumnLimit: 80

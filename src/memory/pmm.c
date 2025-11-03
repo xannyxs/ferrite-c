@@ -139,8 +139,10 @@ void pmm_init_from_map(multiboot_info_t* mbd)
             continue;
         }
 
-        printk("Start Addr Low: 0x%x | Length Low: 0x%x\n", entry->addr_low,
-            entry->len_low);
+        printk(
+            "Start Addr Low: 0x%x | Length Low: 0x%x\n", entry->addr_low,
+            entry->len_low
+        );
 
         for (u32 p = 0; p < entry->len_low; p += PAGE_SIZE) {
             u32 current_addr = entry->addr_low + p;

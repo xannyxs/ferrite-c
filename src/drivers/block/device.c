@@ -1,4 +1,5 @@
 #include "drivers/block/device.h"
+#include "drivers/block/ide.h"
 #include "drivers/printk.h"
 
 extern struct device_operations ide_device_ops;
@@ -7,9 +8,9 @@ block_device_t block_devices[MAX_BLOCK_DEVICES];
 
 /* Public */
 
-block_device_t* get_devices(void) { return block_devices; }
+inline block_device_t* get_devices(void) { return block_devices; }
 
-block_device_t* get_device(int index) { return &block_devices[index]; }
+inline block_device_t* get_device(int index) { return &block_devices[index]; }
 
 void register_block_device(block_device_type_e type, void* data)
 {
@@ -33,6 +34,7 @@ void register_block_device(block_device_type_e type, void* data)
 
     switch (type) {
     case BLOCK_DEVICE_IDE:
+        d->sector_size = read_from_ata_data();
         d->d_op = &ide_device_ops;
         break;
     default:

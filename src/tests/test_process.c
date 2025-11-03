@@ -108,10 +108,14 @@ TEST(wait_with_multiple_children)
     pid_t result2 = do_wait(NULL);
 
     // Should reap both children (order doesn't matter)
-    ASSERT((result1 == child1 || result1 == child2),
-        "First wait should return a valid child");
-    ASSERT((result2 == child1 || result2 == child2),
-        "Second wait should return a valid child");
+    ASSERT(
+        (result1 == child1 || result1 == child2),
+        "First wait should return a valid child"
+    );
+    ASSERT(
+        (result2 == child1 || result2 == child2),
+        "Second wait should return a valid child"
+    );
     ASSERT(result1 != result2, "Should reap different children");
 
     return true;

@@ -69,7 +69,8 @@ void idt_init(void)
     // Hardware Interrupts
     for (s32 i = 0; i < NUM_HARDWARE_HANDLERS; i += 1) {
         idt_set_gate(
-            HARDWARE_HANDLERS[i].hex, (u32)HARDWARE_HANDLERS[i].f, 0x8E);
+            HARDWARE_HANDLERS[i].hex, (u32)HARDWARE_HANDLERS[i].f, 0x8E
+        );
     }
 
     // Syscalls

@@ -354,8 +354,10 @@ static void client_process_multi(void)
 TEST(socket_multiple_messages)
 {
     printk("  Testing multiple messages...\n");
-    printk("  Global state: server_ready=%d, client_done=%d, test_result=%d\n",
-        server_ready, client_done, test_result);
+    printk(
+        "  Global state: server_ready=%d, client_done=%d, test_result=%d\n",
+        server_ready, client_done, test_result
+    );
 
     server_ready = 0;
     client_done = 0;

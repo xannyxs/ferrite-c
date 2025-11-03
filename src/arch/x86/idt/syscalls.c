@@ -133,8 +133,8 @@ SYSCALL_ATTR static s32 sys_close(s32 fd)
     return result;
 }
 
-__attribute__((target("general-regs-only"))) void syscall_dispatcher_c(
-    registers_t* reg)
+__attribute__((target("general-regs-only"))) void
+syscall_dispatcher_c(registers_t* reg)
 {
     switch (reg->eax) {
     case SYS_EXIT:
