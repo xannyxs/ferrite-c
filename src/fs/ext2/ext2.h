@@ -15,6 +15,26 @@
 #define SYMBOLIC_LINK 0xA000
 #define UNIX_SOCKET 0xC000
 
+/* EXT2 specific flags */
+#define EXT2_SECRM_FL 0x00000001    // secure deletion
+#define XT2_UNRM_FL 0x00000002      // record for undelete
+#define XT2_COMPR_FL 0x00000004     // compressed file
+#define XT2_SYNC_FL 0x00000008      // synchronous updates
+#define XT2_IMMUTABLE_FL 0x00000010 // immutable file
+#define XT2_APPEND_FL 0x00000020    // append only
+#define XT2_NODUMP_FL 0x00000040    // do not dump / delete file
+#define XT2_NOATIME_FL 0x00000080   // do not update.i_atime
+/* Reserved for compression usage */
+#define EXT2_DIRTY_FL 0x00000100    // Dirty(modified)
+#define EXT2_COMPRBLK_FL 0x00000200 // compressed blocks
+#define XT2_NOCOMPR_FL 0x00000400   // access raw compressed data
+#define XT2_ECOMPR_FL 0x00000800    // compression error
+/* End of compression flags */
+#define XT2_BTREE_FL 0x00001000    // b - tree format directory
+#define XT2_INDEX_FL 0x00001000    // hash indexed directory
+#define XT2_IMAGIC_FL 0x00002000   // AFS directory
+#define XT2_RESERVED_FL 0x80000000 // reserved for ext2 library
+
 typedef struct {
     u32 s_inodes_count;
     u32 s_blocks_count;
@@ -93,10 +113,10 @@ typedef struct ext2_inode {
     u16 i_mode;
     u16 i_uid;
     u32 i_size;
-    u32 i_atime;
-    u32 i_ctime;
-    u32 i_mtime;
-    u32 i_dtime;
+    u32 i_atime; // Access time (updated on read)
+    u32 i_ctime; // Change time (updated on metadata/inode changes)
+    u32 i_mtime; // Modification time (updated on content changes)
+    u32 i_dtime; // Deletion time (set when inode is freed/deleted)
     u16 i_gid;
     u16 i_links_count;
     u32 i_blocks;
