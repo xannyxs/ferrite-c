@@ -3,15 +3,19 @@
 
 #include "types.h"
 
-typedef struct {
+typedef struct vfs_inode {
     u32 i_ino;
-    u32 i_mode;
+    u32 i_dev;
     u32 i_size;
+    u16 i_mode;
+    u16 i_count;
 
-    void* i_fs_specific;
     struct inode_operations* i_op;
 
-    u8 i_name[];
+    union {
+        struct socket* i_socket;
+        struct ext2_inode* i_ext2;
+    } u;
 } vfs_inode_t;
 
 typedef struct {

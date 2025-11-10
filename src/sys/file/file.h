@@ -1,6 +1,7 @@
 #ifndef FILE_H
 #define FILE_H
 
+#include "fs/vfs.h"
 #include "types.h"
 
 #define FMODE_READ 0x01
@@ -11,7 +12,7 @@ typedef u16 dev_t;
 typedef long off_t;
 
 typedef struct file {
-    struct inode* f_inode;
+    struct vfs_inode* f_inode;
     struct file_operations* f_op;
 
     off_t f_pos;
