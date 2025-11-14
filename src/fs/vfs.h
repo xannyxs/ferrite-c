@@ -1,6 +1,7 @@
 #ifndef FS_VFS_H
 #define FS_VFS_H
 
+#include "fs/vfs/mode_t.h"
 #include "types.h"
 
 typedef struct vfs_inode {
@@ -30,7 +31,16 @@ struct inode_operations {
 
     int (*read)(vfs_inode_t* vfs, void* buff, u32 offset, u32 len);
     int (*write)(vfs_inode_t* vfs, void const* buff, u32 offset, u32 len);
-    vfs_inode_t* (*create)(vfs_inode_t* vfs, char const* name, u32 mode);
+    int (*create)(vfs_inode_t* parent, vfs_dentry_t* dentry, mode_t mode);
+    int (*mkdir)(vfs_inode_t* parent, vfs_dentry_t* dentry, mode_t mode);
 };
+
+vfs_inode_t* inode_get(mode_t);
+
+void inode_put(vfs_inode_t*);
+
+s32 vfs_mkdir(char const* path, mode_t mode);
+
+void vfs_init(void);
 
 #endif /* FS_VFS_H */

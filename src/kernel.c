@@ -5,6 +5,7 @@
 #include "arch/x86/pit.h"
 #include "arch/x86/time/rtc.h"
 #include "drivers/block/ide.h"
+#include "drivers/printk.h"
 #include "drivers/video/vga.h"
 #include "fs/ext2/ext2.h"
 #include "lib/stdlib.h"
@@ -28,6 +29,10 @@ __attribute__((noreturn)) void kmain(u32 magic, multiboot_info_t* mbd)
         abort("Invalid magic number!");
     }
 
+    if (!(mbd->flags & (1 << 2))) {
+        abort("Missing cmdline flag. Cannot locate root devices");
+    }
+
     gdt_init();
     idt_init();
     pic_remap(0x20, 0x28);
@@ -44,10 +49,12 @@ __attribute__((noreturn)) void kmain(u32 magic, multiboot_info_t* mbd)
     memblock_deactivate();
     vmalloc_init();
 
-    ide_init();
-    ext2_init();
+    root_device_init((char*)mbd->cmdline);
 
-    init_ptables();
+    ext2_init();
+    vfs_init();
+
+    init_ptables(); // rename
 
     sti();
 

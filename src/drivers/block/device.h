@@ -39,4 +39,6 @@ block_device_t* get_devices(void);
 
 void register_block_device(block_device_type_e type, void* data);
 
+void root_device_init(char* cmdline);
+
 #endif /* BLOCK_DEVICE_H */
