@@ -2,6 +2,7 @@
 #define FS_EXT2_H
 
 #include "drivers/block/device.h"
+#include "fs/vfs.h"
 #include "types.h"
 
 #define EXT2_MAGIC 0xEF53
@@ -199,12 +200,15 @@ s32 ext2_read_entry(
 
 s32 ext2_entry_write(ext2_mount_t* m, ext2_entry_t* entry, u32 parent_ino);
 
-/* General Functio */
+/* General Function */
+
 int find_free_bit_in_bitmap(u8 const* bitmap, u32 size);
 
 int read_block(ext2_mount_t* m, u8* buff, u32 block_num);
 
 int find_free_block(ext2_mount_t* m);
+
+vfs_inode_t* ext2_get_root_node(void);
 
 void ext2_init(void);
 
