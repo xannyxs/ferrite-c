@@ -2,12 +2,12 @@
 #define FILE_H
 
 #include "fs/vfs.h"
+#include "fs/vfs/mode_t.h"
 #include "types.h"
 
 #define FMODE_READ 0x01
 #define FMODE_WRITE 0x02
 
-typedef u16 mode_t;
 typedef u16 dev_t;
 typedef long off_t;
 

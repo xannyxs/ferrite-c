@@ -3,7 +3,6 @@
 #include "lib/string.h"
 #include "memory/kmalloc.h"
 #include "net/socket.h"
-#include "sys/file/inode.h"
 #include "types.h"
 
 #define MAX_UNIX_SOCKETS 64

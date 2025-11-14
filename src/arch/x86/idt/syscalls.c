@@ -5,7 +5,6 @@
 #include "lib/string.h"
 #include "net/socket.h"
 #include "sys/file/file.h"
-#include "sys/file/inode.h"
 #include "sys/file/stat.h"
 #include "sys/process/process.h"
 #include "sys/signal/signal.h"

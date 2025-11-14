@@ -1,11 +1,11 @@
 #include "arch/x86/idt/syscalls.h"
 #include "drivers/printk.h"
+#include "fs/vfs.h"
 #include "lib/string.h"
 #include "memory/kmalloc.h"
 #include "net/socket.h"
 #include "sys/file/fcntl.h"
 #include "sys/file/file.h"
-#include "sys/file/inode.h"
 #include "sys/file/stat.h"
 #include "types.h"
 
@@ -84,7 +84,7 @@ static int sys_accept(int fd, void* addr, int const* addrlen)
         kfree(newsock);
     }
 
-    struct inode* inode = inode_get(S_IFSOCK | 0666);
+    vfs_inode_t* inode = inode_get(S_IFSOCK | 0666);
     if (!inode) {
         if (newsock->data) {
             kfree(newsock->data);

@@ -1,10 +1,10 @@
 #include "net/socket.h"
+#include "fs/vfs.h"
 #include "lib/string.h"
 #include "memory/kmalloc.h"
 #include "net/unix.h"
 #include "sys/file/fcntl.h"
 #include "sys/file/file.h"
-#include "sys/file/inode.h"
 #include "sys/file/stat.h"
 #include "sys/process/process.h"
 #include "types.h"
@@ -114,7 +114,7 @@ s32 socket_create(s32 family, s16 type, s32 protocol)
         return -1;
     }
 
-    struct inode* inode = inode_get(S_IFSOCK | 0666);
+    vfs_inode_t* inode = inode_get(S_IFSOCK | 0666);
     if (!inode) {
         if (s->data) {
             kfree(s->data);
