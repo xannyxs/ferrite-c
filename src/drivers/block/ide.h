@@ -13,7 +13,7 @@ typedef struct {
     char name[41];
 } ata_drive_t;
 
-void ide_init(void);
+s32 ide_mount(s32 major, s32 minor);
 
 u32 read_from_ata_data(void);
 
