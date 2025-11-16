@@ -7,6 +7,8 @@
 
 #include <stdbool.h>
 
+extern ext2_mount_t ext2_mounts[MAX_EXT2_MOUNTS];
+
 int mark_inode_bitmap(ext2_mount_t* m, u32 inode_num, bool allocate)
 {
     ext2_super_t s = m->m_superblock;
@@ -14,7 +16,7 @@ int mark_inode_bitmap(ext2_mount_t* m, u32 inode_num, bool allocate)
     ext2_block_group_descriptor_t* bgd = &m->m_block_group[bgd_index];
 
     u8 bitmap[m->m_block_size];
-    if (read_block(m, bitmap, bgd->bg_inode_bitmap) < 0) {
+    if (ext2_read_block(m, bitmap, bgd->bg_inode_bitmap) < 0) {
         return -1;
     }
 
@@ -96,7 +98,7 @@ int find_free_inode(ext2_mount_t* m)
     }
 
     u8 bitmap[m->m_block_size];
-    read_block(m, bitmap, bgd->bg_inode_bitmap);
+    ext2_read_block(m, bitmap, bgd->bg_inode_bitmap); // Error check?
 
     int bit = find_free_bit_in_bitmap(bitmap, m->m_block_size);
     if (bit < 0) {
@@ -149,7 +151,14 @@ s32 ext2_write_inode(ext2_mount_t* m, u32 inode_num, ext2_inode_t* inode)
 
 s32 ext2_read_inode(ext2_mount_t* m, u32 inode_num, ext2_inode_t* inode)
 {
-    block_device_t* d = m->m_device;
+    block_device_t* d = NULL;
+    if (!m) {
+        // TODO: Simple solution for now, but should be different
+        d = ext2_mounts[0].m_device;
+    } else {
+        d = m->m_device;
+    }
+
     if (!d) {
         printk("%s: device is NULL\n", __func__);
         return -1;

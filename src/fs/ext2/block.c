@@ -2,9 +2,11 @@
 #include "drivers/printk.h"
 #include "fs/ext2/ext2.h"
 #include "lib/math.h"
-#include "lib/string.h"
 
+#include <lib/string.h>
 #include <stdbool.h>
+
+extern ext2_mount_t ext2_mounts[MAX_EXT2_MOUNTS];
 
 int find_free_block(ext2_mount_t* m)
 {
@@ -26,7 +28,7 @@ int find_free_block(ext2_mount_t* m)
     }
 
     u8 bitmap[m->m_block_size];
-    if (read_block(m, bitmap, bgd->bg_block_bitmap) < 0) {
+    if (ext2_read_block(m, bitmap, bgd->bg_block_bitmap) < 0) {
         return -1;
     }
 
@@ -46,7 +48,7 @@ int mark_block_bitmap(ext2_mount_t* m, u32 block_num, bool allocate)
     ext2_block_group_descriptor_t* bgd = &m->m_block_group[bgd_index];
 
     u8 bitmap[m->m_block_size];
-    if (read_block(m, bitmap, bgd->bg_block_bitmap) < 0) {
+    if (ext2_read_block(m, bitmap, bgd->bg_block_bitmap) < 0) {
         return -1;
     }
 
@@ -83,16 +85,29 @@ inline int mark_block_free(ext2_mount_t* m, u32 block_num)
     return mark_block_bitmap(m, block_num, false);
 }
 
-s32 read_block(ext2_mount_t* m, u8* buff, u32 block_num)
+s32 ext2_read_block(ext2_mount_t* m, u8* buff, u32 block_num)
 {
-    block_device_t* d = m->m_device;
+    block_device_t* d = NULL;
+    if (!m) {
+        d = ext2_mounts[0].m_device;
+    } else {
+        d = m->m_device;
+    }
+
     if (!d) {
         printk("%s: device is NULL\n", __func__);
         return -1;
     }
 
     if (!d->d_op || !d->d_op->read) {
-        printk("%s: device has no write operation\n", __func__);
+        printk("%s: device has no read operation\n", __func__);
+        return -1;
+    }
+
+    if (block_num >= 12) {
+        printk(
+            "%s: kernel does not support double / triple pointers yet", __func__
+        );
         return -1;
     }
 

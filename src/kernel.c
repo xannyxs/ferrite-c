@@ -8,6 +8,7 @@
 #include "drivers/printk.h"
 #include "drivers/video/vga.h"
 #include "fs/ext2/ext2.h"
+#include "fs/vfs.h"
 #include "lib/stdlib.h"
 #include "memory/buddy_allocator/buddy.h"
 #include "memory/memblock.h"

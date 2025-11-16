@@ -1,9 +1,12 @@
 #ifndef FILE_H
 #define FILE_H
 
-#include "fs/vfs.h"
+#include "ferrite/dirent.h"
 #include "fs/vfs/mode_t.h"
+
 #include <ferrite/types.h>
+
+struct vfs_inode;
 
 #define FMODE_READ 0x01
 #define FMODE_WRITE 0x02
@@ -22,10 +25,13 @@ typedef struct file {
 } file_t;
 
 struct file_operations {
-    s32 (*read)(struct file* f, void*, size_t len);
-    s32 (*write)(struct file* f, void const*, size_t len);
-    s32 (*close)(struct file* f);
-    off_t (*lseek)(s32 fd, off_t offset, s32 whence);
+    s32 (*readdir)(struct vfs_inode*, struct file*, dirent_t*, s32);
+
+    int (*read)(struct vfs_inode*, struct file*, void*, int);
+    int (*write)(struct vfs_inode*, struct file*, void const*, int);
+
+    void (*release)(struct vfs_inode*, struct file*);
+    int (*lseek)(struct vfs_inode*, struct file*, off_t, int);
 };
 
 void file_put(file_t* f);

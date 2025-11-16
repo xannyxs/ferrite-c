@@ -1,6 +1,7 @@
 #include "sys/file/file.h"
 #include "lib/string.h"
 #include "memory/kmalloc.h"
+#include "sys/file/stat.h"
 #include "sys/process/process.h"
 
 #include <ferrite/types.h>
@@ -40,7 +41,7 @@ void file_put(file_t* f)
     f->f_count -= 1;
     if (f->f_count == 0) {
         if (f->f_inode) {
-            inode_put(f->f_inode);
+            // inode_put(f->f_inode);
         }
 
         kfree(f);

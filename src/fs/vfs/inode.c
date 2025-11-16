@@ -23,17 +23,17 @@ void inode_put(vfs_inode_t* n)
         return;
     }
 
-    n->i_count -= 1;
-    if (n->i_count == 0) {
-        if (S_ISSOCK(n->i_mode) && n->u.i_socket) {
-            socket_t* sock = n->u.i_socket;
-
-            if (sock->data) {
-                kfree(sock->data);
-            }
-
-            kfree(sock);
-        }
-        kfree(n);
-    }
+    // n->i_count -= 1;
+    // if (n->i_count == 0) {
+    //     if (S_ISSOCK(n->i_mode) && n->u.i_socket) {
+    //         socket_t* sock = n->u.i_socket;
+    //
+    //         if (sock->data) {
+    //             kfree(sock->data);
+    //         }
+    //
+    //         kfree(sock);
+    //     }
+    //     kfree(n);
+    // }
 }

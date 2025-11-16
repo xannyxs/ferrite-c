@@ -2,8 +2,10 @@
 #define FS_EXT2_H
 
 #include "drivers/block/device.h"
-#include "fs/vfs.h"
 #include <ferrite/types.h>
+
+struct vfs_inode;
+struct vfs_dentry;
 
 #define EXT2_MAGIC 0xEF53
 #define MAX_EXT2_MOUNTS 8
@@ -171,6 +173,8 @@ int mark_block_allocated(ext2_mount_t* m, u32 block_num);
 
 int mark_block_free(ext2_mount_t* m, u32 block_num);
 
+s32 ext2_read_block(ext2_mount_t* m, u8* buff, u32 block_num);
+
 s32 ext2_write_block(
     ext2_mount_t* m,
     u32 block_num,
@@ -204,12 +208,14 @@ s32 ext2_entry_write(ext2_mount_t* m, ext2_entry_t* entry, u32 parent_ino);
 
 int find_free_bit_in_bitmap(u8 const* bitmap, u32 size);
 
-int read_block(ext2_mount_t* m, u8* buff, u32 block_num);
-
 int find_free_block(ext2_mount_t* m);
 
-vfs_inode_t* ext2_get_root_node(void);
+struct vfs_inode* ext2_get_root_node(void);
 
 void ext2_init(void);
+
+/* namei.c */
+int ext2_create(struct vfs_inode* parent, struct vfs_dentry* dentry, int mode);
+struct vfs_inode* ext2_lookup(struct vfs_inode* inode, char const* name);
 
 #endif /* FS_EXT2_H */
