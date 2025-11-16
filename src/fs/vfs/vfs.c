@@ -7,7 +7,7 @@
 #include "lib/string.h"
 #include "memory/kmalloc.h"
 #include "sys/file/stat.h"
-#include "types.h"
+#include <ferrite/types.h>
 
 extern ext2_mount_t
     ext2_mounts[MAX_EXT2_MOUNTS]; // FIXME: Assuming it is always ext2 and same
@@ -41,6 +41,44 @@ static void create_initial_directories(void)
     // if (vfs_mkdir("/sys", 0) < 0) {
     //     abort("Could not create /sys");
     // }
+}
+
+int vfs_lookup(char const* path)
+{
+
+    printk("path: '%s'\n", path);
+    if (path) {
+        char** split_path = split(path, '/');
+        if (!split_path) {
+            return -1;
+        }
+        vfs_inode_t* current = g_root_inode;
+        for (int i = 0; split_path[i]; i += 1) {
+            vfs_inode_t* new
+                = g_root_inode->i_op->lookup(current, split_path[i]);
+            if (!new) {
+                return -1;
+            }
+
+            if (current != g_root_inode) {
+                kfree(current);
+            }
+            current = new;
+        }
+
+        for (int i = 0; split_path[i]; i += 1) {
+            kfree(split_path[i]);
+        }
+        kfree(split_path);
+    } else {
+        vfs_inode_t* new = g_root_inode->i_op->lookup(g_root_inode, "/");
+        if (!new) {
+            return -1;
+        }
+        kfree(new);
+    }
+
+    return 0;
 }
 
 void vfs_mount_root(void)

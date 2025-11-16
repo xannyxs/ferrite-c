@@ -1,7 +1,7 @@
 #ifndef IDE_H
 #define IDE_H
 
-#include "types.h"
+#include <ferrite/types.h>
 
 typedef struct {
     u8 drive; // Master (0) / Slave (1)

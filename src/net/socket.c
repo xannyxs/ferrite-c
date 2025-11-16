@@ -7,7 +7,8 @@
 #include "sys/file/file.h"
 #include "sys/file/stat.h"
 #include "sys/process/process.h"
-#include "types.h"
+
+#include <ferrite/types.h>
 
 static int socket_read(struct file* f, void* buf, size_t len);
 static int socket_write(struct file* f, void const* buf, size_t len);

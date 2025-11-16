@@ -8,7 +8,7 @@
 #include "memory/page.h"
 #include "memory/vmm.h"
 #include "sys/process/process.h"
-#include "types.h"
+#include <ferrite/types.h>
 
 #ifdef __TEST
 #    include "tests/tests.h"

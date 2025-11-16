@@ -3,7 +3,7 @@
 
 #include "drivers/block/device.h"
 #include "fs/vfs.h"
-#include "types.h"
+#include <ferrite/types.h>
 
 #define EXT2_MAGIC 0xEF53
 #define MAX_EXT2_MOUNTS 8

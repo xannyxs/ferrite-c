@@ -1,7 +1,7 @@
 #include "drivers/console.h"
 #include "sys/process/process.h"
-#include "types.h"
 
+#include <ferrite/types.h>
 #include <stdbool.h>
 
 static bool SHIFT_PRESSED = false;

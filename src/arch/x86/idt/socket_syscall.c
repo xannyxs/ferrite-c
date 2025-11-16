@@ -7,7 +7,7 @@
 #include "sys/file/fcntl.h"
 #include "sys/file/file.h"
 #include "sys/file/stat.h"
-#include "types.h"
+#include <ferrite/types.h>
 
 SYSCALL_ATTR static s32 sys_bind(s32 fd, void* addr, s32 addrlen)
 {

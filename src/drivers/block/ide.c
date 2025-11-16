@@ -5,7 +5,8 @@
 #include "ferrite/major.h"
 #include "lib/string.h"
 #include "memory/kmalloc.h"
-#include "types.h"
+
+#include <ferrite/types.h>
 
 #define ATA_ADDR 0x1F0
 #define DEVICE_ATAPI 1

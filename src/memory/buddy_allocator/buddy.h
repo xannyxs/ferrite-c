@@ -1,7 +1,7 @@
 #ifndef BUDDY_H
 #define BUDDY_H
 
-#include "types.h"
+#include <ferrite/types.h>
 
 #define MAX_ORDER 32
 #define MIN_ORDER 0

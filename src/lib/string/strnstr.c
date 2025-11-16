@@ -1,4 +1,4 @@
-#include "types.h"
+#include <ferrite/types.h>
 
 char* strnstr(char const* str, char const* to_find, size_t len)
 {

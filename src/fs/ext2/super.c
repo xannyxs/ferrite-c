@@ -2,7 +2,7 @@
 #include "drivers/printk.h"
 #include "fs/ext2/ext2.h"
 #include "lib/math.h"
-#include "types.h"
+#include <ferrite/types.h>
 
 /**
  * Write the superblock to disk at offset 1024.

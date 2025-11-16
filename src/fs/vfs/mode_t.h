@@ -1,7 +1,7 @@
 #ifndef MODE_T_H
 #define MODE_T_H
 
-#include "types.h"
+#include <ferrite/types.h>
 
 #define S_IRWXU 0000700 /* RWX mask for owner */
 #define S_IRUSR 0000400 /* R for owner */

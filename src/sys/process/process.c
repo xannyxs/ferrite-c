@@ -12,7 +12,7 @@
 #include "sys/file/file.h"
 #include "sys/signal/signal.h"
 #include "sys/timer/timer.h"
-#include "types.h"
+#include <ferrite/types.h>
 
 #include <stdbool.h>
 

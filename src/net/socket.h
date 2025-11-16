@@ -3,7 +3,7 @@
 
 #include "fs/vfs.h"
 #include "sys/file/file.h"
-#include "types.h"
+#include <ferrite/types.h>
 
 #define SOCK_STREAM 1 /* Stream socket (TCP, Unix STREAM) */
 #define SOCK_DGRAM 2  /* Datagram socket (UDP, Unix DGRAM) */

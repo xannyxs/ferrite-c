@@ -8,8 +8,8 @@
 #include "memory/consts.h"
 #include "memory/memblock.h"
 #include "memory/vmm.h"
-#include "types.h"
 
+#include <ferrite/types.h>
 #include <stdbool.h>
 
 static buddy_allocator_t g_buddy = { 0 };

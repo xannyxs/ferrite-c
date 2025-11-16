@@ -16,4 +16,6 @@ typedef unsigned long vaddr_t;
 
 #define NULL ((void*)0)
 
+typedef long off_t;
+
 #endif

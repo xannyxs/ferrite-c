@@ -1,6 +1,6 @@
 #include "arch/x86/pic.h"
 #include "arch/x86/io.h"
-#include "types.h"
+#include <ferrite/types.h>
 
 #define PIC_READ_ISR 0x0b /* OCW3 irq service next CMD read */
 

@@ -1,8 +1,8 @@
 #include "memory/memblock.h"
 #include "memory/consts.h"
 #include "memory/pmm.h"
-#include "types.h"
 
+#include <ferrite/types.h>
 #include <stdbool.h>
 
 static bool bumpalloc_is_active = false;

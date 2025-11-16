@@ -1,7 +1,7 @@
 #ifndef IDT_H
 #define IDT_H
 
-#include "types.h"
+#include <ferrite/types.h>
 
 #define IDT_ENTRY_COUNT 256
 #define NUM_EXCEPTION_HANDLERS 17

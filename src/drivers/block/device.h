@@ -1,7 +1,7 @@
 #ifndef BLOCK_DEVICE_H
 #define BLOCK_DEVICE_H
 
-#include "types.h"
+#include <ferrite/types.h>
 
 #define MAX_BLOCK_DEVICES 64
 

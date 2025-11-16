@@ -3,7 +3,7 @@
 
 #include "fs/vfs.h"
 #include "fs/vfs/mode_t.h"
-#include "types.h"
+#include <ferrite/types.h>
 
 #define FMODE_READ 0x01
 #define FMODE_WRITE 0x02

@@ -1,7 +1,7 @@
 #pragma once
 
 #include "arch/x86/io.h"
-#include "types.h"
+#include <ferrite/types.h>
 
 inline void halt(void) { __asm__ __volatile__("hlt"); }
 

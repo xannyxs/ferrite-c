@@ -3,7 +3,8 @@
 #include "lib/string.h"
 #include "memory/kmalloc.h"
 #include "net/socket.h"
-#include "types.h"
+
+#include <ferrite/types.h>
 
 #define MAX_UNIX_SOCKETS 64
 

@@ -2,7 +2,7 @@
 
 #    include "arch/x86/io.h"
 #    include "tests.h"
-#    include "types.h"
+#    include <ferrite/types.h>
 
 u32 tests_passed = 0;
 u32 tests_failed = 0;

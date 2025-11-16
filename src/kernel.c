@@ -15,8 +15,8 @@
 #include "memory/vmalloc.h"
 #include "memory/vmm.h"
 #include "sys/process/process.h"
-#include "types.h"
 
+#include <ferrite/types.h>
 #include <stdbool.h>
 
 #if !defined(__i386__)

@@ -2,7 +2,8 @@
 #include "lib/string.h"
 #include "memory/kmalloc.h"
 #include "sys/process/process.h"
-#include "types.h"
+
+#include <ferrite/types.h>
 
 file_t* getfd(s32 fd)
 {

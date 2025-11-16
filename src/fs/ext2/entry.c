@@ -4,7 +4,7 @@
 #include "lib/math.h"
 #include "lib/string.h"
 #include "memory/kmalloc.h"
-#include "types.h"
+#include <ferrite/types.h>
 
 // TODO: If all blocks are full it should grow
 s32 ext2_entry_write(ext2_mount_t* m, ext2_entry_t* entry, u32 parent_ino)

@@ -2,7 +2,7 @@
 #define CONSOLE_H
 
 #include "sys/process/process.h"
-#include "types.h"
+#include <ferrite/types.h>
 
 typedef struct exec {
     char const* cmd;

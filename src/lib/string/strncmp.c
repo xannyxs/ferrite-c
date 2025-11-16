@@ -1,4 +1,4 @@
-#include "types.h"
+#include <ferrite/types.h>
 
 s32 strncmp(char const* str1, char const* str2, size_t n)
 {

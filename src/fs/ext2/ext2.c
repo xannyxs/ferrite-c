@@ -9,7 +9,7 @@
 #include "lib/string.h"
 #include "memory/kmalloc.h"
 #include "sys/file/stat.h"
-#include "types.h"
+#include <ferrite/types.h>
 
 // TODO:
 // - ext2_rename (for dirs)

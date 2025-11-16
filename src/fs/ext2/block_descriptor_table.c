@@ -3,7 +3,7 @@
 #include "fs/ext2/ext2.h"
 #include "lib/math.h"
 #include "lib/string.h"
-#include "types.h"
+#include <ferrite/types.h>
 
 s32 ext2_block_group_descriptors_write(ext2_mount_t* m, u32 bgd_index)
 {
