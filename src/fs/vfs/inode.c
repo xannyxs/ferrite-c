@@ -1,20 +1,44 @@
 #include "fs/vfs.h"
-#include "fs/vfs/mode_t.h"
 #include "memory/kmalloc.h"
-#include "net/socket.h"
-#include "sys/file/stat.h"
 
-vfs_inode_t* inode_get(mode_t mode)
+#include <ferrite/limits.h>
+#include <ferrite/types.h>
+#include <lib/stdlib.h>
+
+vfs_inode_t inode_cache[MAX_INODES];
+
+void inode_cache_init(void)
 {
-    vfs_inode_t* inode = kmalloc(sizeof(vfs_inode_t));
-    if (!inode) {
-        return NULL;
+    for (int i = 0; i < MAX_INODES; i++) {
+        inode_cache[i].i_count = 0;
+    }
+}
+
+vfs_inode_t* inode_get(vfs_superblock_t* sb, unsigned long ino)
+{
+    if (!sb) {
+        abort("inode_get: sb == NULL");
     }
 
-    inode->i_count = 0;
-    inode->i_mode = mode;
+    for (int i = 0; i < MAX_INODES; i += 1) {
+        if (inode_cache[i].i_sb == sb && inode_cache[i].i_ino == ino) {
+            return &inode_cache[i];
+        }
+    }
 
-    return inode;
+    for (int i = 0; i < MAX_INODES; i += 1) {
+        if (inode_cache[i].i_count == 0) {
+            inode_cache[i].i_sb = sb;
+            inode_cache[i].i_ino = ino;
+            inode_cache[i].i_count = 1;
+
+            sb->s_op->read_inode(&inode_cache[i]);
+
+            return &inode_cache[i];
+        }
+    }
+
+    return NULL;
 }
 
 void inode_put(vfs_inode_t* n)
@@ -23,17 +47,8 @@ void inode_put(vfs_inode_t* n)
         return;
     }
 
-    // n->i_count -= 1;
-    // if (n->i_count == 0) {
-    //     if (S_ISSOCK(n->i_mode) && n->u.i_socket) {
-    //         socket_t* sock = n->u.i_socket;
-    //
-    //         if (sock->data) {
-    //             kfree(sock->data);
-    //         }
-    //
-    //         kfree(sock);
-    //     }
-    //     kfree(n);
-    // }
+    n->i_count -= 1;
+    if (n->i_count == 0) {
+        kfree(n);
+    }
 }

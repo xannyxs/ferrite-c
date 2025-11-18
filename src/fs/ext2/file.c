@@ -1,14 +1,13 @@
 #include "sys/file/file.h"
 #include "arch/x86/time/time.h"
 #include "drivers/printk.h"
+#include "fs/ext2/ext2.h"
 #include "fs/vfs.h"
 #include "lib/math.h"
 #include "sys/file/stat.h"
 
 #include <ferrite/types.h>
 #include <lib/string.h>
-
-extern ext2_mount_t ext2_mounts[MAX_EXT2_MOUNTS];
 
 // static int ext2_file_read(struct vfs_inode*, struct file*, void*, int);
 // static int ext2_file_write(struct vfs_inode*, struct file*, void const*,
@@ -99,9 +98,7 @@ extern ext2_mount_t ext2_mounts[MAX_EXT2_MOUNTS];
 // )
 // {
 //     if (!vfs || !vfs->u.i_ext2) {
-//         return -1;
-//     }
-//
+//         return -1; }
 //     ext2_inode_t* node = vfs->u.i_ext2;
 //     ext2_mount_t* m = &ext2_mounts[0];
 //

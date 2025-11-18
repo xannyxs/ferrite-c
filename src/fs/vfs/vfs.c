@@ -1,14 +1,13 @@
 #include "fs/vfs.h"
-#include "fs/ext2/ext2.h"
+#include "drivers/block/device.h"
+#include "fs/filesystem.h"
 #include "lib/stdlib.h"
+#include "memory/kmalloc.h"
 
 #include <ferrite/types.h>
+#include <lib/string.h>
 
-extern ext2_mount_t
-    ext2_mounts[MAX_EXT2_MOUNTS]; // FIXME: Assuming it is always ext2 and same
-                                  // mount pount
-
-static vfs_inode_t* g_root_inode = NULL;
+vfs_inode_t* root_inode = NULL;
 
 /**
  * Creates initial directory structure: /sys, /var, /dev, /proc
@@ -38,16 +37,88 @@ static void create_initial_directories(void)
     // }
 }
 
-void vfs_mount_root(void)
+vfs_inode_t* vfs_lookup(vfs_inode_t* start, char const* path)
 {
-    g_root_inode = ext2_get_root_node();
-    if (!g_root_inode) {
-        abort("No root inode!");
+    if (!start || !path) {
+        return NULL;
     }
+
+    if (path[0] == '/' && path[1] == '\0') {
+        return start;
+    }
+
+    char** components = split(path, '/');
+    if (!components) {
+        return NULL;
+    }
+
+    vfs_inode_t* current = start;
+    vfs_inode_t* new = NULL;
+    for (int i = 0; components[i]; i += 1) {
+        if (components[i][0] == '\0') {
+            continue;
+        }
+
+        s32 name_len = (s32)strlen(components[i]);
+        if (current->i_op->lookup(current, components[i], name_len, &new) < 0) {
+            goto error;
+        }
+
+        if (current != start) {
+            inode_put(current);
+        }
+        current = new;
+    }
+
+    for (int i = 0; components[i]; i += 1) {
+        kfree(components[i]);
+    }
+    kfree(components);
+
+    return current;
+
+error:
+    if (current != start) {
+        inode_put(current);
+    }
+
+    for (int i = 0; components[i]; i += 1) {
+        kfree(components[i]);
+    }
+    kfree(components);
+
+    return NULL;
+}
+
+vfs_superblock_t* vfs_mount_root(block_device_t* root_device)
+{
+    vfs_superblock_t* sb = kmalloc(sizeof(vfs_superblock_t));
+    if (!sb) {
+        abort("Could not allocate the root superblock");
+    }
+    memset(sb, 0, sizeof(vfs_superblock_t));
+    sb->s_dev = root_device->d_dev;
+
+    vfs_superblock_t* result = NULL;
+    for (int i = 0; file_systems[i].name; i += 1) {
+        result = file_systems[i].read_super(sb, NULL, 0);
+        if (result) {
+            return result;
+        }
+    }
+
+    kfree(sb);
+    abort("Root Device Filesystem is not supported");
+    __builtin_unreachable();
 }
 
 void vfs_init(void)
 {
-    vfs_mount_root();
+    block_device_t* d = get_new_device();
+    vfs_mount_root(d);
+    if (!root_inode) {
+        abort("Root Device is missing");
+    }
+
     create_initial_directories();
 }

@@ -3,6 +3,7 @@
 #include "arch/x86/time/time.h"
 #include "drivers/printk.h"
 #include "ferrite/dirent.h"
+#include "fs/vfs.h"
 #include "sys/file/file.h"
 #include "sys/process/process.h"
 #include "sys/signal/signal.h"
@@ -12,6 +13,8 @@
 #include <ferrite/types.h>
 #include <lib/string.h>
 #include <stdbool.h>
+
+extern vfs_inode_t* root_inode;
 
 __attribute__((target("general-regs-only"))) static void sys_exit(s32 status)
 {
@@ -44,6 +47,19 @@ SYSCALL_ATTR static s32 sys_write(s32 fd, void* buf, int count)
     }
 
     return -1;
+}
+
+SYSCALL_ATTR static s32 sys_open(char const* filename, int flags, int mode)
+{
+    (void)flags;
+    (void)mode;
+
+    vfs_inode_t* new = vfs_lookup(root_inode, filename);
+    if (!new) {
+        return -1;
+    }
+
+    return 0;
 }
 
 SYSCALL_ATTR static s32 sys_fork(void) { return do_fork("user process"); }
@@ -163,6 +179,11 @@ syscall_dispatcher_c(registers_t* reg)
 
     case SYS_WRITE:
         reg->eax = sys_write((s32)reg->ebx, (void*)reg->ecx, (s32)reg->edx);
+        break;
+
+    case SYS_OPEN:
+        reg->eax
+            = sys_open((char const*)reg->ebx, (s32)reg->ecx, (s32)reg->edx);
         break;
 
     case SYS_CLOSE:

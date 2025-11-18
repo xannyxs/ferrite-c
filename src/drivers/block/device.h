@@ -33,7 +33,11 @@ struct device_operations {
     void (*shutdown)(block_device_t* d);
 };
 
+block_device_t* get_devices(void);
+
 block_device_t* get_device(dev_t dev);
+
+block_device_t* get_new_device(void);
 
 void register_block_device(block_device_type_e type, void* data);
 

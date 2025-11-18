@@ -15,7 +15,21 @@ block_device_t block_devices[MAX_BLOCK_DEVICES];
 
 /* Public */
 
+inline block_device_t* get_devices(void) { return block_devices; }
+
 inline block_device_t* get_device(dev_t dev) { return &block_devices[dev]; }
+
+inline block_device_t* get_new_device(void)
+{
+    for (int i = 0; i < MAX_BLOCK_DEVICES; i += 1) {
+        if (!block_devices[i].d_data) {
+            block_devices[i].d_dev = i;
+            return &block_devices[i];
+        }
+    }
+
+    return NULL;
+}
 
 void register_block_device(block_device_type_e type, void* data)
 {
@@ -24,15 +38,7 @@ void register_block_device(block_device_type_e type, void* data)
         return;
     }
 
-    block_device_t* d = NULL;
-    for (int i = 0; i < MAX_BLOCK_DEVICES; i += 1) {
-        if (!block_devices[i].d_data) {
-            block_devices[i].d_dev = i;
-            d = &block_devices[i];
-            break;
-        }
-    }
-
+    block_device_t* d = get_new_device();
     if (!d) {
         printk("All device blocks are taken\n");
         return;
