@@ -19,4 +19,10 @@ typedef unsigned long vaddr_t;
 typedef long off_t;
 typedef u16 dev_t;
 
+typedef long time_t;
+
+typedef unsigned short uid_t;
+typedef unsigned short gid_t;
+typedef unsigned short dev_t;
+
 #endif

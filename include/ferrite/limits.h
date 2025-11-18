@@ -13,6 +13,8 @@
 // #define PATH_MAX 1024  /* # chars in a path name */
 // #define PIPE_BUF 4096  /* # bytes in atomic write to a pipe */
 
+#define MAX_INODES 256
 #define NAME_MAX 255 /* Chars in a file name */
+#define MAX_BLOCK_DEVICES 64
 
 #endif
