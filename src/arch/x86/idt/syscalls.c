@@ -206,8 +206,7 @@ syscall_dispatcher_c(registers_t* reg)
         break;
 
     case SYS_OPEN:
-        reg->eax
-            = sys_open((char const*)reg->ebx, (s32)reg->ecx, (s32)reg->edx);
+        reg->eax = sys_open((char*)reg->ebx, (s32)reg->ecx, (s32)reg->edx);
         break;
 
     case SYS_CLOSE:

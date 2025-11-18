@@ -1,3 +1,4 @@
+#include "drivers/printk.h"
 #include "ferrite/dirent.h"
 #include "ferrite/types.h"
 #include "fs/ext2/ext2.h"
@@ -71,7 +72,7 @@ s32 ext2_readdir(vfs_inode_t* inode, file_t* file, dirent_t* dirent, s32 count)
         u32 block_num = inode->u.i_ext2->i_block[block];
         u8 buff[sb->s_blocksize];
 
-        if (ext2_read_block(NULL, buff, block_num) < 0) {
+        if (ext2_read_block(inode, buff, block_num) < 0) {
             return -1;
         }
 

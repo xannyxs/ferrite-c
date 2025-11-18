@@ -106,13 +106,6 @@ s32 ext2_read_block(vfs_inode_t* node, u8* buff, u32 block_num)
         return -1;
     }
 
-    if (block_num >= 12) {
-        printk(
-            "%s: kernel does not support double / triple pointers yet", __func__
-        );
-        return -1;
-    }
-
     vfs_superblock_t* sb = node->i_sb;
     u32 count = sb->s_blocksize / d->d_sector_size;
     u32 sector_pos = block_num * count;

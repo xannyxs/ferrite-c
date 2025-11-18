@@ -111,12 +111,7 @@ void init_process(void)
     printk("fd = %d\n", fd);
 
     dirent_t* dirent = kmalloc(sizeof(dirent_t));
-    if (syscall(89, fd, (s32)dirent, 1) < 0) {
-        printk("syscall failed\n");
-    } else {
-        printk("Got emmm\n");
-
-        printk("%d\n", dirent->d_off);
+    while (syscall(89, fd, (s32)dirent, 1) > 0) {
         printk("%s\n", (char*)dirent->d_name);
     }
 
