@@ -2,9 +2,10 @@
 #include "drivers/block/ide.h"
 #include "drivers/printk.h"
 #include "ferrite/major.h"
-#include "lib/stdlib.h"
-#include "lib/string.h"
-#include "memory/kmalloc.h"
+
+#include <ferrite/limits.h>
+#include <lib/stdlib.h>
+#include <lib/string.h>
 
 extern struct device_operations ide_device_ops;
 
@@ -14,9 +15,7 @@ block_device_t block_devices[MAX_BLOCK_DEVICES];
 
 /* Public */
 
-inline block_device_t* get_devices(void) { return block_devices; }
-
-inline block_device_t* get_device(int index) { return &block_devices[index]; }
+inline block_device_t* get_device(dev_t dev) { return &block_devices[dev]; }
 
 void register_block_device(block_device_type_e type, void* data)
 {
@@ -28,6 +27,7 @@ void register_block_device(block_device_type_e type, void* data)
     block_device_t* d = NULL;
     for (int i = 0; i < MAX_BLOCK_DEVICES; i += 1) {
         if (!block_devices[i].d_data) {
+            block_devices[i].d_dev = i;
             d = &block_devices[i];
             break;
         }
@@ -40,7 +40,7 @@ void register_block_device(block_device_type_e type, void* data)
 
     switch (type) {
     case BLOCK_DEVICE_IDE:
-        d->sector_size = read_from_ata_data();
+        d->d_sector_size = read_from_ata_data();
         d->d_op = &ide_device_ops;
         break;
     default:
