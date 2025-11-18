@@ -238,6 +238,7 @@ s32 ext2_read_inode(vfs_inode_t* dir)
     dir->i_mtime = (time_t)node->i_mtime;
     dir->i_ctime = (time_t)node->i_ctime;
     dir->i_links_count = node->i_links_count;
+    dir->i_mode = node->i_mode;
 
     dir->i_uid = node->i_uid;
     dir->i_gid = node->i_gid;

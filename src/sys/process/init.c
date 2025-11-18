@@ -2,9 +2,11 @@
 #include "arch/x86/memlayout.h"
 #include "debug/debug.h"
 #include "drivers/printk.h"
+#include "ferrite/dirent.h"
 #include "lib/stdlib.h"
 #include "lib/string.h"
 #include "memory/consts.h"
+#include "memory/kmalloc.h"
 #include "memory/page.h"
 #include "memory/vmm.h"
 #include "sys/process/process.h"
@@ -105,7 +107,18 @@ void init_process(void)
 #endif
 
     printk("Init: Created child PID %d with PID %d\n", pid, current->pid);
-    syscall(5, (s32) "/", 0, 0);
+    int fd = syscall(5, (s32) "/", 0, 0);
+    printk("fd = %d\n", fd);
+
+    dirent_t* dirent = kmalloc(sizeof(dirent_t));
+    if (syscall(89, fd, (s32)dirent, 1) < 0) {
+        printk("syscall failed\n");
+    } else {
+        printk("Got emmm\n");
+
+        printk("%d\n", dirent->d_off);
+        printk("%s\n", (char*)dirent->d_name);
+    }
 
     while (true) {
         for (s32 i = 0; i < NUM_PROC; i++) {
@@ -149,4 +162,8 @@ void create_initial_process(void)
 
     u32 kernel_stack_top = (u32)init->kstack + PAGE_SIZE;
     tss_set_stack(kernel_stack_top);
+
+    for (int i = 0; i < MAX_OPEN_FILES; i += 1) {
+        init->open_files[i] = NULL;
+    }
 }

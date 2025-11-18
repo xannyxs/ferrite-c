@@ -139,6 +139,7 @@ ext2_superblock_read(vfs_superblock_t* sb, void* data, int silent)
     ext2_block_group_descriptors_read(sb, sb->u.ext2_sb.s_groups_count);
 
     sb->s_root_node = inode_get(sb, 2);
+    sb->s_root_node->i_sb = sb;
 
     return sb;
 }

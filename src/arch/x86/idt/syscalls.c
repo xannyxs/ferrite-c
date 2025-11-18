@@ -4,6 +4,7 @@
 #include "drivers/printk.h"
 #include "ferrite/dirent.h"
 #include "fs/vfs.h"
+#include "memory/kmalloc.h"
 #include "sys/file/file.h"
 #include "sys/process/process.h"
 #include "sys/signal/signal.h"
@@ -23,7 +24,7 @@ __attribute__((target("general-regs-only"))) static void sys_exit(s32 status)
 
 SYSCALL_ATTR static s32 sys_read(s32 fd, void* buf, int count)
 {
-    file_t* f = getfd(fd);
+    file_t* f = fd_get(fd);
     if (!f || !f->f_inode) {
         return -1;
     }
@@ -37,7 +38,7 @@ SYSCALL_ATTR static s32 sys_read(s32 fd, void* buf, int count)
 
 SYSCALL_ATTR static s32 sys_write(s32 fd, void* buf, int count)
 {
-    file_t* f = getfd(fd);
+    file_t* f = fd_get(fd);
     if (!f || f->f_inode) {
         return -1;
     }
@@ -49,17 +50,40 @@ SYSCALL_ATTR static s32 sys_write(s32 fd, void* buf, int count)
     return -1;
 }
 
+// TODO: Support flags:
+// https://man7.org/linux/man-pages/man2/open.2.html
 SYSCALL_ATTR static s32 sys_open(char const* filename, int flags, int mode)
 {
     (void)flags;
-    (void)mode;
 
     vfs_inode_t* new = vfs_lookup(root_inode, filename);
     if (!new) {
         return -1;
     }
 
-    return 0;
+    int fd = fd_alloc();
+    if (fd < 0) {
+        inode_put(new);
+        return -1;
+    }
+
+    file_t* file = fd_get(fd);
+    if (!file) {
+        file_put(myproc()->open_files[fd]);
+        inode_put(new);
+        return -1;
+    }
+
+    if (fd_install(new, fd) < 0) {
+        file_put(file);
+        inode_put(new);
+        return -1;
+    }
+
+    file->f_op = new->i_op->default_file_ops;
+    file->f_mode = mode;
+
+    return fd;
 }
 
 SYSCALL_ATTR static s32 sys_fork(void) { return do_fork("user process"); }
@@ -109,7 +133,7 @@ SYSCALL_ATTR static uid_t sys_geteuid(void) { return geteuid(); }
 
 SYSCALL_ATTR static s32 sys_readdir(u32 fd, dirent_t* dirent, s32 count)
 {
-    file_t* f = getfd((s32)fd);
+    file_t* f = fd_get((s32)fd);
     if (!f) {
         return -1;
     }
@@ -146,7 +170,7 @@ SYSCALL_ATTR static s32 sys_nanosleep(void) { return knanosleep(1000); }
 
 SYSCALL_ATTR static s32 sys_close(s32 fd)
 {
-    file_t* f = getfd(fd);
+    file_t* f = fd_get(fd);
     if (!f) {
         return -1;
     }

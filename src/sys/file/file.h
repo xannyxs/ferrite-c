@@ -34,10 +34,14 @@ struct file_operations {
     int (*lseek)(struct vfs_inode*, struct file*, off_t, int);
 };
 
-void file_put(file_t* f);
+int fd_alloc(void);
 
 struct file* file_get(void);
 
-file_t* getfd(s32 fd);
+int fd_install(struct vfs_inode* node, int fd);
+
+void file_put(file_t* f);
+
+file_t* fd_get(s32 fd);
 
 #endif

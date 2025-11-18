@@ -7,6 +7,7 @@
 #include <ferrite/types.h>
 #include <lib/string.h>
 
+extern struct super_operations ext2_sops;
 vfs_inode_t* root_inode = NULL;
 
 /**
@@ -98,6 +99,7 @@ vfs_superblock_t* vfs_mount_root(block_device_t* root_device)
     }
     memset(sb, 0, sizeof(vfs_superblock_t));
     sb->s_dev = root_device->d_dev;
+    sb->s_op = &ext2_sops;
 
     vfs_superblock_t* result = NULL;
     for (int i = 0; file_systems[i].name; i += 1) {
@@ -114,8 +116,10 @@ vfs_superblock_t* vfs_mount_root(block_device_t* root_device)
 
 void vfs_init(void)
 {
-    block_device_t* d = get_new_device();
-    vfs_mount_root(d);
+    block_device_t* d = get_device(0);
+    vfs_superblock_t* sb = vfs_mount_root(d);
+    root_inode = sb->s_root_node;
+
     if (!root_inode) {
         abort("Root Device is missing");
     }
