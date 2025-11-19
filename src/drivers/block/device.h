@@ -1,9 +1,7 @@
 #ifndef BLOCK_DEVICE_H
 #define BLOCK_DEVICE_H
 
-#include "types.h"
-
-#define MAX_BLOCK_DEVICES 64
+#include <ferrite/types.h>
 
 typedef enum {
     BLOCK_DEVICE_NONE = 0,
@@ -14,9 +12,11 @@ typedef enum {
 } block_device_type_e;
 
 typedef struct {
-    u32 sector_size;
+    dev_t d_dev;
+    u32 d_sector_size;
 
     void* d_data;
+
     block_device_type_e d_type;
     struct device_operations* d_op;
 } block_device_t;
@@ -33,10 +33,14 @@ struct device_operations {
     void (*shutdown)(block_device_t* d);
 };
 
-block_device_t* get_device(int index);
-
 block_device_t* get_devices(void);
 
+block_device_t* get_device(dev_t dev);
+
+block_device_t* get_new_device(void);
+
 void register_block_device(block_device_type_e type, void* data);
+
+void root_device_init(char* cmdline);
 
 #endif /* BLOCK_DEVICE_H */

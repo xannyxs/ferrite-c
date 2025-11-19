@@ -1,6 +1,6 @@
 #include "arch/x86/io.h"
 #include "lib/stdlib.h"
-#include "types.h"
+#include <ferrite/types.h>
 
 u16 const PORT = 0x3f8;
 

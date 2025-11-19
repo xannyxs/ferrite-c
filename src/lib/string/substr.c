@@ -1,6 +1,6 @@
 #include "lib/string.h"
 #include "memory/kmalloc.h"
-#include "types.h"
+#include <ferrite/types.h>
 
 char* substr(char const* str, u32 start, size_t len)
 {

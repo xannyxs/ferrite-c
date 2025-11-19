@@ -3,7 +3,8 @@
 #include "lib/string.h"
 #include "memory/buddy_allocator/buddy.h"
 #include "memory/consts.h"
-#include "types.h"
+
+#include <ferrite/types.h>
 
 /*
  * Allocates a single 4KB page from the buddy allocator, converts it to a

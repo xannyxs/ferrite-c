@@ -1,7 +1,7 @@
 #ifndef GDT_H
 #define GDT_H
 
-#include "types.h"
+#include <ferrite/types.h>
 
 typedef struct {
     u32 prev_tss;

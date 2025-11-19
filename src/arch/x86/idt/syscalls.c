@@ -2,50 +2,88 @@
 #include "arch/x86/idt/idt.h"
 #include "arch/x86/time/time.h"
 #include "drivers/printk.h"
-#include "lib/string.h"
-#include "net/socket.h"
+#include "ferrite/dirent.h"
+#include "fs/vfs.h"
+#include "memory/kmalloc.h"
 #include "sys/file/file.h"
-#include "sys/file/inode.h"
-#include "sys/file/stat.h"
 #include "sys/process/process.h"
 #include "sys/signal/signal.h"
 #include "sys/timer/timer.h"
 #include "syscalls.h"
-#include "types.h"
 
+#include <ferrite/types.h>
+#include <lib/string.h>
 #include <stdbool.h>
+
+extern vfs_inode_t* root_inode;
 
 __attribute__((target("general-regs-only"))) static void sys_exit(s32 status)
 {
     do_exit(status);
 }
 
-SYSCALL_ATTR static s32 sys_read(s32 fd, void* buf, size_t count)
+SYSCALL_ATTR static s32 sys_read(s32 fd, void* buf, int count)
 {
-    file_t* f = getfd(fd);
-    if (!f) {
+    file_t* f = fd_get(fd);
+    if (!f || !f->f_inode) {
         return -1;
     }
 
     if (f->f_op && f->f_op->read) {
-        return f->f_op->read(f, buf, count);
+        return f->f_op->read(f->f_inode, f, buf, count);
     }
 
     return -1;
 }
 
-SYSCALL_ATTR static s32 sys_write(s32 fd, void* buf, size_t count)
+SYSCALL_ATTR static s32 sys_write(s32 fd, void* buf, int count)
 {
-    file_t* f = getfd(fd);
-    if (!f) {
+    file_t* f = fd_get(fd);
+    if (!f || f->f_inode) {
         return -1;
     }
 
     if (f->f_op && f->f_op->write) {
-        return f->f_op->write(f, buf, count);
+        return f->f_op->write(f->f_inode, f, buf, count);
     }
 
     return -1;
+}
+
+// TODO: Support flags:
+// https://man7.org/linux/man-pages/man2/open.2.html
+SYSCALL_ATTR static s32 sys_open(char const* filename, int flags, int mode)
+{
+    (void)flags;
+
+    vfs_inode_t* new = vfs_lookup(root_inode, filename);
+    if (!new) {
+        return -1;
+    }
+
+    int fd = fd_alloc();
+    if (fd < 0) {
+        inode_put(new);
+        return -1;
+    }
+
+    file_t* file = fd_get(fd);
+    if (!file) {
+        file_put(myproc()->open_files[fd]);
+        inode_put(new);
+        return -1;
+    }
+
+    if (fd_install(new, fd) < 0) {
+        file_put(file);
+        inode_put(new);
+        return -1;
+    }
+
+    file->f_op = new->i_op->default_file_ops;
+    file->f_mode = mode;
+
+    return fd;
 }
 
 SYSCALL_ATTR static s32 sys_fork(void) { return do_fork("user process"); }
@@ -91,7 +129,62 @@ SYSCALL_ATTR static s32 sys_kill(pid_t pid, s32 sig)
     return -1;
 }
 
+SYSCALL_ATTR static s32 sys_mkdir(char const* pathname, int mode)
+{
+    // 1. Lookup pathname except the very last since we make that.
+    // 2. parse pathname to get only the last name
+    // 3. call mkdir of the current filesystem
+
+    char* last_slash = strrchr(pathname, '/');
+    if (!last_slash) {
+        return -1;
+    }
+
+    size_t parent_len = last_slash - pathname;
+    if (parent_len == 0) {
+        parent_len = 1;
+    }
+
+    char parent_path[parent_len + 1];
+    memcpy(parent_path, pathname, parent_len);
+    parent_path[parent_len] = '\0';
+
+    char* name = last_slash + 1;
+    size_t name_len = strlen(name);
+
+    vfs_inode_t* parent = vfs_lookup(root_inode, parent_path);
+    if (!parent) {
+        return -1;
+    }
+
+    printk("name: %s\n", parent_path);
+    if (!parent->i_op || !parent->i_op->mkdir) {
+        inode_put(parent);
+        return -1;
+    }
+
+    int ret = parent->i_op->mkdir(parent, name, (s32)name_len, mode);
+    inode_put(parent);
+
+    return ret;
+}
+
 SYSCALL_ATTR static uid_t sys_geteuid(void) { return geteuid(); }
+
+SYSCALL_ATTR static s32 sys_readdir(u32 fd, dirent_t* dirent, s32 count)
+{
+    file_t* f = fd_get((s32)fd);
+    if (!f) {
+        return -1;
+    }
+
+    s32 result = -1;
+    if (f->f_op && f->f_op->readdir) {
+        result = f->f_op->readdir(f->f_inode, f, dirent, count);
+    }
+
+    return result;
+}
 
 SYSCALL_ATTR static s32 sys_setuid(uid_t uid)
 {
@@ -117,20 +210,19 @@ SYSCALL_ATTR static s32 sys_nanosleep(void) { return knanosleep(1000); }
 
 SYSCALL_ATTR static s32 sys_close(s32 fd)
 {
-    file_t* f = getfd(fd);
+    file_t* f = fd_get(fd);
     if (!f) {
         return -1;
     }
 
     myproc()->open_files[fd] = NULL;
 
-    s32 result = 0;
-    if (f->f_op && f->f_op->close) {
-        result = f->f_op->close(f);
+    if (f->f_op && f->f_op->release) {
+        f->f_op->release(f->f_inode, f);
     }
 
     file_put(f);
-    return result;
+    return 0;
 }
 
 __attribute__((target("general-regs-only"))) void
@@ -146,11 +238,15 @@ syscall_dispatcher_c(registers_t* reg)
         break;
 
     case SYS_READ:
-        reg->eax = sys_read((s32)reg->ebx, (void*)reg->ecx, reg->edx);
+        reg->eax = sys_read((s32)reg->ebx, (void*)reg->ecx, (s32)reg->edx);
         break;
 
     case SYS_WRITE:
-        reg->eax = sys_write((s32)reg->ebx, (void*)reg->ecx, reg->edx);
+        reg->eax = sys_write((s32)reg->ebx, (void*)reg->ecx, (s32)reg->edx);
+        break;
+
+    case SYS_OPEN:
+        reg->eax = sys_open((char*)reg->ebx, (s32)reg->ecx, (s32)reg->edx);
         break;
 
     case SYS_CLOSE:
@@ -177,6 +273,10 @@ syscall_dispatcher_c(registers_t* reg)
         reg->eax = sys_kill((s32)reg->ebx, (s32)reg->ecx);
         break;
 
+    case SYS_MKDIR:
+        reg->eax = sys_mkdir((char*)reg->ebx, (s32)reg->ecx);
+        break;
+
     case SYS_SOCKETCALL:
         reg->eax = sys_socketcall((s32)reg->ebx, (unsigned long*)reg->ecx);
         break;
@@ -186,6 +286,10 @@ syscall_dispatcher_c(registers_t* reg)
 
     case SYS_GETEUID:
         reg->eax = sys_geteuid();
+        break;
+
+    case SYS_READDIR:
+        reg->eax = sys_readdir(reg->ebx, (void*)reg->ecx, (s32)reg->edx);
         break;
 
     case SYS_SETUID:

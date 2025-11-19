@@ -1,7 +1,7 @@
 #ifndef RTC_H
 #define RTC_H
 
-#include "types.h"
+#include <ferrite/types.h>
 
 typedef struct {
     u8 second;

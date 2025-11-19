@@ -4,7 +4,7 @@
 #include "drivers/printk.h"
 #include "memory/vmm.h"
 #include "sys/process/process.h"
-#include "types.h"
+#include <ferrite/types.h>
 
 #define KERNEL_MODE 0
 #define USER_MODE 3

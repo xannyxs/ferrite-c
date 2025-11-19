@@ -4,7 +4,8 @@
 #include "memory/buddy_allocator/buddy.h"
 #include "memory/consts.h"
 #include "memory/memory.h"
-#include "types.h"
+
+#include <ferrite/types.h>
 
 /* Public */
 

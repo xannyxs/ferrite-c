@@ -1,7 +1,7 @@
 #include "arch/x86/idt/idt.h"
 #include "arch/x86/io.h"
 #include "drivers/printk.h"
-#include "types.h"
+#include <ferrite/types.h>
 
 #include <stdbool.h>
 

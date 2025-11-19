@@ -1,7 +1,7 @@
 #ifndef STRING_H
 #define STRING_H
 
-#include "types.h"
+#include <ferrite/types.h>
 
 size_t strlen(char const* s);
 
@@ -20,5 +20,11 @@ char** split(char const* s, char c);
 char* substr(char const* str, u32 start, size_t len);
 
 size_t strlcpy(char* dest, char const* src, size_t n);
+
+char* strchr(char const* str, s32 c);
+
+char* strrchr(char const* str, s32 c);
+
+char* strnstr(char const* str, char const* to_find, size_t len);
 
 #endif /* STRING_H */

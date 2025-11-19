@@ -16,4 +16,13 @@ typedef unsigned long vaddr_t;
 
 #define NULL ((void*)0)
 
+typedef long off_t;
+typedef u16 dev_t;
+
+typedef unsigned long long time_t;
+
+typedef unsigned short uid_t;
+typedef unsigned short gid_t;
+typedef unsigned short dev_t;
+
 #endif

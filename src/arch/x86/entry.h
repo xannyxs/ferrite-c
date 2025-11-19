@@ -1,7 +1,7 @@
 #ifndef ENTRY_H
 #define ENTRY_H
 
-#include "types.h"
+#include <ferrite/types.h>
 
 typedef struct entry {
     u16 limit;

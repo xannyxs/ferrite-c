@@ -4,18 +4,18 @@
 #include "arch/x86/pic.h"
 #include "arch/x86/pit.h"
 #include "arch/x86/time/rtc.h"
-#include "drivers/block/ide.h"
+#include "drivers/block/device.h"
 #include "drivers/video/vga.h"
-#include "fs/ext2/ext2.h"
-#include "lib/stdlib.h"
+#include "fs/vfs.h"
 #include "memory/buddy_allocator/buddy.h"
 #include "memory/memblock.h"
 #include "memory/pmm.h"
 #include "memory/vmalloc.h"
 #include "memory/vmm.h"
 #include "sys/process/process.h"
-#include "types.h"
 
+#include <ferrite/types.h>
+#include <lib/stdlib.h>
 #include <stdbool.h>
 
 #if !defined(__i386__)
@@ -26,6 +26,10 @@ __attribute__((noreturn)) void kmain(u32 magic, multiboot_info_t* mbd)
 {
     if (magic != MULTIBOOT_BOOTLOADER_MAGIC) {
         abort("Invalid magic number!");
+    }
+
+    if (!(mbd->flags & (1 << 2))) {
+        abort("Missing cmdline flag. Cannot locate root devices");
     }
 
     gdt_init();
@@ -44,10 +48,13 @@ __attribute__((noreturn)) void kmain(u32 magic, multiboot_info_t* mbd)
     memblock_deactivate();
     vmalloc_init();
 
-    ide_init();
-    ext2_init();
+    inode_cache_init();
 
-    init_ptables();
+    root_device_init((char*)mbd->cmdline);
+
+    vfs_init();
+
+    init_ptables(); // rename
 
     sti();
 

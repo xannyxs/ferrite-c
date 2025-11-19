@@ -7,13 +7,14 @@
 #include "drivers/block/ide.h"
 #include "drivers/printk.h"
 #include "drivers/video/vga.h"
+#include "fs/vfs.h"
 #include "lib/stdlib.h"
 #include "lib/string.h"
 #include "memory/buddy_allocator/buddy.h"
 #include "sys/process/process.h"
 #include "sys/signal/signal.h"
 #include "sys/timer/timer.h"
-#include "types.h"
+#include <ferrite/types.h>
 
 extern proc_t* current_proc;
 
@@ -49,6 +50,7 @@ static void print_help(void)
            "allocator\n");
     printk("  top     - Show all active processes\n");
     printk("  devices - Show all found devices\n");
+    printk("  ls      - List information about the FILEs\n");
     printk("  help    - Show this help message\n");
 }
 
@@ -117,6 +119,8 @@ static void print_idt(void)
     printk("IDT Limit: 0x%xx\n", idtr.limit);
 }
 
+static void list_directory_contents(char const* path) { (void)path; }
+
 static void print_time(void)
 {
     rtc_time_t t;
@@ -177,6 +181,15 @@ static void execute_buffer(void)
             command_table[cmd].f();
             break;
         }
+    }
+
+    if (strncmp("ls", buffer, 2) == 0) {
+        char* tmp = strchr(buffer, ' ');
+        if (tmp) {
+            tmp++;
+        }
+
+        list_directory_contents(tmp);
     }
 
     memset(buffer, 0, VGA_WIDTH);

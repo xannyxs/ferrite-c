@@ -2,7 +2,7 @@
 #include "arch/x86/io.h"
 #include "arch/x86/time/time.h"
 #include "drivers/printk.h"
-#include "types.h"
+#include <ferrite/types.h>
 
 #include <stdbool.h>
 
