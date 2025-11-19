@@ -129,6 +129,46 @@ SYSCALL_ATTR static s32 sys_kill(pid_t pid, s32 sig)
     return -1;
 }
 
+SYSCALL_ATTR static s32 sys_mkdir(char const* pathname, int mode)
+{
+    // 1. Lookup pathname except the very last since we make that.
+    // 2. parse pathname to get only the last name
+    // 3. call mkdir of the current filesystem
+
+    char* last_slash = strrchr(pathname, '/');
+    if (!last_slash) {
+        return -1;
+    }
+
+    size_t parent_len = last_slash - pathname;
+    if (parent_len == 0) {
+        parent_len = 1;
+    }
+
+    char parent_path[parent_len + 1];
+    memcpy(parent_path, pathname, parent_len);
+    parent_path[parent_len] = '\0';
+
+    char* name = last_slash + 1;
+    size_t name_len = strlen(name);
+
+    vfs_inode_t* parent = vfs_lookup(root_inode, parent_path);
+    if (!parent) {
+        return -1;
+    }
+
+    printk("name: %s\n", parent_path);
+    if (!parent->i_op || !parent->i_op->mkdir) {
+        inode_put(parent);
+        return -1;
+    }
+
+    int ret = parent->i_op->mkdir(parent, name, (s32)name_len, mode);
+    inode_put(parent);
+
+    return ret;
+}
+
 SYSCALL_ATTR static uid_t sys_geteuid(void) { return geteuid(); }
 
 SYSCALL_ATTR static s32 sys_readdir(u32 fd, dirent_t* dirent, s32 count)
@@ -231,6 +271,10 @@ syscall_dispatcher_c(registers_t* reg)
 
     case SYS_KILL:
         reg->eax = sys_kill((s32)reg->ebx, (s32)reg->ecx);
+        break;
+
+    case SYS_MKDIR:
+        reg->eax = sys_mkdir((char*)reg->ebx, (s32)reg->ecx);
         break;
 
     case SYS_SOCKETCALL:

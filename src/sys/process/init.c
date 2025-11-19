@@ -80,6 +80,16 @@ static inline s32 syscall(s32 num, s32 arg1, s32 arg2, s32 arg3)
     return ret;
 }
 
+static inline s32 syscall2(s32 num, s32 arg1, s32 arg2)
+{
+    s32 ret;
+    __asm__ volatile("int $0x80"
+                     : "=a"(ret)
+                     : "a"(num), "b"(arg1), "c"(arg2)
+                     : "memory");
+    return ret;
+}
+
 void init_process(void)
 {
     proc_t const* current = myproc();
@@ -107,10 +117,15 @@ void init_process(void)
 #endif
 
     printk("Init: Created child PID %d with PID %d\n", pid, current->pid);
-    int fd = syscall(5, (s32) "/", 0, 0);
-    printk("fd = %d\n", fd);
 
-    dirent_t* dirent = kmalloc(sizeof(dirent_t));
+    int fd = syscall(5, (s32) "/", 0, 0);
+    dirent_t* dirent = { 0 };
+    while (syscall(89, fd, (s32)dirent, 1) > 0) {
+        printk("%s\n", (char*)dirent->d_name);
+    }
+
+    syscall2(39, (s32) "/newdir", 0755);
+
     while (syscall(89, fd, (s32)dirent, 1) > 0) {
         printk("%s\n", (char*)dirent->d_name);
     }
