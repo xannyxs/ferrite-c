@@ -3,8 +3,6 @@
 
 #include "rtc.h"
 
-// typedef unsigned long long time_t;
-
 void gettime(rtc_time_t* t);
 
 time_t getepoch(void);
