@@ -3,7 +3,7 @@
 
 #include "sys/file/file.h"
 #include "sys/process/process.h"
-#include "types.h"
+#include <ferrite/types.h>
 
 /* open/fcntl - O_SYNC isn't implemented yet */
 #define O_ACCMODE 0003

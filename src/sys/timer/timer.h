@@ -1,7 +1,7 @@
 #ifndef TIMER_H
 #define TIMER_H
 
-#include "types.h"
+#include <ferrite/types.h>
 
 typedef struct timer {
     struct timer* next;

@@ -2,10 +2,15 @@
 #define FS_EXT2_H
 
 #include "drivers/block/device.h"
-#include "types.h"
+#include "fs/vfs.h"
+#include <ferrite/types.h>
+
+struct vfs_inode;
+struct vfs_dentry;
 
 #define EXT2_MAGIC 0xEF53
-#define MAX_EXT2_MOUNTS 8
+
+#define EXT2_ROOT_INO 2
 
 #define FIFO 0x1000
 #define CHARACTER_DEVICE 0x2000
@@ -35,7 +40,7 @@
 #define XT2_IMAGIC_FL 0x00002000   // AFS directory
 #define XT2_RESERVED_FL 0x80000000 // reserved for ext2 library
 
-typedef struct {
+typedef struct ext2_superblock {
     u32 s_inodes_count;
     u32 s_blocks_count;
     u32 s_r_blocks_count; // Reserved blocks for superuser
@@ -140,72 +145,45 @@ typedef struct {
     u8 name[];
 } __attribute__((packed)) ext2_entry_t;
 
-typedef struct {
-    block_device_t* m_device;
-
-    ext2_super_t m_superblock;
-    ext2_inode_t m_inode;
-
-    u32 m_block_size;
-    u32 num_block_groups;
-    ext2_block_group_descriptor_t* m_block_group;
-} ext2_mount_t;
-
 /* Super Block Functions */
-s32 ext2_superblock_read(ext2_mount_t* m);
+vfs_superblock_t* ext2_superblock_read(vfs_superblock_t*, void*, int);
 
-s32 ext2_superblock_write(ext2_mount_t* m);
-
-/* Block Group Descriptor Table Functions */
-s32 ext2_block_group_descriptors_read_all(
-    ext2_mount_t* m,
-    ext2_block_group_descriptor_t* bgd,
-    u32 num_block_groups
-);
-
-s32 ext2_block_group_descriptors_write(ext2_mount_t* m, u32 bgd_index);
+s32 ext2_superblock_write(vfs_superblock_t*);
 
 /* Block Functions */
-int mark_block_allocated(ext2_mount_t* m, u32 block_num);
+int mark_block_allocated(vfs_inode_t*, u32);
 
-int mark_block_free(ext2_mount_t* m, u32 block_num);
+int mark_block_free(vfs_inode_t*, u32);
 
-s32 ext2_write_block(
-    ext2_mount_t* m,
-    u32 block_num,
-    void const* buff,
-    u32 offset,
-    u32 len
-);
+s32 ext2_read_block(vfs_inode_t*, u8*, u32);
+
+s32 ext2_write_block(vfs_inode_t*, u32, void const*, u32, u32);
 
 /* Inode Functions */
-s32 ext2_read_inode(ext2_mount_t* m, u32 inode_num, ext2_inode_t* inode);
+int find_free_inode(vfs_inode_t*);
 
-s32 ext2_write_inode(ext2_mount_t* m, u32 inode_num, ext2_inode_t* inode);
+int mark_inode_allocated(vfs_inode_t*);
 
-int find_free_inode(ext2_mount_t* m);
-
-int mark_inode_allocated(ext2_mount_t* m, u32 inode_num);
-
-int mark_inode_free(ext2_mount_t* m, u32 inode_num);
+int mark_inode_free(vfs_inode_t*);
 
 /* Directory Functions */
-s32 ext2_read_entry(
-    ext2_mount_t* m,
-    ext2_entry_t** entry,
-    u32 inode_num,
-    char const* entry_name
+int ext2_find_entry(
+    struct vfs_inode* dir,
+    char const* const name,
+    int name_len,
+    ext2_entry_t** result
 );
 
-s32 ext2_entry_write(ext2_mount_t* m, ext2_entry_t* entry, u32 parent_ino);
+s32 ext2_entry_write(vfs_inode_t*, ext2_entry_t* entry, u32 parent_ino);
 
-/* General Functio */
+/* General Function */
+
 int find_free_bit_in_bitmap(u8 const* bitmap, u32 size);
 
-int read_block(ext2_mount_t* m, u8* buff, u32 block_num);
+int find_free_block(vfs_inode_t* m);
 
-int find_free_block(ext2_mount_t* m);
-
-void ext2_init(void);
+/* namei.c */
+int ext2_create(struct vfs_inode* parent, struct vfs_dentry* dentry, int mode);
+s32 ext2_lookup(struct vfs_inode*, char const*, int, struct vfs_inode**);
 
 #endif /* FS_EXT2_H */

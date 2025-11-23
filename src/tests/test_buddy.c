@@ -2,7 +2,7 @@
 #    include "memory/buddy_allocator/buddy.h"
 #    include "memory/consts.h"
 #    include "tests/tests.h"
-#    include "types.h"
+#    include <ferrite/types.h>
 #    include <stdbool.h>
 
 extern u32 tests_passed;

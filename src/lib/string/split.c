@@ -1,6 +1,6 @@
 #include "lib/string.h"
 #include "memory/kmalloc.h"
-#include "types.h"
+#include <ferrite/types.h>
 
 static inline void freearray(char** s, int i)
 {

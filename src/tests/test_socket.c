@@ -6,7 +6,8 @@
 #    include "sys/process/process.h"
 #    include "sys/timer/timer.h"
 #    include "tests/tests.h"
-#    include "types.h"
+
+#    include <ferrite/types.h>
 #    include <stdbool.h>
 
 extern u32 tests_passed;

@@ -1,7 +1,7 @@
 #ifdef __TEST
 
 #    include "tests/tests.h"
-#    include "types.h"
+#    include <ferrite/types.h>
 
 #    include <stdbool.h>
 

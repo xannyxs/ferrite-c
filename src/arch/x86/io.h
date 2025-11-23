@@ -1,7 +1,7 @@
 #ifndef IO_H
 #define IO_H
 
-#include "types.h"
+#include <ferrite/types.h>
 
 static inline u8 inb(u16 addr)
 {

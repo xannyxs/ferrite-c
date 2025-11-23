@@ -27,8 +27,10 @@ enum syscalls_e {
     SYS_SETUID = 23,
     SYS_GETUID = 24,
     SYS_KILL = 37,
+    SYS_MKDIR = 39,
     SYS_SIGNAL = 48,
     SYS_GETEUID = 49,
+    SYS_READDIR = 89,
     SYS_SOCKETCALL = 102,
     SYS_NANOSLEEP = 162,
 

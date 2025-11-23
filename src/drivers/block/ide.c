@@ -2,9 +2,11 @@
 #include "arch/x86/io.h"
 #include "drivers/block/device.h"
 #include "drivers/printk.h"
-#include "lib/string.h"
+#include "ferrite/major.h"
 #include "memory/kmalloc.h"
-#include "types.h"
+
+#include <ferrite/types.h>
+#include <lib/string.h>
 
 #define ATA_ADDR 0x1F0
 #define DEVICE_ATAPI 1
@@ -159,7 +161,7 @@ s32 ide_read(block_device_t* d, u32 lba, u32 count, void* buf, size_t len)
 {
     ata_drive_t* ata = (ata_drive_t*)d->d_data;
 
-    if (len < count * d->sector_size) {
+    if (len < count * d->d_sector_size) {
         printk("Buffer too small\n");
         return -1;
     }
@@ -210,7 +212,7 @@ s32 ide_write(
         printk("d_data is NULL\n", d->d_data);
         return -1;
     }
-    if (len < count * d->sector_size) {
+    if (len < count * d->d_sector_size) {
         printk("Buffer too small\n");
         return -1;
     }
@@ -259,17 +261,32 @@ s32 ide_write(
     return 0;
 }
 
+// TODO
 void ide_shutdown(block_device_t* d) { (void)d; }
 
-void ide_init(void)
+// FIXME: Minor is for particions. Should we support it?
+s32 ide_mount(s32 major, s32 minor)
 {
-    ata_drive_t* d = detect_harddrives(1);
-    if (d) {
+    (void)minor;
+
+    if (major == IDE0_MAJOR) {
+        ata_drive_t* d = detect_harddrives(0);
+        if (!d) {
+            return -1;
+        }
+
+        register_block_device(BLOCK_DEVICE_IDE, d);
+        return 0;
+    }
+
+    if (major == IDE1_MAJOR) {
+        ata_drive_t* d = detect_harddrives(1);
+        if (!d) {
+            return -1;
+        }
+
         register_block_device(BLOCK_DEVICE_IDE, d);
     }
 
-    d = detect_harddrives(0);
-    if (d) {
-        register_block_device(BLOCK_DEVICE_IDE, d);
-    }
+    return 0;
 }

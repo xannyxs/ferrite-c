@@ -1,11 +1,31 @@
 #include "sys/file/file.h"
-#include "lib/string.h"
+#include "drivers/printk.h"
+#include "fs/vfs.h"
 #include "memory/kmalloc.h"
-#include "sys/file/inode.h"
 #include "sys/process/process.h"
-#include "types.h"
 
-file_t* getfd(s32 fd)
+#include <ferrite/types.h>
+#include <lib/string.h>
+
+int fd_alloc(void)
+{
+    proc_t* p = myproc();
+
+    for (int i = 0; i < MAX_OPEN_FILES; i += 1) {
+        if (!p->open_files[i]) {
+            p->open_files[i] = kmalloc(sizeof(file_t));
+            if (!p->open_files[i]) {
+                return -1;
+            }
+
+            return i;
+        }
+    }
+
+    return -1;
+}
+
+file_t* fd_get(s32 fd)
 {
     proc_t* p = myproc();
     if (!p) {
@@ -19,16 +39,19 @@ file_t* getfd(s32 fd)
     return p->open_files[fd];
 }
 
-file_t* file_get(void)
+/* Install inode in fd slot (sets f_inode, f_count=1, zeros rest) */
+int fd_install(vfs_inode_t* node, int fd)
 {
-    file_t* f = kmalloc(sizeof(file_t));
-    if (!f) {
-        return NULL;
+    file_t* file = fd_get(fd);
+    if (!file) {
+        return -1;
     }
 
-    memset(f, 0, sizeof(file_t));
+    memset(file, 0, sizeof(file_t));
+    file->f_inode = node;
+    file->f_count = 1;
 
-    return f;
+    return 0;
 }
 
 void file_put(file_t* f)

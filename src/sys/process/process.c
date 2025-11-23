@@ -12,7 +12,7 @@
 #include "sys/file/file.h"
 #include "sys/signal/signal.h"
 #include "sys/timer/timer.h"
-#include "types.h"
+#include <ferrite/types.h>
 
 #include <stdbool.h>
 
@@ -153,8 +153,8 @@ void do_exit(s32 status)
         if (f) {
             p->open_files[fd] = NULL;
 
-            if (f->f_op && f->f_op->close) {
-                f->f_op->close(f);
+            if (f->f_inode && f->f_op && f->f_op->release) {
+                f->f_op->release(f->f_inode, f);
             }
 
             file_put(f);

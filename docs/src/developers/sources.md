@@ -33,3 +33,5 @@
 
 - [Ext2 Documentation (SO to Wayback Machine)](https://web.archive.org/web/20250812194235/http://www.nongnu.org/ext2-doc/ext2.html#superblock)
 - [OSDev Ext2](https://wiki.osdev.org/Ext2)
+- [Linux Drives naming conventions](https://tldp.org/HOWTO/html_single/Partition/#names)
+- [ArchWiki Device_file](https://wiki.archlinux.org/title/Device_file#Block_devices)

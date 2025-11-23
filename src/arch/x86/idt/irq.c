@@ -7,7 +7,7 @@
 #include "drivers/printk.h"
 #include "sys/process/process.h"
 #include "sys/timer/timer.h"
-#include "types.h"
+#include <ferrite/types.h>
 
 #include <stdbool.h>
 
