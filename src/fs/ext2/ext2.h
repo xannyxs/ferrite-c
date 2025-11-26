@@ -1,7 +1,6 @@
 #ifndef FS_EXT2_H
 #define FS_EXT2_H
 
-#include "drivers/block/device.h"
 #include "fs/vfs.h"
 #include <ferrite/types.h>
 
@@ -148,8 +147,9 @@ typedef struct {
 /* Super Block Functions */
 vfs_superblock_t* ext2_superblock_read(vfs_superblock_t*, void*, int);
 
-s32 ext2_superblock_write(vfs_superblock_t*);
+s32 ext2_bgd_write(vfs_superblock_t* sb, u32 bgd_index);
 
+s32 ext2_superblock_write(vfs_superblock_t*);
 /* Block Functions */
 int mark_block_allocated(vfs_inode_t*, u32);
 
@@ -178,12 +178,29 @@ s32 ext2_entry_write(vfs_inode_t*, ext2_entry_t* entry, u32 parent_ino);
 
 /* General Function */
 
-int find_free_bit_in_bitmap(u8 const* bitmap, u32 size);
-
-int find_free_block(vfs_inode_t* m);
+int find_free_block(vfs_inode_t*);
 
 /* namei.c */
 int ext2_create(struct vfs_inode* parent, struct vfs_dentry* dentry, int mode);
 s32 ext2_lookup(struct vfs_inode*, char const*, int, struct vfs_inode**);
+
+inline int find_free_bit_in_bitmap(u8 const* bitmap, u32 size)
+{
+    for (u32 i = 0; i < size; i += 1) {
+        u8 byte = bitmap[i];
+
+        if (byte == 0xFF) {
+            continue;
+        }
+
+        for (int j = 0; j < 8; j += 1) {
+            if (!(byte & (1 << j))) {
+                return (s32)(i * 8 + j);
+            }
+        }
+    }
+
+    return -1;
+}
 
 #endif /* FS_EXT2_H */
