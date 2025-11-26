@@ -7,20 +7,42 @@
 
 #include <ferrite/types.h>
 #include <lib/stdlib.h>
+#include <lib/string.h>
 
 extern struct super_operations ext2_sops;
 
-static s32
-ext2_block_group_descriptors_read(vfs_superblock_t* sb, u32 num_block_groups)
+s32 ext2_bgd_write(vfs_superblock_t* sb, u32 bgd_index)
 {
     block_device_t* d = get_device(sb->s_dev);
-    if (!d) {
-        printk("%s: device is NULL\n", __func__);
+    if (!d || !d->d_op || !d->d_op->write) {
+        printk("%s: invalid device\n", __func__);
         return -1;
     }
 
-    if (!d->d_op || !d->d_op->read) {
-        printk("%s: device has no read operation\n", __func__);
+    ext2_block_group_descriptor_t* bgd = &sb->u.ext2_sb.s_group_desc[bgd_index];
+    u32 bgd_per_sector
+        = d->d_sector_size / sizeof(ext2_block_group_descriptor_t);
+    u32 bgd_sector_start
+        = CEIL_DIV(1024 + sizeof(ext2_super_t), d->d_sector_size);
+    u32 sector = bgd_sector_start + (bgd_index / bgd_per_sector);
+    u32 offset
+        = sizeof(ext2_block_group_descriptor_t) * (bgd_index % bgd_per_sector);
+
+    u8 buff[d->d_sector_size];
+    if (d->d_op->read(d, sector, 1, buff, d->d_sector_size) < 0) {
+        return -1;
+    }
+
+    memcpy(&buff[offset], bgd, sizeof(ext2_block_group_descriptor_t));
+
+    return d->d_op->write(d, sector, 1, buff, d->d_sector_size);
+}
+
+static s32 ext2_bgd_read(vfs_superblock_t* sb, u32 num_block_groups)
+{
+    block_device_t* d = get_device(sb->s_dev);
+    if (!d || !d->d_op || !d->d_op->read) {
+        printk("%s: invalid device\n", __func__);
         return -1;
     }
 
@@ -136,7 +158,7 @@ ext2_superblock_read(vfs_superblock_t* sb, void* data, int silent)
 
     sb->u.ext2_sb.s_groups_count
         = CEIL_DIV(es->s_blocks_count, es->s_blocks_per_group);
-    ext2_block_group_descriptors_read(sb, sb->u.ext2_sb.s_groups_count);
+    ext2_bgd_read(sb, sb->u.ext2_sb.s_groups_count);
 
     sb->s_root_node = inode_get(sb, 2);
     sb->s_root_node->i_sb = sb;

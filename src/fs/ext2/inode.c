@@ -1,3 +1,4 @@
+#include "arch/x86/bitops.h"
 #include "drivers/block/device.h"
 #include "drivers/printk.h"
 #include "fs/ext2/ext2.h"
@@ -41,9 +42,11 @@ int mark_inode_bitmap(vfs_inode_t* node, bool allocate)
     u32 local_inode_index = (node->i_ino - 1) % es->s_inodes_per_group;
     u32 byte_index = local_inode_index / 8;
     u32 bit_index = local_inode_index % 8;
+    u32 bit_nr = (byte_index * 8) + bit_index;
 
     if (allocate) {
-        if (bitmap[byte_index] & (1 << bit_index)) {
+        int oldbit = set_bit((s32)bit_nr, (void*)bitmap);
+        if (oldbit) {
             printk(
                 "%s: Warning: inode %u already allocated\n", __func__,
                 node->i_ino
@@ -51,18 +54,17 @@ int mark_inode_bitmap(vfs_inode_t* node, bool allocate)
             return -1;
         }
 
-        bitmap[byte_index] |= (1 << bit_index);
         bgd->bg_free_inodes_count--;
         es->s_free_inodes_count--;
     } else {
-        if (!(bitmap[byte_index] & (1 << bit_index))) {
+        int oldbit = clear_bit((s32)bit_nr, (void*)bitmap);
+        if (!oldbit) {
             printk(
                 "%s: Warning: inode %u already freed\n", __func__, node->i_ino
             );
             return -1;
         }
 
-        bitmap[byte_index] &= ~(1 << bit_index);
         bgd->bg_free_inodes_count++;
         es->s_free_inodes_count++;
     }
@@ -81,11 +83,11 @@ int mark_inode_bitmap(vfs_inode_t* node, bool allocate)
         return -1;
     }
 
-    // if (ext2_block_group_descriptors_write(m, bgd_index) < 0) {
-    //     return -1;
-    // }
+    if (ext2_bgd_write(sb, bgd_index) < 0) {
+        return -1;
+    }
 
-    if (ext2_superblock_write(sb) < 0) {
+    if (sb->s_op->write_super(sb) < 0) {
         return -1;
     }
 
@@ -123,7 +125,9 @@ int find_free_inode(vfs_inode_t* node)
     }
 
     u8 bitmap[sb->s_blocksize];
-    ext2_read_block(node, bitmap, bgd->bg_inode_bitmap); // Error check?
+    if (ext2_read_block(node, bitmap, bgd->bg_inode_bitmap) < 0) {
+        return -1;
+    }
 
     int bit = find_free_bit_in_bitmap(bitmap, sb->s_blocksize);
     if (bit < 0) {
