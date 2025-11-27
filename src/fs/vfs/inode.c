@@ -14,6 +14,20 @@ void inode_cache_init(void)
     }
 }
 
+/*
+ * NOTE: Only minimal fields are set here:
+ *   - i_sb, i_ino, i_count
+ *
+ * All other inode fields are loaded from disk by read_inode():
+ *   - i_mode, i_uid, i_gid, i_size, i_blocks
+ *   - i_atime, i_mtime, i_ctime, i_nlink
+ *   - i_block[] (block pointers)
+ *   - ext2-specific fields in u.i_ext2
+ *
+ * This is different from ext2_new_inode() which initializes
+ * all fields because it's creating a NEW inode that doesn't
+ * exist on disk yet.
+ */
 vfs_inode_t* inode_get(vfs_superblock_t* sb, unsigned long ino)
 {
     if (!sb) {
