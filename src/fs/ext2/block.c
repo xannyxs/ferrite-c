@@ -92,7 +92,7 @@ inline int mark_block_free(vfs_inode_t* node, u32 block_num)
     return mark_block_bitmap(node, block_num, false);
 }
 
-s32 ext2_read_block(vfs_inode_t* node, u8* buff, u32 block_num)
+s32 ext2_read_block(vfs_inode_t const* node, u8* buff, u32 block_num)
 {
     block_device_t* d = get_device(node->i_sb->s_dev);
 

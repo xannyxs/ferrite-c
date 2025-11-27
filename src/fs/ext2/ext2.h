@@ -151,22 +151,19 @@ s32 ext2_bgd_write(vfs_superblock_t* sb, u32 bgd_index);
 
 s32 ext2_superblock_write(vfs_superblock_t*);
 /* Block Functions */
-int mark_block_allocated(vfs_inode_t*, u32);
 
-int mark_block_free(vfs_inode_t*, u32);
+int ext2_new_block(vfs_inode_t const* node, int* err);
 
-s32 ext2_read_block(vfs_inode_t*, u8*, u32);
+s32 ext2_read_block(vfs_inode_t const*, u8*, u32);
 
 s32 ext2_write_block(vfs_inode_t*, u32, void const*, u32, u32);
 
 /* Inode Functions */
-int find_free_inode(vfs_inode_t*);
 
-int mark_inode_allocated(vfs_inode_t*);
-
-int mark_inode_free(vfs_inode_t*);
+vfs_inode_t* ext2_new_inode(vfs_inode_t const* dir, int mode, int* err);
 
 /* Directory Functions */
+
 int ext2_find_entry(
     struct vfs_inode* dir,
     char const* const name,
@@ -174,7 +171,7 @@ int ext2_find_entry(
     ext2_entry_t** result
 );
 
-s32 ext2_entry_write(vfs_inode_t*, ext2_entry_t* entry, u32 parent_ino);
+s32 ext2_write_entry(vfs_inode_t* dir, ext2_entry_t* entry);
 
 /* General Function */
 
