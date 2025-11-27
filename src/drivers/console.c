@@ -138,13 +138,15 @@ static void list_directory_contents(char const* path)
     int ret = 1;
     dirent_t dirent = { 0 };
 
-    while (ret > 0) {
-        ret = 0;
+    while (1) {
         __asm__ volatile("int $0x80"
                          : "=a"(ret)
                          : "a"(89), "b"(fd), "c"(&dirent), "d"(1)
                          : "memory");
 
+        if (ret == 0) {
+            break;
+        }
         printk("%s\n", (char*)dirent.d_name);
     }
 
