@@ -10,7 +10,7 @@
 #endif
 
 __attribute__((always_inline)) static inline int
-set_bit(int nr, SMPVOL void* addr)
+atomic_set_bit(int nr, SMPVOL void* addr)
 {
     int oldbit;
 
@@ -22,7 +22,7 @@ set_bit(int nr, SMPVOL void* addr)
 }
 
 __attribute__((always_inline)) static inline int
-clear_bit(int nr, SMPVOL void* addr)
+atomic_clear_bit(int nr, SMPVOL void* addr)
 {
     int oldbit;
 
