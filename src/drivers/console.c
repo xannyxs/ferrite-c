@@ -52,6 +52,7 @@ static void print_help(void)
     printk("  top     - Show all active processes\n");
     printk("  devices - Show all found devices\n");
     printk("  ls      - List information about the FILEs\n");
+    printk("  mkdir   - Create a new directory\n");
     printk("  help    - Show this help message\n");
 }
 
@@ -118,6 +119,19 @@ static void print_idt(void)
 
     printk("IDT Base Address: 0x%x\n", idtr.base);
     printk("IDT Limit: 0x%xx\n", idtr.limit);
+}
+
+static void make_directory(char const* path)
+{
+    int ret;
+    __asm__ volatile("int $0x80"
+                     : "=a"(ret)
+                     : "a"(39), "b"(path), "c"(755)
+                     : "memory");
+
+    if (ret < 0) {
+        printk("Something went wrong making directory\n");
+    }
 }
 
 static void list_directory_contents(char const* path)
@@ -224,6 +238,15 @@ static void execute_buffer(void)
         }
 
         list_directory_contents(tmp);
+    }
+
+    if (strncmp("mkdir", buffer, 5) == 0) {
+        char* tmp = strchr(buffer, ' ');
+        if (tmp) {
+            tmp++;
+        }
+
+        make_directory(tmp);
     }
 
     memset(buffer, 0, VGA_WIDTH);
