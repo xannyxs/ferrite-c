@@ -45,7 +45,7 @@ int mark_inode_bitmap(vfs_inode_t* node, bool allocate)
     u32 bit_nr = (byte_index * 8) + bit_index;
 
     if (allocate) {
-        int oldbit = set_bit((s32)bit_nr, (void*)bitmap);
+        int oldbit = atomic_set_bit((s32)bit_nr, (void*)bitmap);
         if (oldbit) {
             printk(
                 "%s: Warning: inode %u already allocated\n", __func__,
@@ -57,7 +57,7 @@ int mark_inode_bitmap(vfs_inode_t* node, bool allocate)
         bgd->bg_free_inodes_count--;
         es->s_free_inodes_count--;
     } else {
-        int oldbit = clear_bit((s32)bit_nr, (void*)bitmap);
+        int oldbit = atomic_clear_bit((s32)bit_nr, (void*)bitmap);
         if (!oldbit) {
             printk(
                 "%s: Warning: inode %u already freed\n", __func__, node->i_ino
@@ -193,12 +193,7 @@ s32 ext2_write_inode(vfs_inode_t* dir)
 s32 ext2_read_inode(vfs_inode_t* dir)
 {
     block_device_t* d = get_device(dir->i_sb->s_dev);
-    if (!d) {
-        printk("%s: device is NULL\n", __func__);
-        return -1;
-    }
-
-    if (!d->d_op || !d->d_op->read) {
+    if (!d || !d->d_op || !d->d_op->read) {
         printk("%s: device has no read operation\n", __func__);
         return -1;
     }
