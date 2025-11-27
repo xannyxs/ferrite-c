@@ -126,7 +126,7 @@ static void make_directory(char const* path)
     int ret;
     __asm__ volatile("int $0x80"
                      : "=a"(ret)
-                     : "a"(39), "b"(path), "c"(755)
+                     : "a"(39), "b"(path), "c"(0755)
                      : "memory");
 
     if (ret < 0) {

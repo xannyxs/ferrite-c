@@ -11,6 +11,7 @@
 #include "sys/timer/timer.h"
 #include "syscalls.h"
 
+#include <ferrite/errno.h>
 #include <ferrite/types.h>
 #include <lib/string.h>
 #include <stdbool.h>
@@ -138,12 +139,12 @@ SYSCALL_ATTR static s32 sys_mkdir(char const* pathname, int mode)
 {
     vfs_inode_t* node = inode_get(root_inode->i_sb, 2);
     if (!node) {
-        return -1;
+        return -EIO;
     }
 
     char* last_slash = strrchr(pathname, '/');
     if (!last_slash) {
-        return -1;
+        return -ENOENT;
     }
 
     size_t parent_len = last_slash - pathname;
@@ -160,14 +161,13 @@ SYSCALL_ATTR static s32 sys_mkdir(char const* pathname, int mode)
 
     vfs_inode_t* parent = vfs_lookup(node, parent_path);
     if (!parent) {
-        printk("%s: could not find parent node", __func__);
-        return -1;
+        return -ENOENT;
     }
 
     if (!parent->i_op || !parent->i_op->mkdir) {
         inode_put(node);
         inode_put(parent);
-        return -1;
+        return -ENOTDIR;
     }
 
     int result = parent->i_op->mkdir(
