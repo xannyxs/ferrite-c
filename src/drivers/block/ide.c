@@ -232,41 +232,85 @@ s32 ide_write(
     outb(0x1F6, 0xE0 | (ata->drive << 4) | ((lba >> 24) & 0x0F));
     outb(0x1F1, 0x00);
 
+    inb(0x3F6);
+    inb(0x3F6);
+    inb(0x3F6);
+    inb(0x3F6);
+
     outb(0x1F2, (u8)count);
     outb(0x1F3, (u8)lba);
     outb(0x1F4, (u8)(lba >> 8));
     outb(0x1F5, (u8)(lba >> 16));
     outb(0x1F7, 0x30);
 
+    inb(0x3F6);
+    inb(0x3F6);
+    inb(0x3F6);
+    inb(0x3F6);
+
     u16 const* buffer = (u16 const*)buf;
     for (u32 sector = 0; sector < count; sector += 1) {
-        u8 status = inb(ATA_ADDR + 7);
-        while (status & 0x80) {
-            status = inb(ATA_ADDR + 7);
-        }
+        u8 status;
+        u32 timeout;
+
+        timeout = 1000000;
+        do {
+            status = inb(0x1F7);
+            if (--timeout == 0) {
+                printk(
+                    "ide_write: Timeout waiting for BSY clear (status=0x%x)\n",
+                    status
+                );
+                return -1;
+            }
+        } while (status & 0x80);
 
         if (status & 0x01) {
-            printk("Write error\n");
+            u8 error = inb(0x1F1);
+            printk("%s: Error 0x%x\n", __func__, error);
             return -1;
         }
 
-        int timeout = 1000;
-        status = inb(0x1F7);
-        while ((status & 0x08) == 0 && timeout > 0) {
-            status = inb(ATA_ADDR + 7);
-            timeout--;
-        }
-
-        if (timeout == 0) {
-            printk("Timeout waiting for DRQ\n");
-            return -1;
-        }
+        timeout = 1000000;
+        do {
+            status = inb(0x1F7);
+            if (--timeout == 0) {
+                printk(
+                    "ide_write: Timeout waiting for DRQ (status=0x%x)\n", status
+                );
+                return -1;
+            }
+        } while (!(status & 0x08));
 
         for (int i = 0; i < 256; i += 1) {
             outw(ATA_ADDR + 0, buffer[sector * 256 + i]);
         }
     }
+
+    u32 timeout = 1000000;
+    u8 status;
+    do {
+        status = inb(0x1F7);
+        if (--timeout == 0) {
+            printk("ide_write: Timeout waiting for write completion\n");
+            return -1;
+        }
+    } while (status & 0x80);
+
     outb(0x1F7, 0xE7);
+    inb(0x3F6);
+    inb(0x3F6);
+    inb(0x3F6);
+    inb(0x3F6);
+
+    timeout = 1000000;
+    do {
+        status = inb(0x1F7);
+        if (--timeout == 0) {
+            printk("ide_write: Timeout waiting for FLUSH\n");
+            return -1;
+        }
+    } while (status & 0x80);
 
     return 0;
 }
