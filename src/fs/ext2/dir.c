@@ -6,6 +6,7 @@
 #include "fs/ext2/ext2.h"
 #include "fs/vfs.h"
 #include "lib/math.h"
+#include "memory/kmalloc.h"
 #include "sys/file/file.h"
 #include "sys/file/stat.h"
 
@@ -110,7 +111,6 @@ s32 ext2_readdir(vfs_inode_t* inode, file_t* file, dirent_t* dirent, s32 count)
 int ext2_mkdir(struct vfs_inode* dir, char const* name, int len, int mode)
 {
     int err;
-    (void)len;
 
     if (!dir || !S_ISDIR(dir->i_mode)) {
         return -1;
@@ -118,10 +118,10 @@ int ext2_mkdir(struct vfs_inode* dir, char const* name, int len, int mode)
 
     ext2_entry_t* existing = NULL;
     if (ext2_find_entry(dir, name, len, &existing) >= 0) {
+        kfree(existing);
         return -1;
     }
 
-    vfs_superblock_t* sb = dir->i_sb;
     struct vfs_inode* new = ext2_new_inode(dir, mode, &err);
     if (err < 0) {
         return err;
@@ -132,9 +132,13 @@ int ext2_mkdir(struct vfs_inode* dir, char const* name, int len, int mode)
         return err;
     }
 
+    vfs_superblock_t* sb = dir->i_sb;
+    new->i_size = sb->s_blocksize;
+    new->i_links_count = 2;
+
     ext2_inode_t* ext2_node = new->u.i_ext2;
-    ext2_node->i_size = new->i_sb->s_blocksize;
-    ext2_node->i_blocks = (1 * new->i_sb->s_blocksize) / 512;
+    ext2_node->i_size = sb->s_blocksize;
+    ext2_node->i_blocks = sb->s_blocksize / 512;
     ext2_node->i_block[0] = block_num;
     for (int i = 1; i < 15; i += 1) {
         ext2_node->i_block[i] = 0;
@@ -146,7 +150,7 @@ int ext2_mkdir(struct vfs_inode* dir, char const* name, int len, int mode)
     tmp.file_type = 0;
     memcpy(tmp.name, name, len);
 
-    tmp.rec_len = sizeof(ext2_entry_t) + tmp.name_len;
+    tmp.rec_len = ALIGN(sizeof(ext2_entry_t) + tmp.name_len, 4);
     if (ext2_write_entry(dir, &tmp) < 0) {
         inode_put(new);
         return -1;
@@ -158,27 +162,31 @@ int ext2_mkdir(struct vfs_inode* dir, char const* name, int len, int mode)
     }
 
     u8 buff[sb->s_blocksize];
+    memset(buff, 0, sb->s_blocksize);
 
     char const* current_str = ".";
     ext2_entry_t current_entry = { 0 };
     current_entry.inode = new->i_ino;
-    current_entry.name_len = strlen(current_str);
+    current_entry.name_len = 1;
     current_entry.file_type = 0;
     memcpy(current_entry.name, current_str, current_entry.name_len);
 
-    current_entry.rec_len
-        = ALIGN(sizeof(ext2_entry_t) + current_entry.name_len, 4);
-    memcpy(buff, &current_entry, current_entry.rec_len);
+    u32 rec_len = sizeof(ext2_entry_t) + current_entry.name_len;
+    current_entry.rec_len = ALIGN(rec_len, 4);
+    memcpy(buff, &current_entry, sizeof(ext2_entry_t) + current_entry.name_len);
 
     char const* parent_str = "..";
     ext2_entry_t parent_entry = { 0 };
     parent_entry.inode = dir->i_ino;
-    parent_entry.name_len = strlen(parent_str);
+    parent_entry.name_len = 2;
     parent_entry.file_type = 0;
     memcpy(parent_entry.name, parent_str, parent_entry.name_len);
 
     parent_entry.rec_len = sb->s_blocksize - current_entry.rec_len;
-    memcpy(buff + current_entry.rec_len, &parent_entry, parent_entry.rec_len);
+    memcpy(
+        buff + current_entry.rec_len, &parent_entry,
+        sizeof(ext2_entry_t) + parent_entry.name_len
+    );
 
     block_device_t* d = get_device(sb->s_dev);
     u32 const addr = ext2_node->i_block[0] * sb->s_blocksize;
@@ -188,6 +196,12 @@ int ext2_mkdir(struct vfs_inode* dir, char const* name, int len, int mode)
     if (d->d_op->write(d, sector_pos, count, buff, sb->s_blocksize) < 0) {
         return -1;
     }
+
+    printk("ext2_new_inode: Created inode %u\n", new->i_ino);
+    printk("  i_mode = 0x%x\n", new->i_mode);
+    printk("  i_size = %u\n", new->i_size);
+    printk("  i_links_count = %u\n", new->i_links_count);
+    printk("  i_uid = %u, i_gid = %u\n", new->i_uid, new->i_gid);
 
     if (sb->s_op->write_inode(new) < 0) {
         return -1;
@@ -201,6 +215,8 @@ int ext2_mkdir(struct vfs_inode* dir, char const* name, int len, int mode)
     if (sb->s_op->write_inode(dir) < 0) {
         return -1;
     }
+
+    inode_put(new);
 
     return 0;
 }

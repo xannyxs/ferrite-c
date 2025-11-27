@@ -5,6 +5,7 @@
 #include "ferrite/dirent.h"
 #include "fs/vfs.h"
 #include "sys/file/file.h"
+#include "sys/file/stat.h"
 #include "sys/process/process.h"
 #include "sys/signal/signal.h"
 #include "sys/timer/timer.h"
@@ -135,9 +136,10 @@ SYSCALL_ATTR static s32 sys_kill(pid_t pid, s32 sig)
 
 SYSCALL_ATTR static s32 sys_mkdir(char const* pathname, int mode)
 {
-    // 1. Lookup pathname except the very last since we make that.
-    // 2. parse pathname to get only the last name
-    // 3. call mkdir of the current filesystem
+    vfs_inode_t* node = inode_get(root_inode->i_sb, 2);
+    if (!node) {
+        return -1;
+    }
 
     char* last_slash = strrchr(pathname, '/');
     if (!last_slash) {
@@ -156,18 +158,24 @@ SYSCALL_ATTR static s32 sys_mkdir(char const* pathname, int mode)
     char* name = last_slash + 1;
     size_t name_len = strlen(name);
 
-    vfs_inode_t* parent = vfs_lookup(root_inode, parent_path);
+    vfs_inode_t* parent = vfs_lookup(node, parent_path);
     if (!parent) {
         printk("%s: could not find parent node", __func__);
         return -1;
     }
 
     if (!parent->i_op || !parent->i_op->mkdir) {
+        inode_put(node);
         inode_put(parent);
         return -1;
     }
 
-    return parent->i_op->mkdir(parent, name, (s32)name_len, mode);
+    int result = parent->i_op->mkdir(
+        parent, name, (s32)name_len, S_IFDIR | (mode & 0777)
+    );
+
+    inode_put(node);
+    return result;
 }
 
 SYSCALL_ATTR static uid_t sys_geteuid(void) { return geteuid(); }

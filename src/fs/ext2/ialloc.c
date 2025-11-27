@@ -1,4 +1,5 @@
 #include "arch/x86/bitops.h"
+#include "arch/x86/time/time.h"
 #include "drivers/block/device.h"
 #include "drivers/printk.h"
 #include "fs/ext2/ext2.h"
@@ -109,6 +110,20 @@ vfs_inode_t* ext2_new_inode(vfs_inode_t const* dir, int mode, int* err)
         return NULL;
     }
 
+    time_t now = getepoch();
+
+    inode->i_ino = node_num;
+    inode->i_sb = sb;
+    inode->i_mode = mode;
+    inode->i_uid = 0;
+    inode->i_gid = 0;
+    inode->i_size = 0;
+    inode->i_atime = now;
+    inode->i_mtime = now;
+    inode->i_ctime = now;
+    inode->i_links_count = 1;
+
+    ext2_inode->i_mode = mode;
     ext2_inode->i_blocks = 0;
     ext2_inode->i_flags = 0;
     ext2_inode->i_generation = 0;
@@ -123,6 +138,12 @@ vfs_inode_t* ext2_new_inode(vfs_inode_t const* dir, int mode, int* err)
     if (err) {
         *err = 0;
     }
+
+    printk("ext2_new_inode: Created inode %u\n", inode->i_ino);
+    printk("  i_mode = 0x%x\n", inode->i_mode);
+    printk("  i_size = %u\n", inode->i_size);
+    printk("  i_links_count = %u\n", inode->i_links_count);
+    printk("  i_uid = %u, i_gid = %u\n", inode->i_uid, inode->i_gid);
 
     return inode;
 }
