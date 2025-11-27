@@ -1,6 +1,6 @@
 #include "fs/vfs.h"
-#include "memory/kmalloc.h"
 
+#include <drivers/printk.h>
 #include <ferrite/limits.h>
 #include <ferrite/types.h>
 #include <lib/stdlib.h>
@@ -36,6 +36,8 @@ vfs_inode_t* inode_get(vfs_superblock_t* sb, unsigned long ino)
 
     for (int i = 0; i < MAX_INODES; i += 1) {
         if (inode_cache[i].i_sb == sb && inode_cache[i].i_ino == ino) {
+            inode_cache[i].i_count += 1;
+
             return &inode_cache[i];
         }
     }
@@ -61,8 +63,18 @@ void inode_put(vfs_inode_t* n)
         return;
     }
 
+    if (n->i_count == 0) {
+        printk("inode_put: already at count 0!");
+        return;
+    }
+
     n->i_count -= 1;
     if (n->i_count == 0) {
-        kfree(n);
+        if (n->i_sb->s_root_node == n) {
+            abort("inode_put: root reached count 0!");
+        }
+
+        n->i_sb = NULL;
+        n->i_ino = 0;
     }
 }

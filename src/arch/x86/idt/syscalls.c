@@ -4,7 +4,6 @@
 #include "drivers/printk.h"
 #include "ferrite/dirent.h"
 #include "fs/vfs.h"
-#include "memory/kmalloc.h"
 #include "sys/file/file.h"
 #include "sys/process/process.h"
 #include "sys/signal/signal.h"
@@ -56,7 +55,12 @@ SYSCALL_ATTR static s32 sys_open(char const* filename, int flags, int mode)
 {
     (void)flags;
 
-    vfs_inode_t* new = vfs_lookup(root_inode, filename);
+    vfs_inode_t* node = inode_get(root_inode->i_sb, 2);
+    if (!node) {
+        return -1;
+    }
+
+    vfs_inode_t* new = vfs_lookup(node, filename);
     if (!new) {
         return -1;
     }
@@ -154,19 +158,16 @@ SYSCALL_ATTR static s32 sys_mkdir(char const* pathname, int mode)
 
     vfs_inode_t* parent = vfs_lookup(root_inode, parent_path);
     if (!parent) {
+        printk("%s: could not find parent node", __func__);
         return -1;
     }
 
-    printk("name: %s\n", parent_path);
     if (!parent->i_op || !parent->i_op->mkdir) {
         inode_put(parent);
         return -1;
     }
 
-    int ret = parent->i_op->mkdir(parent, name, (s32)name_len, mode);
-    inode_put(parent);
-
-    return ret;
+    return parent->i_op->mkdir(parent, name, (s32)name_len, mode);
 }
 
 SYSCALL_ATTR static uid_t sys_geteuid(void) { return geteuid(); }
