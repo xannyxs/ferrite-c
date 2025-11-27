@@ -129,6 +129,11 @@ static void list_directory_contents(char const* path)
                      : "a"(5), "b"(path ? path : "/"), "c"(0), "d"(0)
                      : "memory");
 
+    if (fd < 0) {
+        printk("Could not open dir\n");
+        return;
+    }
+
     // Lookup
     int ret = 1;
     dirent_t dirent = { 0 };
@@ -141,6 +146,10 @@ static void list_directory_contents(char const* path)
                          : "memory");
 
         printk("%s\n", (char*)dirent.d_name);
+    }
+
+    if (ret < 0) {
+        printk("Something went wrong reading dir\n");
     }
 }
 

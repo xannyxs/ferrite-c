@@ -169,11 +169,21 @@ s32 ide_read(block_device_t* d, u32 lba, u32 count, void* buf, size_t len)
     outb(0x1F6, 0xE0 | (ata->drive << 4) | ((lba >> 24) & 0x0F));
     outb(0x1F1, 0x00);
 
+    inb(0x3F6);
+    inb(0x3F6);
+    inb(0x3F6);
+    inb(0x3F6);
+
     outb(0x1F2, (u8)count);
     outb(0x1F3, (u8)lba);
     outb(0x1F4, (u8)(lba >> 8));
     outb(0x1F5, (u8)(lba >> 16));
     outb(0x1F7, 0x20);
+
+    inb(0x3F6);
+    inb(0x3F6);
+    inb(0x3F6);
+    inb(0x3F6);
 
     u16* buffer = (u16*)buf;
 
