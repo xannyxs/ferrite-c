@@ -139,12 +139,6 @@ vfs_inode_t* ext2_new_inode(vfs_inode_t const* dir, int mode, int* err)
         *err = 0;
     }
 
-    printk("ext2_new_inode: Created inode %u\n", inode->i_ino);
-    printk("  i_mode = 0x%x\n", inode->i_mode);
-    printk("  i_size = %u\n", inode->i_size);
-    printk("  i_links_count = %u\n", inode->i_links_count);
-    printk("  i_uid = %u, i_gid = %u\n", inode->i_uid, inode->i_gid);
-
     return inode;
 }
 

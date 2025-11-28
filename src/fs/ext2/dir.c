@@ -197,12 +197,6 @@ int ext2_mkdir(struct vfs_inode* dir, char const* name, int len, int mode)
         return -1;
     }
 
-    printk("ext2_new_inode: Created inode %u\n", new->i_ino);
-    printk("  i_mode = 0x%x\n", new->i_mode);
-    printk("  i_size = %u\n", new->i_size);
-    printk("  i_links_count = %u\n", new->i_links_count);
-    printk("  i_uid = %u, i_gid = %u\n", new->i_uid, new->i_gid);
-
     if (sb->s_op->write_inode(new) < 0) {
         return -1;
     }
