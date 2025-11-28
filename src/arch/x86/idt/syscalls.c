@@ -4,13 +4,14 @@
 #include "drivers/printk.h"
 #include "ferrite/dirent.h"
 #include "fs/vfs.h"
-#include "memory/kmalloc.h"
 #include "sys/file/file.h"
+#include "sys/file/stat.h"
 #include "sys/process/process.h"
 #include "sys/signal/signal.h"
 #include "sys/timer/timer.h"
 #include "syscalls.h"
 
+#include <ferrite/errno.h>
 #include <ferrite/types.h>
 #include <lib/string.h>
 #include <stdbool.h>
@@ -56,7 +57,12 @@ SYSCALL_ATTR static s32 sys_open(char const* filename, int flags, int mode)
 {
     (void)flags;
 
-    vfs_inode_t* new = vfs_lookup(root_inode, filename);
+    vfs_inode_t* node = inode_get(root_inode->i_sb, 2);
+    if (!node) {
+        return -1;
+    }
+
+    vfs_inode_t* new = vfs_lookup(node, filename);
     if (!new) {
         return -1;
     }
@@ -131,13 +137,14 @@ SYSCALL_ATTR static s32 sys_kill(pid_t pid, s32 sig)
 
 SYSCALL_ATTR static s32 sys_mkdir(char const* pathname, int mode)
 {
-    // 1. Lookup pathname except the very last since we make that.
-    // 2. parse pathname to get only the last name
-    // 3. call mkdir of the current filesystem
+    vfs_inode_t* node = inode_get(root_inode->i_sb, 2);
+    if (!node) {
+        return -EIO;
+    }
 
     char* last_slash = strrchr(pathname, '/');
     if (!last_slash) {
-        return -1;
+        return -ENOENT;
     }
 
     size_t parent_len = last_slash - pathname;
@@ -152,21 +159,23 @@ SYSCALL_ATTR static s32 sys_mkdir(char const* pathname, int mode)
     char* name = last_slash + 1;
     size_t name_len = strlen(name);
 
-    vfs_inode_t* parent = vfs_lookup(root_inode, parent_path);
+    vfs_inode_t* parent = vfs_lookup(node, parent_path);
     if (!parent) {
-        return -1;
+        return -ENOENT;
     }
 
-    printk("name: %s\n", parent_path);
     if (!parent->i_op || !parent->i_op->mkdir) {
+        inode_put(node);
         inode_put(parent);
-        return -1;
+        return -ENOTDIR;
     }
 
-    int ret = parent->i_op->mkdir(parent, name, (s32)name_len, mode);
-    inode_put(parent);
+    int result = parent->i_op->mkdir(
+        parent, name, (s32)name_len, S_IFDIR | (mode & 0777)
+    );
 
-    return ret;
+    inode_put(node);
+    return result;
 }
 
 SYSCALL_ATTR static uid_t sys_geteuid(void) { return geteuid(); }

@@ -7,14 +7,16 @@
 #include "drivers/block/ide.h"
 #include "drivers/printk.h"
 #include "drivers/video/vga.h"
-#include "fs/vfs.h"
-#include "lib/stdlib.h"
-#include "lib/string.h"
+#include "ferrite/dirent.h"
 #include "memory/buddy_allocator/buddy.h"
+#include "sys/file/stat.h"
 #include "sys/process/process.h"
 #include "sys/signal/signal.h"
 #include "sys/timer/timer.h"
+
 #include <ferrite/types.h>
+#include <lib/stdlib.h>
+#include <lib/string.h>
 
 extern proc_t* current_proc;
 
@@ -51,6 +53,7 @@ static void print_help(void)
     printk("  top     - Show all active processes\n");
     printk("  devices - Show all found devices\n");
     printk("  ls      - List information about the FILEs\n");
+    printk("  mkdir   - Create a new directory\n");
     printk("  help    - Show this help message\n");
 }
 
@@ -119,7 +122,54 @@ static void print_idt(void)
     printk("IDT Limit: 0x%xx\n", idtr.limit);
 }
 
-static void list_directory_contents(char const* path) { (void)path; }
+static void make_directory(char const* path)
+{
+    int ret;
+    __asm__ volatile("int $0x80"
+                     : "=a"(ret)
+                     : "a"(39), "b"(path), "c"(0755)
+                     : "memory");
+
+    if (ret < 0) {
+        printk("Something went wrong making directory\n");
+    }
+}
+
+static void list_directory_contents(char const* path)
+{
+    // Open File
+    int fd;
+    __asm__ volatile("int $0x80"
+                     : "=a"(fd)
+                     : "a"(5), "b"(path ? path : "/"), "c"(0), "d"(0)
+                     : "memory");
+    if (fd < 0) {
+        printk("Could not open dir\n");
+        return;
+    }
+
+    int ret = 1;
+    dirent_t dirent = { 0 };
+
+    while (1) {
+        __asm__ volatile("int $0x80"
+                         : "=a"(ret)
+                         : "a"(89), "b"(fd), "c"(&dirent), "d"(1)
+                         : "memory");
+        if (ret == 0) {
+            break;
+        }
+
+        // ls -l style output with placeholders
+        printk("?????????? ?? ???????? %s\n", (char*)dirent.d_name);
+    }
+
+    if (ret < 0) {
+        printk("Something went wrong reading dir\n");
+    }
+
+    // TODO: Close fd when syscall 6 is implemented
+}
 
 static void print_time(void)
 {
@@ -190,6 +240,15 @@ static void execute_buffer(void)
         }
 
         list_directory_contents(tmp);
+    }
+
+    if (strncmp("mkdir", buffer, 5) == 0) {
+        char* tmp = strchr(buffer, ' ');
+        if (tmp) {
+            tmp++;
+        }
+
+        make_directory(tmp);
     }
 
     memset(buffer, 0, VGA_WIDTH);

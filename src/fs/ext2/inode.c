@@ -25,138 +25,29 @@ struct super_operations ext2_sops = {
     // .put_super = ext_put_super,
 };
 
-int mark_inode_bitmap(vfs_inode_t* node, bool allocate)
-{
-    vfs_superblock_t* sb = node->i_sb;
-    ext2_super_t* es = sb->u.ext2_sb.s_es;
-
-    u32 bgd_index = (node->i_ino - 1) / es->s_inodes_per_group;
-    ext2_block_group_descriptor_t* bgd = &sb->u.ext2_sb.s_group_desc[bgd_index];
-
-    u8 bitmap[sb->s_blocksize];
-    if (ext2_read_block(node, bitmap, bgd->bg_inode_bitmap) < 0) {
-        return -1;
-    }
-
-    u32 local_inode_index = (node->i_ino - 1) % es->s_inodes_per_group;
-    u32 byte_index = local_inode_index / 8;
-    u32 bit_index = local_inode_index % 8;
-
-    if (allocate) {
-        if (bitmap[byte_index] & (1 << bit_index)) {
-            printk(
-                "%s: Warning: inode %u already allocated\n", __func__,
-                node->i_ino
-            );
-            return -1;
-        }
-
-        bitmap[byte_index] |= (1 << bit_index);
-        bgd->bg_free_inodes_count--;
-        es->s_free_inodes_count--;
-    } else {
-        if (!(bitmap[byte_index] & (1 << bit_index))) {
-            printk(
-                "%s: Warning: inode %u already freed\n", __func__, node->i_ino
-            );
-            return -1;
-        }
-
-        bitmap[byte_index] &= ~(1 << bit_index);
-        bgd->bg_free_inodes_count++;
-        es->s_free_inodes_count++;
-    }
-
-    block_device_t* d = get_device(sb->s_dev);
-    if (!d) {
-        return -1;
-    }
-
-    u32 sectors_per_block = sb->s_blocksize / d->d_sector_size;
-    u32 sector_num = bgd->bg_inode_bitmap * sectors_per_block;
-    if (d->d_op->write(
-            d, sector_num, sectors_per_block, bitmap, sb->s_blocksize
-        )
-        < 0) {
-        return -1;
-    }
-
-    // if (ext2_block_group_descriptors_write(m, bgd_index) < 0) {
-    //     return -1;
-    // }
-
-    if (ext2_superblock_write(sb) < 0) {
-        return -1;
-    }
-
-    return 0;
-}
-
-inline int mark_inode_allocated(vfs_inode_t* node)
-{
-    return mark_inode_bitmap(node, true);
-}
-
-inline int mark_inode_free(vfs_inode_t* node)
-{
-    return mark_inode_bitmap(node, false);
-}
-
-int find_free_inode(vfs_inode_t* node)
-{
-    vfs_superblock_t* sb = node->i_sb;
-    ext2_super_t* es = sb->u.ext2_sb.s_es;
-    ext2_block_group_descriptor_t* bgd = NULL;
-
-    u32 i;
-    u32 bgd_count = CEIL_DIV(es->s_inodes_count, es->s_inodes_per_group);
-    for (i = 0; i < bgd_count; i += 1) {
-        if (sb->u.ext2_sb.s_group_desc[i].bg_free_inodes_count != 0) {
-            bgd = &sb->u.ext2_sb.s_group_desc[i];
-            break;
-        }
-    }
-
-    if (!bgd) {
-        printk("%s: No free inode\n", __func__);
-        return -1;
-    }
-
-    u8 bitmap[sb->s_blocksize];
-    ext2_read_block(node, bitmap, bgd->bg_inode_bitmap); // Error check?
-
-    int bit = find_free_bit_in_bitmap(bitmap, sb->s_blocksize);
-    if (bit < 0) {
-        return -1;
-    }
-
-    return (s32)(bit + (es->s_inodes_per_group * i) + 1);
-}
-
 s32 ext2_write_inode(vfs_inode_t* dir)
 {
-    block_device_t* d = get_device(dir->i_sb->s_dev);
-    if (!d) {
-        printk("%s: device is NULL\n", __func__);
-        return -1;
-    }
-
-    if (!d->d_op || !d->d_op->write) {
-        printk("%s: device has no write operation\n", __func__);
+    if (!dir || !dir->i_sb) {
+        printk("ext2_write_inode: invalid inode\n");
         return -1;
     }
 
     vfs_superblock_t* sb = dir->i_sb;
-    struct ext2_superblock* es = sb->u.ext2_sb.s_es;
-    ext2_inode_t* node = dir->u.i_ext2;
+    block_device_t* d = get_device(dir->i_sb->s_dev);
+    if (!d || !d->d_op || !d->d_op->write) {
+        printk("%s: device has no write operation\n", __func__);
+        return -1;
+    }
+
+    ext2_super_t* es = sb->u.ext2_sb.s_es;
+    ext2_inode_t* ext2_inode = dir->u.i_ext2;
 
     u32 block_group = (dir->i_ino - 1) / es->s_inodes_per_group;
-    struct ext2_block_group_descriptor* bgd
+    u32 local_index = (dir->i_ino - 1) % es->s_inodes_per_group;
+    ext2_block_group_descriptor_t* bgd
         = &sb->u.ext2_sb.s_group_desc[block_group];
 
-    u32 local_inode_index = (dir->i_ino - 1) % es->s_inodes_per_group;
-    u32 inode_table_offset = local_inode_index * es->s_inode_size;
-
+    u32 inode_table_offset = local_index * es->s_inode_size;
     u32 inode_table_start_byte = bgd->bg_inode_table * sb->s_blocksize;
     u32 absolute_addr = inode_table_start_byte + inode_table_offset;
 
@@ -168,16 +59,19 @@ s32 ext2_write_inode(vfs_inode_t* dir)
         return -1;
     }
 
-    node->i_mode = dir->i_mode;
-    node->i_size = dir->i_size;
-    node->i_uid = dir->i_uid;
-    node->i_gid = dir->i_gid;
-    node->i_atime = dir->i_atime;
-    node->i_mtime = dir->i_mtime;
-    node->i_ctime = dir->i_ctime;
-    node->i_links_count = dir->i_links_count;
+    ext2_inode_t* disk_inode = (ext2_inode_t*)(buff + offset_in_sector);
 
-    memcpy(&buff[offset_in_sector], node, es->s_inode_size);
+    ext2_inode->i_mode = dir->i_mode;
+    ext2_inode->i_size = dir->i_size;
+    ext2_inode->i_uid = dir->i_uid;
+    ext2_inode->i_gid = dir->i_gid;
+    ext2_inode->i_atime = dir->i_atime;
+    ext2_inode->i_mtime = dir->i_mtime;
+    ext2_inode->i_ctime = dir->i_ctime;
+    ext2_inode->i_dtime = 0;
+    ext2_inode->i_links_count = dir->i_links_count;
+
+    memcpy(disk_inode, ext2_inode, es->s_inode_size);
 
     if (d->d_op->write(d, sector_pos, 1, buff, d->d_sector_size) < 0) {
         return -1;
@@ -189,12 +83,7 @@ s32 ext2_write_inode(vfs_inode_t* dir)
 s32 ext2_read_inode(vfs_inode_t* dir)
 {
     block_device_t* d = get_device(dir->i_sb->s_dev);
-    if (!d) {
-        printk("%s: device is NULL\n", __func__);
-        return -1;
-    }
-
-    if (!d->d_op || !d->d_op->read) {
+    if (!d || !d->d_op || !d->d_op->read) {
         printk("%s: device has no read operation\n", __func__);
         return -1;
     }

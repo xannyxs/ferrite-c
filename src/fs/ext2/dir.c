@@ -1,8 +1,12 @@
+#include "arch/x86/time/time.h"
+#include "drivers/block/device.h"
 #include "drivers/printk.h"
 #include "ferrite/dirent.h"
 #include "ferrite/types.h"
 #include "fs/ext2/ext2.h"
 #include "fs/vfs.h"
+#include "lib/math.h"
+#include "memory/kmalloc.h"
 #include "sys/file/file.h"
 #include "sys/file/stat.h"
 
@@ -106,136 +110,107 @@ s32 ext2_readdir(vfs_inode_t* inode, file_t* file, dirent_t* dirent, s32 count)
 
 int ext2_mkdir(struct vfs_inode* dir, char const* name, int len, int mode)
 {
-    (void)name;
-    (void)len;
-    if (!dir) {
+    int err;
+
+    if (!dir || !S_ISDIR(dir->i_mode)) {
         return -1;
     }
 
-    if (!S_ISDIR(mode)) {
+    ext2_entry_t* existing = NULL;
+    if (ext2_find_entry(dir, name, len, &existing) >= 0) {
+        kfree(existing);
         return -1;
     }
 
-    ext2_entry_t* entry = NULL;
-    if (ext2_find_entry(dir, name, len, &entry) < 0) {
-        inode_put(dir);
+    struct vfs_inode* new = ext2_new_inode(dir, mode, &err);
+    if (err < 0) {
+        return err;
+    }
+
+    s32 block_num = ext2_new_block(dir, &err);
+    if (err < 0) {
+        return err;
+    }
+
+    vfs_superblock_t* sb = dir->i_sb;
+    new->i_size = sb->s_blocksize;
+    new->i_links_count = 2;
+
+    ext2_inode_t* ext2_node = new->u.i_ext2;
+    ext2_node->i_size = sb->s_blocksize;
+    ext2_node->i_blocks = sb->s_blocksize / 512;
+    ext2_node->i_block[0] = block_num;
+    for (int i = 1; i < 15; i += 1) {
+        ext2_node->i_block[i] = 0;
+    }
+
+    ext2_entry_t tmp = { 0 };
+    tmp.inode = new->i_ino;
+    tmp.name_len = len;
+    tmp.file_type = 0;
+    memcpy(tmp.name, name, len);
+
+    tmp.rec_len = ALIGN(sizeof(ext2_entry_t) + tmp.name_len, 4);
+    if (ext2_write_entry(dir, &tmp) < 0) {
+        inode_put(new);
         return -1;
     }
 
-    // s32 node_num = find_free_inode(m);
-    // if (node_num < 0) {
-    //     return -1;
-    // }
-    //
-    // if (mark_inode_allocated(m, node_num) < 0) {
-    //     return -1;
-    // }
-    //
-    // s32 block_num = find_free_block(m);
-    // if (block_num < 0) {
-    //     return -1;
-    // }
-    //
-    // if (mark_block_allocated(m, block_num) < 0) {
-    //     return -1;
-    // }
+    if (sb->s_op->write_inode(new) < 0) {
+        inode_put(new);
+        return -1;
+    }
 
-    // node->i_mode = mode;
-    // node->i_uid = 0;
-    //
-    // node->i_size = m->m_block_size;
-    // node->i_blocks = (1 * m->m_block_size) / 512;
-    // node->i_block[0] = block_num;
-    // for (int i = 1; i < 15; i += 1) {
-    //     node->i_block[i] = 0;
-    // }
-    //
-    // u32 now = getepoch();
-    // node->i_atime = now;
-    // node->i_ctime = now;
-    // node->i_mtime = now;
-    // node->i_dtime = 0;
-    //
-    // node->i_gid = 0;
-    // node->i_links_count = 2;
-    // node->i_flags = 0;
-    //
-    // new->i_ino = node_num;
-    // new->i_mode = mode;
-    // new->i_size = m->m_block_size;
-    // // new->i_op = &ext2_dir_operations;
-    // new->u.i_ext2 = node;
-    //
-    // ext2_entry_t entry = { 0 };
-    // entry.inode = node_num;
-    // entry.name_len = strlen(dentry->d_name);
-    // entry.file_type = 0;
-    // memcpy(entry.name, dentry->d_name, entry.name_len);
-    //
-    // entry.rec_len = sizeof(ext2_entry_t) + entry.name_len;
-    // if (ext2_entry_write(m, &entry, parent->i_ino) < 0) {
-    //     kfree(node);
-    //     kfree(new);
-    //     return -1;
-    // }
-    //
-    // if (ext2_write_inode(m, node_num, node) < 0) {
-    //     kfree(node);
-    //     kfree(new);
-    //     return -1;
-    // }
-    //
-    // u8 buff[m->m_block_size];
-    //
-    // char const* current_str = ".";
-    // ext2_entry_t current_entry = { 0 };
-    // current_entry.inode = node_num;
-    // current_entry.name_len = strlen(current_str);
-    // current_entry.file_type = 0;
-    // memcpy(current_entry.name, current_str, current_entry.name_len);
-    //
-    // current_entry.rec_len
-    //     = ALIGN(sizeof(ext2_entry_t) + current_entry.name_len, 4);
-    // memcpy(buff, &current_entry, current_entry.rec_len);
-    //
-    // char const* parent_str = "..";
-    // ext2_entry_t parent_entry = { 0 };
-    // parent_entry.inode = parent->i_ino;
-    // parent_entry.name_len = strlen(parent_str);
-    // parent_entry.file_type = 0;
-    // memcpy(parent_entry.name, parent_str, parent_entry.name_len);
-    //
-    // parent_entry.rec_len = m->m_block_size - current_entry.rec_len;
-    // memcpy(buff + current_entry.rec_len, &parent_entry,
-    // parent_entry.rec_len);
-    //
-    // block_device_t* d = m->m_device;
-    // u32 const addr = node->i_block[0] * m->m_block_size;
-    // u32 sector_pos = addr / d->sector_size;
-    // u32 const count = m->m_block_size / d->sector_size;
-    //
-    // if (d->d_op->write(d, sector_pos, count, buff, m->m_block_size) < 0)
-    // {
-    //     return -1;
-    // }
-    //
-    // ext2_inode_t parent_inode = { 0 };
-    // if (ext2_read_inode(m, parent->i_ino, &parent_inode) < 0) {
-    //     kfree(node);
-    //     kfree(new);
-    //     return -1;
-    // }
-    //
-    // parent_inode.i_links_count += 1;
-    // parent_inode.i_ctime = now;
-    // parent_inode.i_mtime = now;
-    //
-    // if (ext2_write_inode(m, parent->i_ino, &parent_inode) < 0) {
-    //     kfree(node);
-    //     kfree(new);
-    //     return -1;
-    // }
-    //
-    // dentry->d_inode = new;
+    u8 buff[sb->s_blocksize];
+    memset(buff, 0, sb->s_blocksize);
+
+    char const* current_str = ".";
+    ext2_entry_t current_entry = { 0 };
+    current_entry.inode = new->i_ino;
+    current_entry.name_len = 1;
+    current_entry.file_type = 0;
+    memcpy(current_entry.name, current_str, current_entry.name_len);
+
+    u32 rec_len = sizeof(ext2_entry_t) + current_entry.name_len;
+    current_entry.rec_len = ALIGN(rec_len, 4);
+    memcpy(buff, &current_entry, sizeof(ext2_entry_t) + current_entry.name_len);
+
+    char const* parent_str = "..";
+    ext2_entry_t parent_entry = { 0 };
+    parent_entry.inode = dir->i_ino;
+    parent_entry.name_len = 2;
+    parent_entry.file_type = 0;
+    memcpy(parent_entry.name, parent_str, parent_entry.name_len);
+
+    parent_entry.rec_len = sb->s_blocksize - current_entry.rec_len;
+    memcpy(
+        buff + current_entry.rec_len, &parent_entry,
+        sizeof(ext2_entry_t) + parent_entry.name_len
+    );
+
+    block_device_t* d = get_device(sb->s_dev);
+    u32 const addr = ext2_node->i_block[0] * sb->s_blocksize;
+    u32 sector_pos = addr / d->d_sector_size;
+    u32 const count = sb->s_blocksize / d->d_sector_size;
+
+    if (d->d_op->write(d, sector_pos, count, buff, sb->s_blocksize) < 0) {
+        return -1;
+    }
+
+    if (sb->s_op->write_inode(new) < 0) {
+        return -1;
+    }
+
+    time_t now = getepoch();
+    dir->i_links_count += 1;
+    dir->i_ctime = now;
+    dir->i_mtime = now;
+
+    if (sb->s_op->write_inode(dir) < 0) {
+        return -1;
+    }
+
+    inode_put(new);
+
     return 0;
 }

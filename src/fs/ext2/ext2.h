@@ -1,7 +1,6 @@
 #ifndef FS_EXT2_H
 #define FS_EXT2_H
 
-#include "drivers/block/device.h"
 #include "fs/vfs.h"
 #include <ferrite/types.h>
 
@@ -148,25 +147,23 @@ typedef struct {
 /* Super Block Functions */
 vfs_superblock_t* ext2_superblock_read(vfs_superblock_t*, void*, int);
 
+s32 ext2_bgd_write(vfs_superblock_t* sb, u32 bgd_index);
+
 s32 ext2_superblock_write(vfs_superblock_t*);
-
 /* Block Functions */
-int mark_block_allocated(vfs_inode_t*, u32);
 
-int mark_block_free(vfs_inode_t*, u32);
+int ext2_new_block(vfs_inode_t const* node, int* err);
 
-s32 ext2_read_block(vfs_inode_t*, u8*, u32);
+s32 ext2_read_block(vfs_inode_t const*, u8*, u32);
 
 s32 ext2_write_block(vfs_inode_t*, u32, void const*, u32, u32);
 
 /* Inode Functions */
-int find_free_inode(vfs_inode_t*);
 
-int mark_inode_allocated(vfs_inode_t*);
-
-int mark_inode_free(vfs_inode_t*);
+vfs_inode_t* ext2_new_inode(vfs_inode_t const* dir, int mode, int* err);
 
 /* Directory Functions */
+
 int ext2_find_entry(
     struct vfs_inode* dir,
     char const* const name,
@@ -174,16 +171,33 @@ int ext2_find_entry(
     ext2_entry_t** result
 );
 
-s32 ext2_entry_write(vfs_inode_t*, ext2_entry_t* entry, u32 parent_ino);
+s32 ext2_write_entry(vfs_inode_t* dir, ext2_entry_t* entry);
 
 /* General Function */
 
-int find_free_bit_in_bitmap(u8 const* bitmap, u32 size);
-
-int find_free_block(vfs_inode_t* m);
+int find_free_block(vfs_inode_t*);
 
 /* namei.c */
 int ext2_create(struct vfs_inode* parent, struct vfs_dentry* dentry, int mode);
 s32 ext2_lookup(struct vfs_inode*, char const*, int, struct vfs_inode**);
+
+inline int find_free_bit_in_bitmap(u8 const* bitmap, u32 size)
+{
+    for (u32 i = 0; i < size; i += 1) {
+        u8 byte = bitmap[i];
+
+        if (byte == 0xFF) {
+            continue;
+        }
+
+        for (int j = 0; j < 8; j += 1) {
+            if (!(byte & (1 << j))) {
+                return (s32)(i * 8 + j);
+            }
+        }
+    }
+
+    return -1;
+}
 
 #endif /* FS_EXT2_H */
