@@ -3,6 +3,7 @@
 #include "memory/kmalloc.h"
 #include "sys/file/stat.h"
 
+#include <ferrite/errno.h>
 #include <ferrite/types.h>
 #include <lib/string.h>
 
@@ -82,6 +83,10 @@
 //     return 0;
 // }
 
+/*
+ * Consumes reference to inode (always calls inode_put).
+ * On success, returns new reference in *result.
+ */
 s32 ext2_lookup(
     struct vfs_inode* inode,
     char const* name,
@@ -92,18 +97,18 @@ s32 ext2_lookup(
     *result = NULL;
 
     if (!inode) {
-        return -1;
+        return -EINVAL;
     }
 
     if (!S_ISDIR(inode->i_mode)) {
         inode_put(inode);
-        return -1;
+        return -ENOTDIR;
     }
 
     ext2_entry_t* entry = NULL;
     if (ext2_find_entry(inode, name, len, &entry) < 0) {
         inode_put(inode);
-        return -1;
+        return -ENOENT;
     }
     unsigned long ino = entry->inode;
     kfree(entry);
@@ -111,7 +116,7 @@ s32 ext2_lookup(
     *result = inode_get(inode->i_sb, ino);
     if (!*result) {
         inode_put(inode);
-        return -1;
+        return -ENOMEM;
     }
 
     inode_put(inode);
