@@ -28,6 +28,7 @@ enum syscalls_e {
     SYS_GETUID = 24,
     SYS_KILL = 37,
     SYS_MKDIR = 39,
+    SYS_RMDIR = 40,
     SYS_SIGNAL = 48,
     SYS_GETEUID = 49,
     SYS_READDIR = 89,
