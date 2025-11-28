@@ -30,7 +30,7 @@ ext2_readdir(vfs_inode_t* inode, file_t* file, dirent_t* dirent, s32 count);
 static int
 ext2_mkdir(struct vfs_inode* dir, char const* name, int len, int mode);
 
-static int ext2_rmdir(vfs_inode_t* dir, char const* path, int len);
+static int ext2_rmdir(vfs_inode_t* dir, char const* name, int len);
 
 static struct file_operations ext2_dir_operations = {
     .write = NULL,
@@ -58,6 +58,60 @@ struct inode_operations ext2_dir_inode_ops = {
     //     ext2_truncate,        /* truncate */
     //     ext2_permission       /* permission */
 };
+
+static s32 ext2_is_empty_dir(vfs_inode_t const* node)
+{
+    if (!node || !S_ISDIR(node->i_mode)) {
+        return -ENOTDIR;
+    }
+
+    vfs_superblock_t* sb = node->i_sb;
+    ext2_super_t* es = sb->u.ext2_sb.s_es;
+    u32 pos = 0;
+
+    while (pos < node->i_size) {
+        unsigned long offset = pos & (sb->s_blocksize - 1);
+        unsigned long block = (pos) >> (es->s_log_block_size + 10);
+
+        if (block >= 12) {
+            return -EIO;
+        }
+
+        u32 block_num = node->u.i_ext2->i_block[block];
+        u8 buff[sb->s_blocksize];
+
+        if (ext2_read_block(node, buff, block_num) < 0) {
+            return -EIO;
+        }
+
+        while (offset < sb->s_blocksize && pos < node->i_size) {
+            ext2_entry_t* entry = (ext2_entry_t*)&buff[offset];
+
+            if (entry->rec_len == 0 || entry->rec_len > sb->s_blocksize) {
+                return -EIO;
+            }
+
+            if (entry->inode) {
+                if (entry->name_len > 2) {
+                    return -ENOTEMPTY;
+                }
+
+                if (entry->name[0] != '.') {
+                    return -ENOTEMPTY;
+                }
+
+                if (entry->name_len == 2 && entry->name[1] != '.') {
+                    return -ENOTEMPTY;
+                }
+            }
+
+            offset += entry->rec_len;
+            pos += entry->rec_len;
+        }
+    }
+
+    return 0;
+}
 
 s32 ext2_readdir(vfs_inode_t* inode, file_t* file, dirent_t* dirent, s32 count)
 {
@@ -195,7 +249,7 @@ int ext2_mkdir(struct vfs_inode* dir, char const* name, int len, int mode)
 
     block_device_t* d = get_device(sb->s_dev);
     u32 const addr = ext2_node->i_block[0] * sb->s_blocksize;
-    u32 sector_pos = addr / d->d_sector_size;
+    u32 const sector_pos = addr / d->d_sector_size;
     u32 const count = sb->s_blocksize / d->d_sector_size;
 
     if (d->d_op->write(d, sector_pos, count, buff, sb->s_blocksize) < 0) {
@@ -226,13 +280,50 @@ int ext2_rmdir(vfs_inode_t* dir, char const* name, int len)
         return -ENOENT;
     }
 
-    printk("%s\n", name);
     ext2_entry_t* entry = NULL;
     if (ext2_find_entry(dir, name, len, &entry) < 0) {
         return -1;
     }
 
-    printk("Entry exists\n");
+    vfs_inode_t* node = inode_get(dir->i_sb, entry->inode);
+    if (!node) {
+        return -EPERM;
+    }
 
+    if (node->i_dev != dir->i_dev) {
+        return -EPERM;
+    }
+
+    if (dir == node) {
+        return -EPERM;
+    }
+
+    if (!S_ISDIR(node->i_mode)) {
+        return -ENOTDIR;
+    }
+
+    if (ext2_is_empty_dir(node) < 0) {
+        return -ENOTEMPTY;
+    }
+
+    if (node->i_count > 1) {
+        node->i_size = 0;
+    }
+
+    if (ext2_delete_entry(dir, entry) < 0) {
+        return -1;
+    }
+
+    if (ext2_free_inode(node) < 0) {
+        return -1;
+    }
+
+    if (ext2_free_block(node) < 0) {
+        return -1;
+    }
+
+    kfree(entry);
+    inode_put(dir);
+    inode_put(node);
     return 0;
 }

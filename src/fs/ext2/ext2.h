@@ -158,11 +158,13 @@ s32 ext2_read_block(vfs_inode_t const*, u8*, u32);
 
 s32 ext2_write_block(vfs_inode_t*, u32, void const*, u32, u32);
 
-/* Inode Functions */
+/* ialloc.c */
 
 vfs_inode_t* ext2_new_inode(vfs_inode_t const* dir, int mode, int* err);
 
-/* Directory Functions */
+int ext2_free_inode(vfs_inode_t* dir);
+
+/* entry.c */
 
 int ext2_find_entry(
     struct vfs_inode* dir,
@@ -172,6 +174,8 @@ int ext2_find_entry(
 );
 
 s32 ext2_write_entry(vfs_inode_t* dir, ext2_entry_t* entry);
+
+s32 ext2_delete_entry(vfs_inode_t* dir, ext2_entry_t* entry);
 
 /* General Function */
 

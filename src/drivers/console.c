@@ -140,7 +140,9 @@ static void remove_directory(char const* path)
     __asm__ volatile("int $0x80" : "=a"(ret) : "a"(40), "b"(path) : "memory");
 
     if (ret < 0) {
-        printk("Something went wrong removing directory\n");
+        printk(
+            "Something went wrong removing directory with error code %d\n", ret
+        );
     }
 }
 

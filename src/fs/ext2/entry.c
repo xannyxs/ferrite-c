@@ -8,6 +8,61 @@
 #include <ferrite/types.h>
 #include <lib/string.h>
 
+s32 ext2_delete_entry(vfs_inode_t* dir, ext2_entry_t* entry)
+{
+    block_device_t* d = get_device(dir->i_sb->s_dev);
+    if (!d || !d->d_op || !d->d_op->read) {
+        printk("%s: device has no read operation\n", __func__);
+        return -1;
+    }
+
+    ext2_inode_t* node = dir->u.i_ext2;
+    vfs_superblock_t* sb = dir->i_sb;
+
+    u32 const count = sb->s_blocksize / d->d_sector_size;
+
+    u32 blocks = (dir->i_size + sb->s_blocksize - 1) / sb->s_blocksize;
+    for (int i = 0; (u32)i < blocks && i < 12; i += 1) {
+        if (!node->i_block[i]) {
+            break;
+        }
+
+        u32 addr = node->i_block[i] * sb->s_blocksize;
+        u32 sector_pos = addr / d->d_sector_size;
+
+        u8 buff[sb->s_blocksize];
+        if (d->d_op->read(d, sector_pos, count, buff, sb->s_blocksize) < 0) {
+            return -1;
+        }
+
+        u32 offset = 0;
+        u32 prev_offset = 0;
+        while (offset < sb->s_blocksize) {
+            ext2_entry_t* e = (ext2_entry_t*)&buff[offset];
+
+            if (entry->name_len == e->name_len
+                && strncmp((char*)entry->name, (char*)e->name, e->name_len)
+                    == 0) {
+
+                ext2_entry_t* prev = (ext2_entry_t*)&buff[prev_offset];
+                prev->rec_len += e->rec_len;
+
+                if (d->d_op->write(d, sector_pos, count, buff, sb->s_blocksize)
+                    < 0) {
+                    return -1;
+                }
+
+                return 0;
+            }
+
+            prev_offset = offset;
+            offset += e->rec_len;
+        }
+    }
+
+    return -1;
+}
+
 // TODO: If all blocks are full it should grow
 s32 ext2_write_entry(vfs_inode_t* dir, ext2_entry_t* entry)
 {
