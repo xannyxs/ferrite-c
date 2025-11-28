@@ -9,7 +9,6 @@
 #include "drivers/video/vga.h"
 #include "ferrite/dirent.h"
 #include "memory/buddy_allocator/buddy.h"
-#include "sys/file/stat.h"
 #include "sys/process/process.h"
 #include "sys/signal/signal.h"
 #include "sys/timer/timer.h"
@@ -168,7 +167,7 @@ static void list_directory_contents(char const* path)
         printk("Something went wrong reading dir\n");
     }
 
-    // TODO: Close fd when syscall 6 is implemented
+    __asm__ volatile("int $0x80" : "=a"(fd) : "a"(6), "b"(fd) : "memory");
 }
 
 static void print_time(void)
