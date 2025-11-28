@@ -71,6 +71,7 @@ struct inode_operations {
 
     int (*create)(vfs_inode_t*, vfs_dentry_t*, mode_t);
     int (*mkdir)(vfs_inode_t*, char const*, int, int);
+    int (*rmdir)(vfs_inode_t*, char const*, int);
 };
 
 vfs_inode_t* inode_get(vfs_superblock_t* sb, unsigned long ino);

@@ -1,5 +1,6 @@
 #include "arch/x86/time/time.h"
 #include "drivers/block/device.h"
+#include "drivers/printk.h"
 #include "fs/ext2/ext2.h"
 #include "fs/vfs.h"
 #include "lib/math.h"
@@ -29,6 +30,8 @@ ext2_readdir(vfs_inode_t* inode, file_t* file, dirent_t* dirent, s32 count);
 static int
 ext2_mkdir(struct vfs_inode* dir, char const* name, int len, int mode);
 
+static int ext2_rmdir(vfs_inode_t* dir, char const* path, int len);
+
 static struct file_operations ext2_dir_operations = {
     .write = NULL,
     .readdir = ext2_readdir,
@@ -43,10 +46,10 @@ struct inode_operations ext2_dir_inode_ops = {
     // .create = ext2_create,
     .lookup = ext2_lookup,
     .mkdir = ext2_mkdir,
+    .rmdir = ext2_rmdir,
     //     ext2_link,            /* link */
     //     ext2_unlink,          /* unlink */
     //     ext2_symlink,         /* symlink */
-    //     ext2_rmdir,           /* rmdir */
     //     ext2_mknod,           /* mknod */
     //     ext2_rename,          /* rename */
     //     NULL,                 /* readlink */
@@ -213,6 +216,23 @@ int ext2_mkdir(struct vfs_inode* dir, char const* name, int len, int mode)
     }
 
     inode_put(new);
+
+    return 0;
+}
+
+int ext2_rmdir(vfs_inode_t* dir, char const* name, int len)
+{
+    if (!dir) {
+        return -ENOENT;
+    }
+
+    printk("%s\n", name);
+    ext2_entry_t* entry = NULL;
+    if (ext2_find_entry(dir, name, len, &entry) < 0) {
+        return -1;
+    }
+
+    printk("Entry exists\n");
 
     return 0;
 }
