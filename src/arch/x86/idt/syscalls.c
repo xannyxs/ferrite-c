@@ -92,6 +92,23 @@ SYSCALL_ATTR static s32 sys_open(char const* filename, int flags, int mode)
     return fd;
 }
 
+SYSCALL_ATTR static int sys_close(int fd)
+{
+    file_t* f = fd_get(fd);
+    if (!f) {
+        return -1;
+    }
+
+    myproc()->open_files[fd] = NULL;
+
+    if (f->f_op && f->f_op->release) {
+        f->f_op->release(f->f_inode, f);
+    }
+
+    file_put(f);
+    return 0;
+}
+
 SYSCALL_ATTR static s32 sys_fork(void) { return do_fork("user process"); }
 
 SYSCALL_ATTR static pid_t sys_waitpid(pid_t pid, s32* status, s32 options)
@@ -216,23 +233,6 @@ SYSCALL_ATTR static s32 sys_setuid(uid_t uid)
 }
 
 SYSCALL_ATTR static s32 sys_nanosleep(void) { return knanosleep(1000); }
-
-SYSCALL_ATTR static s32 sys_close(s32 fd)
-{
-    file_t* f = fd_get(fd);
-    if (!f) {
-        return -1;
-    }
-
-    myproc()->open_files[fd] = NULL;
-
-    if (f->f_op && f->f_op->release) {
-        f->f_op->release(f->f_inode, f);
-    }
-
-    file_put(f);
-    return 0;
-}
 
 __attribute__((target("general-regs-only"))) void
 syscall_dispatcher_c(registers_t* reg)

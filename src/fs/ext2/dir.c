@@ -1,8 +1,5 @@
 #include "arch/x86/time/time.h"
 #include "drivers/block/device.h"
-#include "drivers/printk.h"
-#include "ferrite/dirent.h"
-#include "ferrite/types.h"
 #include "fs/ext2/ext2.h"
 #include "fs/vfs.h"
 #include "lib/math.h"
@@ -10,6 +7,9 @@
 #include "sys/file/file.h"
 #include "sys/file/stat.h"
 
+#include <ferrite/dirent.h>
+#include <ferrite/errno.h>
+#include <ferrite/types.h>
 #include <lib/string.h>
 
 static s32
@@ -20,8 +20,7 @@ ext2_dir_read(vfs_inode_t* inode, struct file* file, void* buff, int count)
     (void)buff;
     (void)count;
 
-    // return -EISDIR;
-    return -1;
+    return -EISDIR;
 }
 
 static s32
@@ -34,6 +33,9 @@ static struct file_operations ext2_dir_operations = {
     .write = NULL,
     .readdir = ext2_readdir,
     .read = ext2_dir_read,
+    .release = NULL,
+    .open = NULL,
+    .lseek = NULL,
 };
 
 struct inode_operations ext2_dir_inode_ops = {

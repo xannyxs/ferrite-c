@@ -30,6 +30,7 @@ struct file_operations {
     int (*read)(struct vfs_inode*, struct file*, void*, int);
     int (*write)(struct vfs_inode*, struct file*, void const*, int);
 
+    int (*open)(struct vfs_inode*, struct file*);
     void (*release)(struct vfs_inode*, struct file*);
     int (*lseek)(struct vfs_inode*, struct file*, off_t, int);
 };
