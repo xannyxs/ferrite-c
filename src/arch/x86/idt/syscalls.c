@@ -160,7 +160,6 @@ SYSCALL_ATTR int sys_stat(char const* filename, struct stat* statbuf)
     tmp.st_blocks = node->u.i_ext2->i_blocks;
     memcpy(statbuf, &tmp, sizeof(tmp));
 
-    inode_put(node);
     return 0;
 }
 
@@ -277,6 +276,7 @@ SYSCALL_ATTR static s32 sys_readdir(u32 fd, dirent_t* dirent, s32 count)
     }
 
     s32 result = -1;
+
     if (f->f_op && f->f_op->readdir) {
         result = f->f_op->readdir(f->f_inode, f, dirent, count);
     }
