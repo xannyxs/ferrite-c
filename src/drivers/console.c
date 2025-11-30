@@ -134,6 +134,18 @@ static void make_directory(char const* path)
     }
 }
 
+static void remove_directory(char const* path)
+{
+    int ret;
+    __asm__ volatile("int $0x80" : "=a"(ret) : "a"(40), "b"(path) : "memory");
+
+    if (ret < 0) {
+        printk(
+            "Something went wrong removing directory with error code %d\n", ret
+        );
+    }
+}
+
 static void list_directory_contents(char const* path)
 {
     // Open File
@@ -248,6 +260,15 @@ static void execute_buffer(void)
         }
 
         make_directory(tmp);
+    }
+
+    if (strncmp("rmdir", buffer, 5) == 0) {
+        char* tmp = strchr(buffer, ' ');
+        if (tmp) {
+            tmp++;
+        }
+
+        remove_directory(tmp);
     }
 
     memset(buffer, 0, VGA_WIDTH);

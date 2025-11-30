@@ -1,5 +1,6 @@
 #include "arch/x86/time/time.h"
 #include "drivers/block/device.h"
+#include "drivers/printk.h"
 #include "fs/ext2/ext2.h"
 #include "fs/vfs.h"
 #include "lib/math.h"
@@ -29,6 +30,8 @@ ext2_readdir(vfs_inode_t* inode, file_t* file, dirent_t* dirent, s32 count);
 static int
 ext2_mkdir(struct vfs_inode* dir, char const* name, int len, int mode);
 
+static int ext2_rmdir(vfs_inode_t* dir, char const* name, int len);
+
 static struct file_operations ext2_dir_operations = {
     .write = NULL,
     .readdir = ext2_readdir,
@@ -43,10 +46,10 @@ struct inode_operations ext2_dir_inode_ops = {
     // .create = ext2_create,
     .lookup = ext2_lookup,
     .mkdir = ext2_mkdir,
+    .rmdir = ext2_rmdir,
     //     ext2_link,            /* link */
     //     ext2_unlink,          /* unlink */
     //     ext2_symlink,         /* symlink */
-    //     ext2_rmdir,           /* rmdir */
     //     ext2_mknod,           /* mknod */
     //     ext2_rename,          /* rename */
     //     NULL,                 /* readlink */
@@ -55,6 +58,60 @@ struct inode_operations ext2_dir_inode_ops = {
     //     ext2_truncate,        /* truncate */
     //     ext2_permission       /* permission */
 };
+
+static s32 ext2_is_empty_dir(vfs_inode_t const* node)
+{
+    if (!node || !S_ISDIR(node->i_mode)) {
+        return -ENOTDIR;
+    }
+
+    vfs_superblock_t* sb = node->i_sb;
+    ext2_super_t* es = sb->u.ext2_sb.s_es;
+    u32 pos = 0;
+
+    while (pos < node->i_size) {
+        unsigned long offset = pos & (sb->s_blocksize - 1);
+        unsigned long block = (pos) >> (es->s_log_block_size + 10);
+
+        if (block >= 12) {
+            return -EIO;
+        }
+
+        u32 block_num = node->u.i_ext2->i_block[block];
+        u8 buff[sb->s_blocksize];
+
+        if (ext2_read_block(node, buff, block_num) < 0) {
+            return -EIO;
+        }
+
+        while (offset < sb->s_blocksize && pos < node->i_size) {
+            ext2_entry_t* entry = (ext2_entry_t*)&buff[offset];
+
+            if (entry->rec_len == 0 || entry->rec_len > sb->s_blocksize) {
+                return -EIO;
+            }
+
+            if (entry->inode) {
+                if (entry->name_len > 2) {
+                    return -ENOTEMPTY;
+                }
+
+                if (entry->name[0] != '.') {
+                    return -ENOTEMPTY;
+                }
+
+                if (entry->name_len == 2 && entry->name[1] != '.') {
+                    return -ENOTEMPTY;
+                }
+            }
+
+            offset += entry->rec_len;
+            pos += entry->rec_len;
+        }
+    }
+
+    return 0;
+}
 
 s32 ext2_readdir(vfs_inode_t* inode, file_t* file, dirent_t* dirent, s32 count)
 {
@@ -192,7 +249,7 @@ int ext2_mkdir(struct vfs_inode* dir, char const* name, int len, int mode)
 
     block_device_t* d = get_device(sb->s_dev);
     u32 const addr = ext2_node->i_block[0] * sb->s_blocksize;
-    u32 sector_pos = addr / d->d_sector_size;
+    u32 const sector_pos = addr / d->d_sector_size;
     u32 const count = sb->s_blocksize / d->d_sector_size;
 
     if (d->d_op->write(d, sector_pos, count, buff, sb->s_blocksize) < 0) {
@@ -215,4 +272,84 @@ int ext2_mkdir(struct vfs_inode* dir, char const* name, int len, int mode)
     inode_put(new);
 
     return 0;
+}
+
+int ext2_rmdir(vfs_inode_t* dir, char const* name, int len)
+{
+    if (!dir) {
+        return -ENOENT;
+    }
+
+    int retval = 0;
+    vfs_inode_t* node = NULL;
+    ext2_entry_t* entry = NULL;
+    retval = ext2_find_entry(dir, name, len, &entry);
+    if (retval < 0) {
+        goto end_rmdir;
+    }
+
+    retval = -EPERM;
+    node = inode_get(dir->i_sb, entry->inode);
+    if (!node) {
+        goto end_rmdir;
+    }
+
+    if (node->i_dev != dir->i_dev) {
+        goto end_rmdir;
+    }
+
+    if (dir == node) {
+        goto end_rmdir;
+    }
+
+    if (!S_ISDIR(node->i_mode)) {
+        retval = -ENOTDIR;
+        goto end_rmdir;
+    }
+
+    if (ext2_is_empty_dir(node) < 0) {
+        retval = -ENOTEMPTY;
+        goto end_rmdir;
+    }
+
+    if (node->i_count > 1) {
+        node->i_size = 0;
+    }
+
+    retval = ext2_delete_entry(dir, entry);
+    if (retval < 0) {
+        goto end_rmdir;
+    }
+
+    retval = ext2_free_inode(node);
+    if (retval < 0) {
+        goto end_rmdir;
+    }
+
+    for (int i = 0; i < 12 && node->u.i_ext2->i_block[i]; i += 1) {
+        u32 block = node->u.i_ext2->i_block[i];
+
+        retval = ext2_free_block(node, block); // Keep going, even on error
+    }
+
+    time_t now = getepoch();
+    dir->i_links_count -= 1;
+    dir->i_mtime = dir->i_ctime = now;
+    retval = node->i_sb->s_op->write_inode(dir);
+    if (retval < 0) {
+        printk("%s: Warning: failed to update parent inode\n", __func__);
+    }
+
+    node->u.i_ext2->i_dtime = now;
+    retval = node->i_sb->s_op->write_inode(node);
+    if (retval < 0) {
+        printk("%s: Warning: failed to set deletion time\n", __func__);
+    }
+
+end_rmdir:
+    kfree(entry);
+    inode_put(dir);
+    inode_put(node);
+
+    return retval;
 }

@@ -142,8 +142,53 @@ vfs_inode_t* ext2_new_inode(vfs_inode_t const* dir, int mode, int* err)
     return inode;
 }
 
-int mark_inode_free(vfs_inode_t* node)
+int ext2_free_inode(vfs_inode_t* dir)
 {
-    (void)node;
-    return -1;
+    vfs_superblock_t* sb = dir->i_sb;
+    block_device_t* d = get_device(sb->s_dev);
+    ext2_super_t* es = sb->u.ext2_sb.s_es;
+
+    u32 bgd_index = (dir->i_ino - 1) / es->s_inodes_per_group;
+    ext2_block_group_descriptor_t* bgd = &sb->u.ext2_sb.s_group_desc[bgd_index];
+    if (!bgd) {
+        return -ENOSPC;
+    }
+
+    u8 bitmap[sb->s_blocksize];
+    if (ext2_read_block((vfs_inode_t*)dir, bitmap, bgd->bg_inode_bitmap) < 0) {
+        return -EIO;
+    }
+
+    unsigned long bit = (dir->i_ino - 1) % es->s_inodes_per_group;
+    int oldbit = atomic_clear_bit((s32)bit, (void*)bitmap);
+    if (!oldbit) {
+        printk("%s: Race condition on bit %d, retrying\n", __func__, bit);
+        return -1;
+    }
+
+    bgd->bg_free_inodes_count += 1;
+    es->s_free_inodes_count += 1;
+    if (S_ISDIR(dir->i_mode) == 1) {
+        bgd->bg_used_dirs_count -= 1;
+    }
+
+    u32 const sectors_per_block = sb->s_blocksize / d->d_sector_size;
+    u32 const sector_num = bgd->bg_inode_bitmap * sectors_per_block;
+    if (d->d_op->write(
+            d, sector_num, sectors_per_block, bitmap, sb->s_blocksize
+        )
+        < 0) {
+
+        return -EIO;
+    }
+
+    if (ext2_bgd_write(sb, bgd_index) < 0) {
+        return -EIO;
+    }
+
+    if (sb->s_op->write_super(sb) < 0) {
+        return -EIO;
+    }
+
+    return 0;
 }

@@ -195,6 +195,43 @@ SYSCALL_ATTR static s32 sys_mkdir(char const* pathname, int mode)
     return result;
 }
 
+SYSCALL_ATTR static int sys_rmdir(char const* path)
+{
+    vfs_inode_t* root = inode_get(root_inode->i_sb, 2);
+    if (!root) {
+        return -ENOTDIR;
+    }
+
+    char const* last_slash = strrchr(path, '/');
+    if (!last_slash) {
+        return -ENOENT;
+    }
+
+    size_t parent_len = last_slash - path;
+    if (parent_len == 0) {
+        parent_len = 1;
+    }
+
+    char parent_path[parent_len + 1];
+    memcpy(parent_path, path, parent_len);
+    parent_path[parent_len] = '\0';
+
+    char const* name = last_slash + 1;
+    size_t name_len = strlen(name);
+
+    vfs_inode_t* parent = vfs_lookup(root, parent_path);
+    if (!parent) {
+        return -ENOTDIR;
+    }
+
+    if (!parent || !parent->i_op || !parent->i_op->rmdir) {
+        inode_put(parent);
+        return -ENOTDIR;
+    }
+
+    return parent->i_op->rmdir(parent, name, (int)name_len);
+}
+
 SYSCALL_ATTR static uid_t sys_geteuid(void) { return geteuid(); }
 
 SYSCALL_ATTR static s32 sys_readdir(u32 fd, dirent_t* dirent, s32 count)
@@ -284,6 +321,10 @@ syscall_dispatcher_c(registers_t* reg)
 
     case SYS_MKDIR:
         reg->eax = sys_mkdir((char*)reg->ebx, (s32)reg->ecx);
+        break;
+
+    case SYS_RMDIR:
+        reg->eax = sys_rmdir((char*)reg->ebx);
         break;
 
     case SYS_SOCKETCALL:

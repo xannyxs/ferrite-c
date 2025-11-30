@@ -105,9 +105,43 @@ retry:
     return (int)block_num;
 }
 
-inline int mark_block_free(vfs_inode_t* node, u32 block_num)
+int ext2_free_block(vfs_inode_t* node, u32 block_num)
 {
-    (void)block_num;
-    (void)node;
+    vfs_superblock_t* sb = node->i_sb;
+    block_device_t* d = get_device(sb->s_dev);
+    ext2_super_t* es = sb->u.ext2_sb.s_es;
+    u32 bgd_index
+        = (block_num - es->s_first_data_block) / es->s_blocks_per_group;
+    ext2_block_group_descriptor_t* bgd = &sb->u.ext2_sb.s_group_desc[bgd_index];
+
+    u8 bitmap[sb->s_blocksize];
+    if (ext2_read_block(node, bitmap, bgd->bg_block_bitmap) < 0) {
+        return -EIO;
+    }
+
+    int bit = (block_num - es->s_first_data_block) % es->s_blocks_per_group;
+    int oldbit = atomic_clear_bit(bit, (void*)bitmap);
+    if (!oldbit) {
+        printk("%s: Warning: block %d already free\n", __func__, block_num);
+        return -EINVAL;
+    }
+
+    bgd->bg_free_blocks_count += 1;
+    es->s_free_blocks_count += 1;
+
+    u32 const count = sb->s_blocksize / d->d_sector_size;
+    u32 const sector_num = bgd->bg_block_bitmap * count;
+    if (d->d_op->write(d, sector_num, count, bitmap, sb->s_blocksize) < 0) {
+        return -EIO;
+    }
+
+    if (ext2_bgd_write(sb, bgd_index) < 0) {
+        return -EIO;
+    }
+
+    if (sb->s_op->write_super(sb) < 0) {
+        return -EIO;
+    }
+
     return 0;
 }
