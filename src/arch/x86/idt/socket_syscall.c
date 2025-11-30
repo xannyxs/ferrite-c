@@ -1,12 +1,12 @@
 #include "arch/x86/idt/syscalls.h"
 #include "drivers/printk.h"
+#include "fs/stat.h"
 #include "fs/vfs.h"
 #include "lib/string.h"
 #include "memory/kmalloc.h"
 #include "net/socket.h"
 #include "sys/file/fcntl.h"
 #include "sys/file/file.h"
-#include "sys/file/stat.h"
 #include <ferrite/types.h>
 
 // SYSCALL_ATTR static s32 sys_bind(s32 fd, void* addr, s32 addrlen)
