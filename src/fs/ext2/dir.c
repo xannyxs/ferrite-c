@@ -280,50 +280,76 @@ int ext2_rmdir(vfs_inode_t* dir, char const* name, int len)
         return -ENOENT;
     }
 
+    int retval = 0;
+    vfs_inode_t* node = NULL;
     ext2_entry_t* entry = NULL;
-    if (ext2_find_entry(dir, name, len, &entry) < 0) {
-        return -1;
+    retval = ext2_find_entry(dir, name, len, &entry);
+    if (retval < 0) {
+        goto end_rmdir;
     }
 
-    vfs_inode_t* node = inode_get(dir->i_sb, entry->inode);
+    retval = -EPERM;
+    node = inode_get(dir->i_sb, entry->inode);
     if (!node) {
-        return -EPERM;
+        goto end_rmdir;
     }
 
     if (node->i_dev != dir->i_dev) {
-        return -EPERM;
+        goto end_rmdir;
     }
 
     if (dir == node) {
-        return -EPERM;
+        goto end_rmdir;
     }
 
     if (!S_ISDIR(node->i_mode)) {
-        return -ENOTDIR;
+        retval = -ENOTDIR;
+        goto end_rmdir;
     }
 
     if (ext2_is_empty_dir(node) < 0) {
-        return -ENOTEMPTY;
+        retval = -ENOTEMPTY;
+        goto end_rmdir;
     }
 
     if (node->i_count > 1) {
         node->i_size = 0;
     }
 
-    if (ext2_delete_entry(dir, entry) < 0) {
-        return -1;
+    retval = ext2_delete_entry(dir, entry);
+    if (retval < 0) {
+        goto end_rmdir;
     }
 
-    if (ext2_free_inode(node) < 0) {
-        return -1;
+    retval = ext2_free_inode(node);
+    if (retval < 0) {
+        goto end_rmdir;
     }
 
-    if (ext2_free_block(node) < 0) {
-        return -1;
+    for (int i = 0; i < 12 && node->u.i_ext2->i_block[i]; i += 1) {
+        u32 block = node->u.i_ext2->i_block[i];
+
+        retval = ext2_free_block(node, block); // Keep going, even on error
     }
 
+    time_t now = getepoch();
+    dir->i_links_count -= 1;
+    dir->i_mtime = dir->i_ctime = now;
+    retval = node->i_sb->s_op->write_inode(dir);
+    if (retval < 0) {
+        printk("%s: Warning: failed to update parent inode\n", __func__);
+    }
+
+    node->u.i_ext2->i_dtime = now;
+    retval = node->i_sb->s_op->write_inode(node);
+    if (retval < 0) {
+        printk("%s: Warning: failed to set deletion time\n", __func__);
+    }
+
+end_rmdir:
     kfree(entry);
     inode_put(dir);
     inode_put(node);
-    return 0;
+
+    return retval;
 }

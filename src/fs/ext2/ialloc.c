@@ -162,7 +162,7 @@ int ext2_free_inode(vfs_inode_t* dir)
     unsigned long bit = (dir->i_ino - 1) % es->s_inodes_per_group;
     int oldbit = atomic_clear_bit((s32)bit, (void*)bitmap);
     if (!oldbit) {
-        printk("%s: Warning: inode %u already free\n", __func__, dir->i_ino);
+        printk("%s: Race condition on bit %d, retrying\n", __func__, bit);
         return -1;
     }
 

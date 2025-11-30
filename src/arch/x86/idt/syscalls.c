@@ -229,10 +229,7 @@ SYSCALL_ATTR static int sys_rmdir(char const* path)
         return -ENOTDIR;
     }
 
-    int result = parent->i_op->rmdir(parent, name, (int)name_len);
-
-    inode_put(parent);
-    return result;
+    return parent->i_op->rmdir(parent, name, (int)name_len);
 }
 
 SYSCALL_ATTR static uid_t sys_geteuid(void) { return geteuid(); }
