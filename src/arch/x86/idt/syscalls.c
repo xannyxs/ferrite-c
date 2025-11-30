@@ -3,9 +3,10 @@
 #include "arch/x86/time/time.h"
 #include "drivers/printk.h"
 #include "ferrite/dirent.h"
+#include "fs/ext2/ext2.h"
+#include "fs/stat.h"
 #include "fs/vfs.h"
 #include "sys/file/file.h"
-#include "sys/file/stat.h"
 #include "sys/process/process.h"
 #include "sys/signal/signal.h"
 #include "sys/timer/timer.h"
@@ -129,6 +130,39 @@ SYSCALL_ATTR static time_t sys_time(time_t* tloc)
     return current_time;
 }
 
+SYSCALL_ATTR int sys_stat(char const* filename, struct stat* statbuf)
+{
+    vfs_inode_t* root = inode_get(root_inode->i_sb, 2);
+    if (!root) {
+        return -ENOTDIR;
+    }
+
+    vfs_inode_t* node = vfs_lookup(root, filename);
+    if (!node) {
+        inode_put(root);
+        return -ENOENT;
+    }
+
+    struct stat tmp;
+
+    tmp.st_dev = node->i_dev;
+    tmp.st_ino = node->i_ino;
+    tmp.st_mode = node->i_mode;
+    tmp.st_nlink = node->i_links_count;
+    tmp.st_uid = node->i_uid;
+    tmp.st_gid = node->i_gid;
+    tmp.st_rdev = node->i_dev;
+    tmp.st_size = node->i_size;
+    tmp.st_atime = node->i_atime;
+    tmp.st_mtime = node->i_mtime;
+    tmp.st_ctime = node->i_ctime;
+    tmp.st_blksize = node->i_sb->s_blocksize;
+    tmp.st_blocks = node->u.i_ext2->i_blocks;
+    memcpy(statbuf, &tmp, sizeof(tmp));
+
+    return 0;
+}
+
 SYSCALL_ATTR static pid_t sys_getpid(void) { return myproc()->pid; }
 
 SYSCALL_ATTR static uid_t sys_getuid(void) { return getuid(); }
@@ -242,6 +276,7 @@ SYSCALL_ATTR static s32 sys_readdir(u32 fd, dirent_t* dirent, s32 count)
     }
 
     s32 result = -1;
+
     if (f->f_op && f->f_op->readdir) {
         result = f->f_op->readdir(f->f_inode, f, dirent, count);
     }
@@ -305,6 +340,10 @@ syscall_dispatcher_c(registers_t* reg)
 
     case SYS_TIME:
         reg->eax = sys_time((time_t*)reg->ebx);
+        break;
+
+    case SYS_STAT:
+        reg->eax = sys_stat((char*)reg->ebx, (struct stat*)reg->ecx);
         break;
 
     case SYS_GETPID:

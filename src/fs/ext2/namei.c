@@ -1,7 +1,7 @@
 #include "fs/ext2/ext2.h"
+#include "fs/stat.h"
 #include "fs/vfs.h"
 #include "memory/kmalloc.h"
-#include "sys/file/stat.h"
 
 #include <ferrite/errno.h>
 #include <ferrite/types.h>

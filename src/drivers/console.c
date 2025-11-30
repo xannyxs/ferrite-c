@@ -8,6 +8,7 @@
 #include "drivers/printk.h"
 #include "drivers/video/vga.h"
 #include "ferrite/dirent.h"
+#include "fs/stat.h"
 #include "memory/buddy_allocator/buddy.h"
 #include "sys/process/process.h"
 #include "sys/signal/signal.h"
@@ -171,8 +172,43 @@ static void list_directory_contents(char const* path)
             break;
         }
 
-        // ls -l style output with placeholders
-        printk("?????????? ?? ???????? %s\n", (char*)dirent.d_name);
+        char fullpath[256];
+        char const* dir = path ? path : "/";
+        strlcpy(fullpath, dir, sizeof(fullpath));
+
+        size_t len = strlen(fullpath);
+        if (len > 0 && fullpath[len - 1] != '/') {
+            fullpath[len] = '/';
+            fullpath[len + 1] = '\0';
+        }
+
+        strlcat(fullpath, (char*)dirent.d_name, sizeof(fullpath));
+
+        struct stat st;
+        int stat_ret;
+        __asm__ volatile("int $0x80"
+                         : "=a"(stat_ret)
+                         : "a"(18), "b"(fullpath), "c"(&st)
+                         : "memory");
+
+        if (stat_ret == 0) {
+            printk("%c", S_ISDIR(st.st_mode) ? 'd' : '-');
+            printk("%c", (st.st_mode & S_IRUSR) ? 'r' : '-');
+            printk("%c", (st.st_mode & S_IWUSR) ? 'w' : '-');
+            printk("%c", (st.st_mode & S_IXUSR) ? 'x' : '-');
+            printk("%c", (st.st_mode & S_IRGRP) ? 'r' : '-');
+            printk("%c", (st.st_mode & S_IWGRP) ? 'w' : '-');
+            printk("%c", (st.st_mode & S_IXGRP) ? 'x' : '-');
+            printk("%c", (st.st_mode & S_IROTH) ? 'r' : '-');
+            printk("%c", (st.st_mode & S_IWOTH) ? 'w' : '-');
+            printk("%c", (st.st_mode & S_IXOTH) ? 'x' : '-');
+            printk(
+                " %2d %8d %10u %s\n", st.st_nlink, st.st_size, st.st_mtime,
+                (char*)dirent.d_name
+            );
+        } else {
+            printk("?????????? ?? ???????? %s\n", (char*)dirent.d_name);
+        }
     }
 
     if (ret < 0) {

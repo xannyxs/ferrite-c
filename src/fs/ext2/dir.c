@@ -2,11 +2,11 @@
 #include "drivers/block/device.h"
 #include "drivers/printk.h"
 #include "fs/ext2/ext2.h"
+#include "fs/stat.h"
 #include "fs/vfs.h"
 #include "lib/math.h"
 #include "memory/kmalloc.h"
 #include "sys/file/file.h"
-#include "sys/file/stat.h"
 
 #include <ferrite/dirent.h>
 #include <ferrite/errno.h>
@@ -116,12 +116,12 @@ static s32 ext2_is_empty_dir(vfs_inode_t const* node)
 s32 ext2_readdir(vfs_inode_t* inode, file_t* file, dirent_t* dirent, s32 count)
 {
     (void)count;
-    ext2_entry_t* entry;
 
     if (!inode || !S_ISDIR(inode->i_mode)) {
         return -1;
     }
 
+    ext2_entry_t* entry;
     vfs_superblock_t* sb = inode->i_sb;
     ext2_super_t* es = sb->u.ext2_sb.s_es;
 
