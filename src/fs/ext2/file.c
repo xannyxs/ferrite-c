@@ -6,6 +6,7 @@
 #include "fs/stat.h"
 #include "fs/vfs.h"
 #include "lib/math.h"
+#include "sys/file/fcntl.h"
 
 #include <ferrite/errno.h>
 #include <ferrite/types.h>
@@ -34,6 +35,10 @@ int ext2_file_read(vfs_inode_t* node, file_t* file, void* buff, s32 count)
 {
     if (!node) {
         return -1;
+    }
+
+    if ((file->f_flags & 0x03) == O_WRONLY) {
+        return -EBADF;
     }
 
     block_device_t* d = get_device(node->i_dev);
@@ -100,6 +105,10 @@ int ext2_file_write(
 {
     if (!dir) {
         return -1;
+    }
+
+    if ((file->f_flags & 0x03) == O_RDONLY) {
+        return -EBADF;
     }
 
     if (!S_ISREG(dir->i_mode)) {

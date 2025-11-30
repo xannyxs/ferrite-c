@@ -1,6 +1,7 @@
 #include "drivers/console.h"
 #include "arch/x86/cpu.h"
 #include "arch/x86/entry.h"
+#include "arch/x86/idt/syscalls.h"
 #include "arch/x86/time/rtc.h"
 #include "arch/x86/time/time.h"
 #include "drivers/block/device.h"
@@ -10,6 +11,7 @@
 #include "ferrite/dirent.h"
 #include "fs/stat.h"
 #include "memory/buddy_allocator/buddy.h"
+#include "sys/file/fcntl.h"
 #include "sys/process/process.h"
 #include "sys/signal/signal.h"
 #include "sys/timer/timer.h"
@@ -54,7 +56,25 @@ static void print_help(void)
     printk("  devices - Show all found devices\n");
     printk("  ls      - List information about the FILEs\n");
     printk("  mkdir   - Create a new directory\n");
+    printk("  rmdir   - Remove a existing directory\n");
+    printk("  touch   - Create a new file\n");
     printk("  help    - Show this help message\n");
+}
+
+static void touch_file(char const* path)
+{
+    int fd;
+    __asm__ volatile("int $0x80"
+                     : "=a"(fd)
+                     : "a"(SYS_OPEN), "b"(path), "c"(O_CREAT), "d"(0644)
+                     : "memory");
+
+    if (fd < 0) {
+        printk("Failed to create file: %s with error code: %d\n", path, fd);
+        return;
+    }
+
+    __asm__ volatile("int $0x80" : : "a"(SYS_CLOSE), "b"(fd) : "memory");
 }
 
 static void print_devices(void)
@@ -296,6 +316,14 @@ static void execute_buffer(void)
         }
 
         make_directory(tmp);
+    }
+
+    if (strncmp("touch", buffer, 5) == 0) {
+        char* tmp = strchr(buffer, ' ');
+        if (tmp) {
+            tmp++;
+            touch_file(tmp);
+        }
     }
 
     if (strncmp("rmdir", buffer, 5) == 0) {
