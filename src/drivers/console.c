@@ -203,7 +203,8 @@ static void list_directory_contents(char const* path)
             printk("%c", (st.st_mode & S_IWOTH) ? 'w' : '-');
             printk("%c", (st.st_mode & S_IXOTH) ? 'x' : '-');
             printk(
-                " %2d %8d %s\n", st.st_nlink, st.st_size, (char*)dirent.d_name
+                " %2d %8d %10u %s\n", st.st_nlink, st.st_size, st.st_mtime,
+                (char*)dirent.d_name
             );
         } else {
             printk("?????????? ?? ???????? %s\n", (char*)dirent.d_name);
