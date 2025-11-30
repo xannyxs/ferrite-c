@@ -27,4 +27,6 @@ char* strrchr(char const* str, s32 c);
 
 char* strnstr(char const* str, char const* to_find, size_t len);
 
+size_t strlcat(char* dst, char const* src, size_t n);
+
 #endif /* STRING_H */
