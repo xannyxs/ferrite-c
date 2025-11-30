@@ -65,9 +65,6 @@ vfs_inode_t* vfs_lookup(vfs_inode_t* start, char const* path)
             goto error;
         }
 
-        if (current != start) {
-            inode_put(current);
-        }
         current = new;
     }
 
@@ -79,10 +76,6 @@ vfs_inode_t* vfs_lookup(vfs_inode_t* start, char const* path)
     return current;
 
 error:
-    if (current != start) {
-        inode_put(current);
-    }
-
     for (int i = 0; components[i]; i += 1) {
         kfree(components[i]);
     }

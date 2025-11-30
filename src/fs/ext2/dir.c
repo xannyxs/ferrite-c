@@ -116,12 +116,12 @@ static s32 ext2_is_empty_dir(vfs_inode_t const* node)
 s32 ext2_readdir(vfs_inode_t* inode, file_t* file, dirent_t* dirent, s32 count)
 {
     (void)count;
-    ext2_entry_t* entry;
 
     if (!inode || !S_ISDIR(inode->i_mode)) {
         return -1;
     }
 
+    ext2_entry_t* entry;
     vfs_superblock_t* sb = inode->i_sb;
     ext2_super_t* es = sb->u.ext2_sb.s_es;
 
