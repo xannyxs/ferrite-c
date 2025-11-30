@@ -41,9 +41,9 @@ static struct file_operations ext2_dir_operations = {
     .lseek = NULL,
 };
 
-struct inode_operations ext2_dir_inode_ops = {
+struct inode_operations ext2_dir_inode_operations = {
     .default_file_ops = &ext2_dir_operations,
-    // .create = ext2_create,
+    .create = ext2_create,
     .lookup = ext2_lookup,
     .mkdir = ext2_mkdir,
     .rmdir = ext2_rmdir,

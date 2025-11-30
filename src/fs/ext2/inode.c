@@ -9,8 +9,6 @@
 #include <lib/string.h>
 #include <stdbool.h>
 
-extern struct inode_operations ext2_dir_inode_ops;
-
 static s32 ext2_read_inode(vfs_inode_t*);
 static s32 ext2_write_inode(vfs_inode_t*);
 // static void ext2_put_inode(vfs_inode_t*);
@@ -133,9 +131,9 @@ s32 ext2_read_inode(vfs_inode_t* dir)
     dir->i_gid = node->i_gid;
 
     if (S_ISDIR(dir->i_mode)) {
-        dir->i_op = &ext2_dir_inode_ops;
+        dir->i_op = &ext2_dir_inode_operations;
     } else {
-        // dir->i_op = &ext2_file_inode_ops; // TODO
+        dir->i_op = &ext2_file_inode_operations;
         return -1;
     }
 
