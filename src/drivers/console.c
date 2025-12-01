@@ -62,6 +62,40 @@ static void print_help(void)
     printk("  help    - Show this help message\n");
 }
 
+static void cat_file(char const* path)
+{
+    int fd;
+    __asm__ volatile("int $0x80"
+                     : "=a"(fd)
+                     : "a"(SYS_OPEN), "b"(path), "c"(O_RDONLY), "d"(0)
+                     : "memory");
+
+    if (fd < 0) {
+        printk("cat: %s: No such file or directory\n", path);
+        return;
+    }
+
+    char buf[512];
+    int bytes_read;
+
+    while (1) {
+        __asm__ volatile("int $0x80"
+                         : "=a"(bytes_read)
+                         : "a"(SYS_READ), "b"(fd), "c"(buf), "d"(sizeof(buf))
+                         : "memory");
+
+        if (bytes_read <= 0) {
+            break;
+        }
+
+        for (int i = 0; i < bytes_read; i++) {
+            printk("%c", buf[i]);
+        }
+    }
+
+    __asm__ volatile("int $0x80" : : "a"(SYS_CLOSE), "b"(fd) : "memory");
+}
+
 static void touch_file(char const* path)
 {
     int fd;
@@ -342,6 +376,10 @@ static void execute_buffer(void)
     } else if (strncmp(buffer, "rm", 2) == 0 && buffer[2] == ' ') {
         if (arg) {
             remove_file(arg);
+        }
+    } else if (strncmp(buffer, "cat", 3) == 0 && buffer[3] == ' ') {
+        if (arg) {
+            cat_file(arg);
         }
     }
 
