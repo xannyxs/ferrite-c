@@ -205,7 +205,7 @@ static void list_directory_contents(char const* path)
                          : "=a"(ret)
                          : "a"(89), "b"(fd), "c"(&dirent), "d"(1)
                          : "memory");
-        if (ret == 0) {
+        if (ret <= 0) {
             break;
         }
 

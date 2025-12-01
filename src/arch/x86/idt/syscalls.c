@@ -1,6 +1,7 @@
 #include "arch/x86/idt/syscalls.h"
 #include "arch/x86/idt/idt.h"
 #include "arch/x86/time/time.h"
+#include "drivers/keyboard.h"
 #include "drivers/printk.h"
 #include "ferrite/dirent.h"
 #include "fs/ext2/ext2.h"
@@ -168,7 +169,7 @@ SYSCALL_ATTR static int sys_unlink(char const* path)
         return -1;
     }
 
-    size_t parent_len = path - last_slash;
+    size_t parent_len = last_slash - path;
     if (parent_len == 0) {
         parent_len = 1;
     }

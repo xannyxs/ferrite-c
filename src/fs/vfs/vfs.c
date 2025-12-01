@@ -22,8 +22,6 @@ vfs_inode_t* root_inode = NULL;
  */
 static void create_initial_directories(void)
 {
-    // Check if it already exists?
-
     // if (vfs_mkdir("/proc", 0) < 0) {
     //     abort("Could not create /proc");
     // }
