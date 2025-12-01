@@ -153,13 +153,13 @@ SYSCALL_ATTR static pid_t sys_waitpid(pid_t pid, s32* status, s32 options)
 
 SYSCALL_ATTR static int sys_unlink(char const* path)
 {
-    vfs_inode_t* node = inode_get(root_inode->i_sb, 2);
-    if (!node) {
+    vfs_inode_t* root = inode_get(root_inode->i_sb, 2);
+    if (!root) {
         return -ENOTDIR;
     }
 
-    if (!node->i_op || !node->i_op->unlink) {
-        inode_put(node);
+    if (!root->i_op || !root->i_op->unlink) {
+        inode_put(root);
         return -EPERM;
     }
 
@@ -175,19 +175,19 @@ SYSCALL_ATTR static int sys_unlink(char const* path)
 
     char parent_path[parent_len + 1];
     memcpy(parent_path, path, parent_len);
-    parent_path[parent_len + 1] = '\0';
+    parent_path[parent_len] = '\0';
 
     char* name = last_slash + 1;
     size_t name_len = strlen(name);
 
-    vfs_inode_t* parent = vfs_lookup(node, parent_path);
+    vfs_inode_t* parent = vfs_lookup(root, parent_path);
     if (!parent) {
         return -ENOTDIR;
     }
 
-    int error = node->i_op->unlink(parent, name, name_len);
+    int error = root->i_op->unlink(parent, name, name_len);
 
-    inode_put(node);
+    inode_put(parent);
     return error;
 }
 
