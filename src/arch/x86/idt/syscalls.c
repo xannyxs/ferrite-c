@@ -44,7 +44,7 @@ SYSCALL_ATTR static s32 sys_read(s32 fd, void* buf, int count)
 SYSCALL_ATTR static s32 sys_write(s32 fd, void* buf, int count)
 {
     file_t* f = fd_get(fd);
-    if (!f || f->f_inode) {
+    if (!f || !f->f_inode) {
         return -1;
     }
 

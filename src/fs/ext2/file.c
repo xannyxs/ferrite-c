@@ -68,7 +68,9 @@ int ext2_file_read(vfs_inode_t* node, file_t* file, void* buff, s32 count)
 
         u32 offset_in_block = offset % sb->s_blocksize;
         s32 bytes_in_this_block = (s32)sb->s_blocksize - offset_in_block;
+        s32 bytes_remaining = (s32)ext2_node->i_size - offset;
         s32 bytes_to_copy = min(bytes_in_this_block, count - bytes_copied);
+        bytes_to_copy = min(bytes_to_copy, bytes_remaining);
 
         u32 addr = ext2_node->i_block[i] * sb->s_blocksize;
         u32 sector_pos = addr / d->d_sector_size;
@@ -124,6 +126,7 @@ int ext2_file_write(
     u32 bytes_written = 0;
     u32 start_block = offset / sb->s_blocksize;
     u32 end_block = (offset + count - 1) / sb->s_blocksize;
+
     for (u32 i = start_block; i <= end_block; i += 1) {
         if (i >= 12) {
             return bytes_written > 0 ? (s32)bytes_written : -EFBIG;
@@ -137,7 +140,6 @@ int ext2_file_write(
             if (err) {
                 return err;
             }
-
             node->i_block[i] = block_num;
         } else {
             block_num = (s32)node->i_block[i];
@@ -145,7 +147,6 @@ int ext2_file_write(
 
         u32 block_offset = (i == start_block) ? (offset % sb->s_blocksize) : 0;
         u32 bytes_to_write = sb->s_blocksize - block_offset;
-
         if (bytes_written + bytes_to_write > (u32)count) {
             bytes_to_write = count - bytes_written;
         }
@@ -163,9 +164,12 @@ int ext2_file_write(
     u32 now = getepoch();
     node->i_ctime = now;
     node->i_mtime = now;
+    dir->i_ctime = now;
+    dir->i_mtime = now;
 
     if (offset + count > (s32)node->i_size) {
         node->i_size = offset + count;
+        dir->i_size = offset + count;
     }
 
     u32 allocated_blocks = 0;

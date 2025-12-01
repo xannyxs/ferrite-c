@@ -104,6 +104,7 @@ static void echo_file(char const* args)
     }
 
     int ret;
+
     __asm__ volatile("int $0x80"
                      : "=a"(ret)
                      : "a"(SYS_WRITE), "b"(fd), "c"(text), "d"(text_len)
