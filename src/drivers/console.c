@@ -1,6 +1,7 @@
 #include "drivers/console.h"
 #include "arch/x86/cpu.h"
 #include "arch/x86/entry.h"
+#include "arch/x86/idt/syscalls.h"
 #include "arch/x86/time/rtc.h"
 #include "arch/x86/time/time.h"
 #include "drivers/block/device.h"
@@ -10,6 +11,7 @@
 #include "ferrite/dirent.h"
 #include "fs/stat.h"
 #include "memory/buddy_allocator/buddy.h"
+#include "sys/file/fcntl.h"
 #include "sys/process/process.h"
 #include "sys/signal/signal.h"
 #include "sys/timer/timer.h"
@@ -54,7 +56,42 @@ static void print_help(void)
     printk("  devices - Show all found devices\n");
     printk("  ls      - List information about the FILEs\n");
     printk("  mkdir   - Create a new directory\n");
+    printk("  rmdir   - Remove a existing directory\n");
+    printk("  touch   - Create a new file\n");
+    printk("  rm      - Remove a file\n");
     printk("  help    - Show this help message\n");
+}
+
+static void touch_file(char const* path)
+{
+    int fd;
+    __asm__ volatile("int $0x80"
+                     : "=a"(fd)
+                     : "a"(SYS_OPEN), "b"(path), "c"(O_CREAT), "d"(0644)
+                     : "memory");
+
+    if (fd < 0) {
+        printk("Failed to create file: %s with error code: %d\n", path, fd);
+        return;
+    }
+
+    __asm__ volatile("int $0x80" : : "a"(SYS_CLOSE), "b"(fd) : "memory");
+}
+
+static void remove_file(char const* path)
+{
+    int ret;
+    __asm__ volatile("int $0x80"
+                     : "=a"(ret)
+                     : "a"(SYS_UNLINK), "b"(path)
+                     : "memory");
+
+    if (ret < 0) {
+        printk("Failed to unlink file: %s with error code: %d\n", path, ret);
+        return;
+    }
+
+    __asm__ volatile("int $0x80" : : "a"(SYS_CLOSE), "b"(ret) : "memory");
 }
 
 static void print_devices(void)
@@ -168,7 +205,7 @@ static void list_directory_contents(char const* path)
                          : "=a"(ret)
                          : "a"(89), "b"(fd), "c"(&dirent), "d"(1)
                          : "memory");
-        if (ret == 0) {
+        if (ret <= 0) {
             break;
         }
 
@@ -254,6 +291,12 @@ static void exec_sleep(void) { ksleep(3); }
 
 static void exec_abort(void) { abort("Test abort"); }
 
+static char* get_arg(void)
+{
+    char* arg = strchr(buffer, ' ');
+    return arg ? arg + 1 : NULL;
+}
+
 static void execute_buffer(void)
 {
     static exec_t const command_table[] = { { "reboot", reboot },
@@ -273,43 +316,38 @@ static void execute_buffer(void)
     printk("\n");
 
     for (s32 cmd = 0; command_table[cmd].cmd; cmd++) {
-        if (command_table[cmd].f
-            && strcmp(buffer, command_table[cmd].cmd) == 0) {
+        if (strcmp(buffer, command_table[cmd].cmd) == 0) {
             command_table[cmd].f();
-            break;
+            goto cleanup;
         }
     }
 
-    if (strncmp("ls", buffer, 2) == 0) {
-        char* tmp = strchr(buffer, ' ');
-        if (tmp) {
-            tmp++;
-        }
+    char* arg = get_arg();
 
-        list_directory_contents(tmp);
+    if (strncmp(buffer, "ls", 2) == 0
+        && (buffer[2] == ' ' || buffer[2] == '\0')) {
+        list_directory_contents(arg);
+    } else if (strncmp(buffer, "mkdir", 5) == 0 && buffer[5] == ' ') {
+        if (arg) {
+            make_directory(arg);
+        }
+    } else if (strncmp(buffer, "touch", 5) == 0 && buffer[5] == ' ') {
+        if (arg) {
+            touch_file(arg);
+        }
+    } else if (strncmp(buffer, "rmdir", 5) == 0 && buffer[5] == ' ') {
+        if (arg) {
+            remove_directory(arg);
+        }
+    } else if (strncmp(buffer, "rm", 2) == 0 && buffer[2] == ' ') {
+        if (arg) {
+            remove_file(arg);
+        }
     }
 
-    if (strncmp("mkdir", buffer, 5) == 0) {
-        char* tmp = strchr(buffer, ' ');
-        if (tmp) {
-            tmp++;
-        }
-
-        make_directory(tmp);
-    }
-
-    if (strncmp("rmdir", buffer, 5) == 0) {
-        char* tmp = strchr(buffer, ' ');
-        if (tmp) {
-            tmp++;
-        }
-
-        remove_directory(tmp);
-    }
-
+cleanup:
     memset(buffer, 0, VGA_WIDTH);
     i = 0;
-
     printk("%s", prompt);
 }
 

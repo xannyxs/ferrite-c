@@ -69,9 +69,11 @@ struct inode_operations {
     vfs_inode_t* (*inode_get)(u32);
     void (*inode_put)(vfs_inode_t*);
 
-    int (*create)(vfs_inode_t*, vfs_dentry_t*, mode_t);
+    int (*create)(vfs_inode_t*, char const*, int, int, vfs_inode_t**);
     int (*mkdir)(vfs_inode_t*, char const*, int, int);
     int (*rmdir)(vfs_inode_t*, char const*, int);
+
+    int (*unlink)(vfs_inode_t*, char const*, int);
 };
 
 vfs_inode_t* inode_get(vfs_superblock_t* sb, unsigned long ino);

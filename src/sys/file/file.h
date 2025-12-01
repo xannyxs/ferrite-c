@@ -39,10 +39,10 @@ int fd_alloc(void);
 
 struct file* file_get(void);
 
-int fd_install(struct vfs_inode* node, int fd);
+int fd_install(struct vfs_inode*, file_t*);
 
-void file_put(file_t* f);
+void file_put(file_t*);
 
-file_t* fd_get(s32 fd);
+file_t* fd_get(s32);
 
 #endif

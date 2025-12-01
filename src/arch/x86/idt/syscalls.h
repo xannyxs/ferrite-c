@@ -22,6 +22,7 @@ enum syscalls_e {
     SYS_OPEN = 5,
     SYS_CLOSE = 6,
     SYS_WAITPID = 7,
+    SYS_UNLINK = 10,
     SYS_TIME = 13,
     SYS_STAT = 18,
     SYS_GETPID = 20,

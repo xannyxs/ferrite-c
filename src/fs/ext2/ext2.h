@@ -185,9 +185,21 @@ s32 ext2_delete_entry(vfs_inode_t* dir, ext2_entry_t* entry);
 
 /* namei.c */
 
-int ext2_create(struct vfs_inode* parent, struct vfs_dentry* dentry, int mode);
+int ext2_create(
+    vfs_inode_t* dir,
+    char const* name,
+    int len,
+    int mode,
+    vfs_inode_t** result
+);
 
 s32 ext2_lookup(struct vfs_inode*, char const*, int, struct vfs_inode**);
+
+/* dir.c */
+extern struct inode_operations ext2_dir_inode_operations;
+
+/* file.c */
+extern struct inode_operations ext2_file_inode_operations;
 
 inline int find_free_bit_in_bitmap(u8 const* bitmap, u32 size)
 {

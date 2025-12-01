@@ -1,11 +1,14 @@
 #include "arch/x86/idt/syscalls.h"
 #include "arch/x86/idt/idt.h"
 #include "arch/x86/time/time.h"
+#include "drivers/keyboard.h"
 #include "drivers/printk.h"
 #include "ferrite/dirent.h"
 #include "fs/ext2/ext2.h"
 #include "fs/stat.h"
 #include "fs/vfs.h"
+#include "fs/vfs/mode_t.h"
+#include "sys/file/fcntl.h"
 #include "sys/file/file.h"
 #include "sys/process/process.h"
 #include "sys/signal/signal.h"
@@ -54,18 +57,45 @@ SYSCALL_ATTR static s32 sys_write(s32 fd, void* buf, int count)
 
 // TODO: Support flags:
 // https://man7.org/linux/man-pages/man2/open.2.html
-SYSCALL_ATTR static s32 sys_open(char const* filename, int flags, int mode)
+SYSCALL_ATTR static s32 sys_open(char const* path, int flags, int mode)
 {
-    (void)flags;
-
-    vfs_inode_t* node = inode_get(root_inode->i_sb, 2);
-    if (!node) {
+    vfs_inode_t* root = inode_get(root_inode->i_sb, 2);
+    if (!root) {
         return -1;
     }
 
-    vfs_inode_t* new = vfs_lookup(node, filename);
+    vfs_inode_t* new = vfs_lookup(root, path);
     if (!new) {
-        return -1;
+        if (!(flags & O_CREAT)) {
+            return -ENOENT;
+        }
+
+        char* last_slash = strrchr(path, '/');
+        if (!last_slash) {
+            return -ENOENT;
+        }
+
+        size_t parent_len = last_slash - path;
+        if (parent_len == 0) {
+            parent_len = 1;
+        }
+
+        char parent_path[parent_len + 1];
+        memcpy(parent_path, path, parent_len);
+        parent_path[parent_len] = '\0';
+
+        char* name = last_slash + 1;
+        size_t name_len = strlen(name);
+
+        vfs_inode_t* parent = vfs_lookup(root, parent_path);
+        if (!parent) {
+            return -ENOENT;
+        }
+
+        if (parent->i_op->create(parent, name, (s32)name_len, mode, &new) < 0) {
+            inode_put(parent);
+            return -1;
+        }
     }
 
     int fd = fd_alloc();
@@ -81,13 +111,16 @@ SYSCALL_ATTR static s32 sys_open(char const* filename, int flags, int mode)
         return -1;
     }
 
-    if (fd_install(new, fd) < 0) {
+    if (fd_install(new, file) < 0) {
         file_put(file);
         inode_put(new);
         return -1;
     }
 
     file->f_op = new->i_op->default_file_ops;
+    file->f_inode = new;
+    file->f_pos = 0;
+    file->f_flags = flags;
     file->f_mode = mode;
 
     return fd;
@@ -117,6 +150,46 @@ SYSCALL_ATTR static pid_t sys_waitpid(pid_t pid, s32* status, s32 options)
     (void)pid;
     (void)options;
     return do_wait(status);
+}
+
+SYSCALL_ATTR static int sys_unlink(char const* path)
+{
+    vfs_inode_t* root = inode_get(root_inode->i_sb, 2);
+    if (!root) {
+        return -ENOTDIR;
+    }
+
+    if (!root->i_op || !root->i_op->unlink) {
+        inode_put(root);
+        return -EPERM;
+    }
+
+    char* last_slash = strrchr(path, '/');
+    if (!last_slash) {
+        return -1;
+    }
+
+    size_t parent_len = last_slash - path;
+    if (parent_len == 0) {
+        parent_len = 1;
+    }
+
+    char parent_path[parent_len + 1];
+    memcpy(parent_path, path, parent_len);
+    parent_path[parent_len] = '\0';
+
+    char* name = last_slash + 1;
+    size_t name_len = strlen(name);
+
+    vfs_inode_t* parent = vfs_lookup(root, parent_path);
+    if (!parent) {
+        return -ENOTDIR;
+    }
+
+    int error = root->i_op->unlink(parent, name, name_len);
+
+    inode_put(parent);
+    return error;
 }
 
 SYSCALL_ATTR static time_t sys_time(time_t* tloc)
@@ -336,6 +409,10 @@ syscall_dispatcher_c(registers_t* reg)
 
     case SYS_WAITPID:
         reg->eax = sys_waitpid((s32)reg->ebx, (s32*)reg->ecx, (s32)reg->edx);
+        break;
+
+    case SYS_UNLINK:
+        reg->eax = sys_unlink((char*)reg->ebx);
         break;
 
     case SYS_TIME:

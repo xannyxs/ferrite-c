@@ -1,5 +1,4 @@
 #include "sys/file/file.h"
-#include "drivers/printk.h"
 #include "fs/vfs.h"
 #include "memory/kmalloc.h"
 #include "sys/process/process.h"
@@ -40,9 +39,8 @@ file_t* fd_get(s32 fd)
 }
 
 /* Install inode in fd slot (sets f_inode, f_count=1, zeros rest) */
-int fd_install(vfs_inode_t* node, int fd)
+int fd_install(vfs_inode_t* node, file_t* file)
 {
-    file_t* file = fd_get(fd);
     if (!file) {
         return -1;
     }

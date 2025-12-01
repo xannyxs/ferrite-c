@@ -7,6 +7,7 @@
 #include "lib/math.h"
 #include "memory/kmalloc.h"
 #include "sys/file/file.h"
+#include "sys/process/process.h"
 
 #include <ferrite/dirent.h>
 #include <ferrite/errno.h>
@@ -32,6 +33,8 @@ ext2_mkdir(struct vfs_inode* dir, char const* name, int len, int mode);
 
 static int ext2_rmdir(vfs_inode_t* dir, char const* name, int len);
 
+static int ext2_unlink(vfs_inode_t* dir, char const* name, int len);
+
 static struct file_operations ext2_dir_operations = {
     .write = NULL,
     .readdir = ext2_readdir,
@@ -41,14 +44,13 @@ static struct file_operations ext2_dir_operations = {
     .lseek = NULL,
 };
 
-struct inode_operations ext2_dir_inode_ops = {
+struct inode_operations ext2_dir_inode_operations = {
     .default_file_ops = &ext2_dir_operations,
-    // .create = ext2_create,
+    .create = ext2_create,
     .lookup = ext2_lookup,
     .mkdir = ext2_mkdir,
     .rmdir = ext2_rmdir,
-    //     ext2_link,            /* link */
-    //     ext2_unlink,          /* unlink */
+    .unlink = ext2_unlink,
     //     ext2_symlink,         /* symlink */
     //     ext2_mknod,           /* mknod */
     //     ext2_rename,          /* rename */
@@ -351,5 +353,80 @@ end_rmdir:
     inode_put(dir);
     inode_put(node);
 
+    return retval;
+}
+
+int ext2_unlink(vfs_inode_t* dir, char const* name, int len)
+{
+
+    if (!dir) {
+        return -ENOENT;
+    }
+
+    int retval = 0;
+    ext2_entry_t* entry = NULL;
+    vfs_inode_t* current = NULL;
+
+repeat:
+    retval = -ENOENT;
+    if (ext2_find_entry(dir, name, len, &entry) < 0) {
+        return retval;
+    }
+
+    current = inode_get(dir->i_sb, entry->inode);
+    if (!current) {
+        goto end_unlink;
+    }
+
+    retval = -EPERM;
+    if (S_ISDIR(current->i_mode)) {
+        goto end_unlink;
+    }
+
+    if (entry->inode != current->i_ino) {
+        inode_put(current);
+        current->i_count = 0;
+
+        yield();
+        goto repeat;
+    }
+
+    if (!current->i_links_count) {
+        printk(
+            "%s: Deleting nonexistent file (%u), %d", __func__, current->i_ino,
+            current->i_links_count
+        );
+
+        retval = -ENOENT;
+        goto end_unlink;
+    }
+
+    retval = ext2_delete_entry(dir, entry);
+    if (retval) {
+        goto end_unlink;
+    }
+
+    time_t now = getepoch();
+
+    current->i_links_count -= 1;
+    current->i_ctime = now;
+
+    if (current->i_links_count == 0) {
+        current->u.i_ext2->i_dtime = now;
+
+        for (int i = 0; i < 12 && current->u.i_ext2->i_block[i]; i++) {
+            ext2_free_block(current, current->u.i_ext2->i_block[i]);
+        }
+
+        ext2_free_inode(current);
+    }
+
+    dir->i_ctime = dir->i_mtime = now;
+    dir->i_sb->s_op->write_inode(dir);
+    dir->i_sb->s_op->write_inode(current);
+
+end_unlink:
+    kfree(entry);
+    inode_put(current);
     return retval;
 }
