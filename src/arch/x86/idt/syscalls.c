@@ -6,6 +6,7 @@
 #include "fs/ext2/ext2.h"
 #include "fs/stat.h"
 #include "fs/vfs.h"
+#include "fs/vfs/mode_t.h"
 #include "sys/file/fcntl.h"
 #include "sys/file/file.h"
 #include "sys/process/process.h"
@@ -148,6 +149,46 @@ SYSCALL_ATTR static pid_t sys_waitpid(pid_t pid, s32* status, s32 options)
     (void)pid;
     (void)options;
     return do_wait(status);
+}
+
+SYSCALL_ATTR static int sys_unlink(char const* path)
+{
+    vfs_inode_t* node = inode_get(root_inode->i_sb, 2);
+    if (!node) {
+        return -ENOTDIR;
+    }
+
+    if (!node->i_op || !node->i_op->unlink) {
+        inode_put(node);
+        return -EPERM;
+    }
+
+    char* last_slash = strrchr(path, '/');
+    if (!last_slash) {
+        return -1;
+    }
+
+    size_t parent_len = path - last_slash;
+    if (parent_len == 0) {
+        parent_len = 1;
+    }
+
+    char parent_path[parent_len + 1];
+    memcpy(parent_path, path, parent_len);
+    parent_path[parent_len + 1] = '\0';
+
+    char* name = last_slash + 1;
+    size_t name_len = strlen(name);
+
+    vfs_inode_t* parent = vfs_lookup(node, parent_path);
+    if (!parent) {
+        return -ENOTDIR;
+    }
+
+    int error = node->i_op->unlink(parent, name, name_len);
+
+    inode_put(node);
+    return error;
 }
 
 SYSCALL_ATTR static time_t sys_time(time_t* tloc)
@@ -367,6 +408,10 @@ syscall_dispatcher_c(registers_t* reg)
 
     case SYS_WAITPID:
         reg->eax = sys_waitpid((s32)reg->ebx, (s32*)reg->ecx, (s32)reg->edx);
+        break;
+
+    case SYS_UNLINK:
+        reg->eax = sys_unlink((char*)reg->ebx);
         break;
 
     case SYS_TIME:

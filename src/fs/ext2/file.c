@@ -29,6 +29,7 @@ struct inode_operations ext2_file_inode_operations = {
     .create = NULL,
     .lookup = NULL,
     .mkdir = NULL,
+    .unlink = NULL,
 };
 
 int ext2_file_read(vfs_inode_t* node, file_t* file, void* buff, s32 count)
