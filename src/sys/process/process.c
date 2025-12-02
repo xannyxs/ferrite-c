@@ -4,6 +4,7 @@
 #include "arch/x86/memlayout.h"
 #include "debug/debug.h"
 #include "drivers/printk.h"
+#include "fs/vfs.h"
 #include "lib/stdlib.h"
 #include "lib/string.h"
 #include "memory/consts.h"
@@ -16,6 +17,7 @@
 
 #include <stdbool.h>
 
+extern vfs_inode_t* root_inode;
 extern u32 page_directory[1024];
 
 proc_t ptables[NUM_PROC];
@@ -64,6 +66,11 @@ proc_t* __alloc_proc(void)
             }
 
             p->parent = current_proc;
+            p->root = current_proc ? current_proc->root : root_inode;
+            p->root->i_count += 1;
+
+            p->pwd = current_proc ? current_proc->pwd : root_inode;
+            p->pwd->i_count += 1;
 
             return p;
         }
@@ -147,6 +154,11 @@ void do_exit(s32 status)
     }
 
     cli();
+
+    inode_put(p->pwd);
+    p->pwd = NULL;
+    inode_put(p->root);
+    p->root = NULL;
 
     for (s32 fd = 0; fd < MAX_OPEN_FILES; fd += 1) {
         file_t* f = p->open_files[fd];
