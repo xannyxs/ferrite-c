@@ -62,6 +62,7 @@ static void print_help(void)
     printk("  cat     - Concatenate files and print\n");
     printk("  echo    - Display a line of text\n");
     printk("  cd      - Change Directory\n");
+    printk("  pwd     - Print Working Directory\n");
     printk("  help    - Show this help message\n");
 }
 
@@ -154,6 +155,18 @@ static void change_directory(char const* path)
     __asm__ volatile("int $0x80"
                      : "=a"(ret)
                      : "a"(SYS_CHDIR), "b"(path)
+                     : "memory");
+}
+
+static void print_working_directory(void)
+{
+    int ret;
+    u8 buf[512];
+    long size = 512;
+
+    __asm__ volatile("int $0x80"
+                     : "=a"(ret)
+                     : "a"(SYS_GETCWD), "b"(buf), "c"(size)
                      : "memory");
 }
 
@@ -406,6 +419,7 @@ static void execute_buffer(void)
                                             { "top", process_list },
                                             { "devices", print_devices },
                                             { "sleep", exec_sleep },
+                                            { "pwd", print_working_directory },
                                             { NULL, NULL } };
 
     printk("\n");
