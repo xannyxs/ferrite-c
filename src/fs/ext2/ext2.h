@@ -201,6 +201,9 @@ extern struct inode_operations ext2_dir_inode_operations;
 /* file.c */
 extern struct inode_operations ext2_file_inode_operations;
 
+/* truncate.c */
+extern int ext2_truncate(vfs_inode_t*, off_t);
+
 inline int find_free_bit_in_bitmap(u8 const* bitmap, u32 size)
 {
     for (u32 i = 0; i < size; i += 1) {
