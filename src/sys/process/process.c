@@ -64,9 +64,14 @@ proc_t* __alloc_proc(void)
             }
 
             // How do you determine which device to use...?
-            p->root = NULL;
-            p->pwd = NULL;
             p->parent = current_proc;
+            if (p->parent) {
+                p->root = current_proc->root;
+                p->pwd = current_proc->pwd;
+            } else {
+                p->root = NULL;
+                p->pwd = NULL;
+            }
 
             return p;
         }
