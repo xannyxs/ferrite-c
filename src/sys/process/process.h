@@ -2,7 +2,9 @@
 #define PROCESS_H
 
 #include "arch/x86/pit.h"
+#include "fs/vfs.h"
 #include "sys/file/file.h"
+
 #include <ferrite/types.h>
 
 #define MAX_OPEN_FILES 64
@@ -34,6 +36,9 @@ typedef struct process {
     void* channel;
     u32 pending_signals;
     s32 status;
+
+    vfs_inode_t* root;
+    vfs_inode_t* pwd;
 
     file_t* open_files[MAX_OPEN_FILES];
 
