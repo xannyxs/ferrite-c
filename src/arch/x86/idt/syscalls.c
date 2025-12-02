@@ -192,6 +192,32 @@ SYSCALL_ATTR static int sys_unlink(char const* path)
     return error;
 }
 
+SYSCALL_ATTR static int sys_chdir(char const* path)
+{
+    vfs_inode_t* root = inode_get(root_inode->i_sb, 2);
+    if (!root) {
+        return -EIO;
+    }
+
+    vfs_inode_t* node = vfs_lookup(root, path);
+    if (!node) {
+        inode_put(root);
+        return -ENOENT;
+    }
+
+    if (!S_ISDIR(node->i_mode)) {
+        inode_put(root);
+        return -ENOTDIR;
+    }
+
+    inode_put(myproc()->pwd);
+
+    myproc()->pwd = node;
+
+    inode_put(root);
+    return 0;
+}
+
 SYSCALL_ATTR static time_t sys_time(time_t* tloc)
 {
     time_t current_time = getepoch();
@@ -459,6 +485,24 @@ SYSCALL_ATTR static s32 sys_setuid(uid_t uid)
     return -1;
 }
 
+SYSCALL_ATTR static int sys_fchdir(s32 fd)
+{
+    file_t* file = fd_get(fd);
+    if (!file) {
+        return -EBADF;
+    }
+
+    if (!S_ISDIR(file->f_inode->i_mode)) {
+        return -ENOTDIR;
+    }
+
+    inode_put(myproc()->pwd);
+
+    myproc()->pwd = file->f_inode;
+    file->f_inode->i_count += 1;
+    return 0;
+}
+
 SYSCALL_ATTR static s32 sys_nanosleep(void) { return knanosleep(1000); }
 
 __attribute__((target("general-regs-only"))) void
@@ -495,6 +539,10 @@ syscall_dispatcher_c(registers_t* reg)
 
     case SYS_UNLINK:
         reg->eax = sys_unlink((char*)reg->ebx);
+        break;
+
+    case SYS_CHDIR:
+        reg->eax = sys_chdir((char*)reg->ebx);
         break;
 
     case SYS_TIME:
@@ -554,6 +602,10 @@ syscall_dispatcher_c(registers_t* reg)
 
     case SYS_FTRUNCATE:
         reg->eax = sys_ftruncate((s32)reg->ebx, (off_t)reg->ecx);
+        break;
+
+    case SYS_FCHDIR:
+        reg->eax = sys_fchdir((char*)reg->ebx);
         break;
 
     case SYS_NANOSLEEP:

@@ -23,6 +23,7 @@ enum syscalls_e {
     SYS_CLOSE = 6,
     SYS_WAITPID = 7,
     SYS_UNLINK = 10,
+    SYS_CHDIR = 12,
     SYS_TIME = 13,
     SYS_STAT = 18,
     SYS_LSEEK = 19,
@@ -38,8 +39,8 @@ enum syscalls_e {
     SYS_TRUNCATE = 92,
     SYS_FTRUNCATE = 93,
     SYS_SOCKETCALL = 102,
+    SYS_FCHDIR = 133,
     SYS_NANOSLEEP = 162,
-
 };
 
 void syscall_dispatcher_c(registers_t*);

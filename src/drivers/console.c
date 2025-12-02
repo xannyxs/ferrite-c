@@ -61,6 +61,7 @@ static void print_help(void)
     printk("  rm      - Remove a file\n");
     printk("  cat     - Concatenate files and print\n");
     printk("  echo    - Display a line of text\n");
+    printk("  cd      - Change Directory\n");
     printk("  help    - Show this help message\n");
 }
 
@@ -145,6 +146,15 @@ static void cat_file(char const* path)
     }
 
     __asm__ volatile("int $0x80" : : "a"(SYS_CLOSE), "b"(fd) : "memory");
+}
+
+static void change_directory(char const* path)
+{
+    int ret;
+    __asm__ volatile("int $0x80"
+                     : "=a"(ret)
+                     : "a"(SYS_CHDIR), "b"(path)
+                     : "memory");
 }
 
 static void touch_file(char const* path)
@@ -435,6 +445,10 @@ static void execute_buffer(void)
     } else if (strncmp(buffer, "echo", 4) == 0 && buffer[4] == ' ') {
         if (arg) {
             echo_file(arg);
+        }
+    } else if (strncmp(buffer, "cd", 2) == 0 && buffer[2] == ' ') {
+        if (arg) {
+            change_directory(arg);
         }
     }
 
