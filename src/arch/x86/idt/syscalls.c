@@ -44,7 +44,7 @@ SYSCALL_ATTR static s32 sys_read(s32 fd, void* buf, int count)
 SYSCALL_ATTR static s32 sys_write(s32 fd, void* buf, int count)
 {
     file_t* f = fd_get(fd);
-    if (!f || f->f_inode) {
+    if (!f || !f->f_inode) {
         return -1;
     }
 
@@ -92,7 +92,10 @@ SYSCALL_ATTR static s32 sys_open(char const* path, int flags, int mode)
             return -ENOENT;
         }
 
-        if (parent->i_op->create(parent, name, (s32)name_len, mode, &new) < 0) {
+        if (parent->i_op->create(
+                parent, name, (s32)name_len, S_IFREG | (mode & 0777), &new
+            )
+            < 0) {
             inode_put(parent);
             return -1;
         }

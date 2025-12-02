@@ -59,7 +59,92 @@ static void print_help(void)
     printk("  rmdir   - Remove a existing directory\n");
     printk("  touch   - Create a new file\n");
     printk("  rm      - Remove a file\n");
+    printk("  cat     - Concatenate files and print\n");
+    printk("  echo    - Display a line of text\n");
     printk("  help    - Show this help message\n");
+}
+
+static void echo_file(char const* args)
+{
+    char* redirect = strchr(args, '>');
+    if (!redirect) {
+        printk("%s\n", args);
+        return;
+    }
+
+    size_t text_len = redirect - args;
+    while (text_len > 0 && args[text_len - 1] == ' ') {
+        text_len--;
+    }
+
+    char text[256];
+    memcpy(text, args, text_len);
+    text[text_len] = '\0';
+
+    char* filename = redirect + 1;
+    while (*filename == ' ') {
+        filename++;
+    }
+
+    if (*filename == '\0') {
+        printk("echo: missing filename\n");
+        return;
+    }
+
+    int fd;
+    __asm__ volatile("int $0x80"
+                     : "=a"(fd)
+                     : "a"(SYS_OPEN), "b"(filename), "c"(O_CREAT | O_WRONLY),
+                       "d"(0644)
+                     : "memory");
+
+    if (fd < 0) {
+        printk("echo (%d): cannot write to %s\n", fd, filename);
+        return;
+    }
+
+    int ret;
+
+    __asm__ volatile("int $0x80"
+                     : "=a"(ret)
+                     : "a"(SYS_WRITE), "b"(fd), "c"(text), "d"(text_len)
+                     : "memory");
+
+    __asm__ volatile("int $0x80" : : "a"(SYS_CLOSE), "b"(fd) : "memory");
+}
+
+static void cat_file(char const* path)
+{
+    int fd;
+    __asm__ volatile("int $0x80"
+                     : "=a"(fd)
+                     : "a"(SYS_OPEN), "b"(path), "c"(O_RDONLY), "d"(0)
+                     : "memory");
+
+    if (fd < 0) {
+        printk("cat: %s: No such file or directory\n", path);
+        return;
+    }
+
+    char buf[512];
+    int bytes_read;
+
+    while (1) {
+        __asm__ volatile("int $0x80"
+                         : "=a"(bytes_read)
+                         : "a"(SYS_READ), "b"(fd), "c"(buf), "d"(sizeof(buf))
+                         : "memory");
+
+        if (bytes_read <= 0) {
+            break;
+        }
+
+        for (int i = 0; i < bytes_read; i++) {
+            printk("%c", buf[i]);
+        }
+    }
+
+    __asm__ volatile("int $0x80" : : "a"(SYS_CLOSE), "b"(fd) : "memory");
 }
 
 static void touch_file(char const* path)
@@ -342,6 +427,14 @@ static void execute_buffer(void)
     } else if (strncmp(buffer, "rm", 2) == 0 && buffer[2] == ' ') {
         if (arg) {
             remove_file(arg);
+        }
+    } else if (strncmp(buffer, "cat", 3) == 0 && buffer[3] == ' ') {
+        if (arg) {
+            cat_file(arg);
+        }
+    } else if (strncmp(buffer, "echo", 4) == 0 && buffer[4] == ' ') {
+        if (arg) {
+            echo_file(arg);
         }
     }
 
