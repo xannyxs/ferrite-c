@@ -56,10 +56,12 @@ typedef struct vfs_dentry {
 
 struct super_operations {
     s32 (*read_inode)(vfs_inode_t*);
+
     s32 (*write_inode)(vfs_inode_t*);
+    s32 (*write_super)(vfs_superblock_t*);
+
     void (*put_inode)(vfs_inode_t*);
     void (*put_super)(vfs_superblock_t*);
-    s32 (*write_super)(vfs_superblock_t*);
 };
 
 struct inode_operations {
@@ -74,6 +76,7 @@ struct inode_operations {
     int (*rmdir)(vfs_inode_t*, char const*, int);
 
     int (*unlink)(vfs_inode_t*, char const*, int);
+    void (*truncate)(vfs_inode_t*);
 };
 
 vfs_inode_t* inode_get(vfs_superblock_t* sb, unsigned long ino);

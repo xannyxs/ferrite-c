@@ -25,6 +25,7 @@ enum syscalls_e {
     SYS_UNLINK = 10,
     SYS_TIME = 13,
     SYS_STAT = 18,
+    SYS_LSEEK = 19,
     SYS_GETPID = 20,
     SYS_SETUID = 23,
     SYS_GETUID = 24,

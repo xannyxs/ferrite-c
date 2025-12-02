@@ -32,6 +32,7 @@ struct file_operations {
 
     int (*open)(struct vfs_inode*, struct file*);
     void (*release)(struct vfs_inode*, struct file*);
+
     int (*lseek)(struct vfs_inode*, struct file*, off_t, int);
 };
 

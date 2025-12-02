@@ -20,6 +20,7 @@ static struct file_operations ext2_file_operations = {
     .read = ext2_file_read,
     .write = ext2_file_write,
     .readdir = NULL,
+    .lseek = NULL,
 
     // .release = ext2_release_file,
 };
