@@ -76,7 +76,7 @@ struct inode_operations {
     int (*rmdir)(vfs_inode_t*, char const*, int);
 
     int (*unlink)(vfs_inode_t*, char const*, int);
-    void (*truncate)(vfs_inode_t*);
+    int (*truncate)(vfs_inode_t*, off_t);
 };
 
 vfs_inode_t* inode_get(vfs_superblock_t* sb, unsigned long ino);

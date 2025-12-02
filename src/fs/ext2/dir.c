@@ -57,7 +57,7 @@ struct inode_operations ext2_dir_inode_operations = {
     //     NULL,                 /* readlink */
     //     NULL,                 /* follow_link */
     //     NULL,                 /* bmap */
-    //     ext2_truncate,        /* truncate */
+    .truncate = ext2_truncate,
     //     ext2_permission       /* permission */
 };
 

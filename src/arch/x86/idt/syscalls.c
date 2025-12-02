@@ -389,7 +389,7 @@ SYSCALL_ATTR static s32 sys_readdir(u32 fd, dirent_t* dirent, s32 count)
 {
     file_t* f = fd_get((s32)fd);
     if (!f) {
-        return -1;
+        return -EBADF;
     }
 
     s32 result = -1;
@@ -399,6 +399,44 @@ SYSCALL_ATTR static s32 sys_readdir(u32 fd, dirent_t* dirent, s32 count)
     }
 
     return result;
+}
+
+SYSCALL_ATTR static s32 sys_truncate(char const* path, off_t len)
+{
+    vfs_inode_t* root = inode_get(root_inode->i_sb, 2);
+    if (!root) {
+        return -EIO;
+    }
+
+    vfs_inode_t* node = vfs_lookup(root, path);
+    if (!node) {
+        return -ENOENT;
+    }
+
+    if (!node->i_op->truncate) {
+        inode_put(node);
+        return -ENOSYS;
+    }
+
+    int ret = node->i_op->truncate(node, len);
+
+    inode_put(node);
+    return ret;
+}
+
+SYSCALL_ATTR static s32 sys_ftruncate(s32 fd, off_t len)
+{
+    file_t* file = fd_get(fd);
+    if (!file) {
+        return -EBADF;
+    }
+
+    if (!file->f_inode->i_op->truncate) {
+        return -ENOSYS;
+    }
+
+    int ret = file->f_inode->i_op->truncate(file->f_inode, len);
+    return ret;
 }
 
 SYSCALL_ATTR static s32 sys_setuid(uid_t uid)
@@ -475,6 +513,10 @@ syscall_dispatcher_c(registers_t* reg)
         reg->eax = sys_getpid();
         break;
 
+    case SYS_SETUID:
+        reg->eax = sys_setuid((s32)reg->ebx);
+        break;
+
     case SYS_GETUID:
         reg->eax = sys_getuid();
         break;
@@ -506,8 +548,12 @@ syscall_dispatcher_c(registers_t* reg)
         reg->eax = sys_readdir(reg->ebx, (void*)reg->ecx, (s32)reg->edx);
         break;
 
-    case SYS_SETUID:
-        reg->eax = sys_setuid((s32)reg->ebx);
+    case SYS_TRUNCATE:
+        reg->eax = sys_truncate((char*)reg->ebx, (off_t)reg->ecx);
+        break;
+
+    case SYS_FTRUNCATE:
+        reg->eax = sys_ftruncate((s32)reg->ebx, (off_t)reg->ecx);
         break;
 
     case SYS_NANOSLEEP:
