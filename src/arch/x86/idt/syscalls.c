@@ -1,13 +1,11 @@
 #include "arch/x86/idt/syscalls.h"
 #include "arch/x86/idt/idt.h"
 #include "arch/x86/time/time.h"
-#include "drivers/keyboard.h"
 #include "drivers/printk.h"
 #include "ferrite/dirent.h"
 #include "fs/ext2/ext2.h"
 #include "fs/stat.h"
 #include "fs/vfs.h"
-#include "fs/vfs/mode_t.h"
 #include "sys/file/fcntl.h"
 #include "sys/file/file.h"
 #include "sys/process/process.h"
@@ -18,7 +16,6 @@
 #include <ferrite/errno.h>
 #include <ferrite/types.h>
 #include <lib/string.h>
-#include <stdbool.h>
 
 extern vfs_inode_t* root_inode;
 
@@ -239,6 +236,50 @@ SYSCALL_ATTR int sys_stat(char const* filename, struct stat* statbuf)
     return 0;
 }
 
+// https://man7.org/linux/man-pages/man2/lseek.2.html
+SYSCALL_ATTR int sys_lseek(u32 fd, off_t offset, u32 whence)
+{
+#define SEEK_SET 0
+#define SEEK_CUR 1
+#define SEEK_END 2
+
+    file_t* file = fd_get((s32)fd);
+    if (!file) {
+        return -EBADF;
+    }
+
+    if (file->f_op && file->f_op->lseek) {
+        return file->f_op->lseek(file->f_inode, file, offset, (s32)whence);
+    }
+
+    switch (whence) {
+    case SEEK_SET:
+        if (offset < 0) {
+            return -EINVAL;
+        }
+
+        file->f_pos = offset;
+        break;
+
+    case SEEK_CUR:
+        if (file->f_pos + offset < 0) {
+            return -EINVAL;
+        }
+
+        file->f_pos += offset;
+        break;
+
+    case SEEK_END:
+        file->f_pos = file->f_inode->i_size + offset;
+        break;
+
+    default:
+        return -EINVAL;
+    }
+
+    return file->f_pos;
+}
+
 SYSCALL_ATTR static pid_t sys_getpid(void) { return myproc()->pid; }
 
 SYSCALL_ATTR static uid_t sys_getuid(void) { return getuid(); }
@@ -424,6 +465,10 @@ syscall_dispatcher_c(registers_t* reg)
 
     case SYS_STAT:
         reg->eax = sys_stat((char*)reg->ebx, (struct stat*)reg->ecx);
+        break;
+
+    case SYS_LSEEK:
+        reg->eax = sys_lseek(reg->ebx, reg->ecx, reg->edx);
         break;
 
     case SYS_GETPID:
