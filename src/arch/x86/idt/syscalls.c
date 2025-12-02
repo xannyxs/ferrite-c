@@ -605,7 +605,7 @@ syscall_dispatcher_c(registers_t* reg)
         break;
 
     case SYS_FCHDIR:
-        reg->eax = sys_fchdir((char*)reg->ebx);
+        reg->eax = sys_fchdir(reg->ebx);
         break;
 
     case SYS_NANOSLEEP:
