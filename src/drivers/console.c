@@ -168,6 +168,11 @@ static void print_working_directory(void)
                      : "=a"(ret)
                      : "a"(SYS_GETCWD), "b"(buf), "c"(size)
                      : "memory");
+    if (ret < 0) {
+        printk("Failed to show pwd: error code: %d\n", ret);
+    } else {
+        printk("%s\n", buf);
+    }
 }
 
 static void touch_file(char const* path)
