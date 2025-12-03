@@ -6,6 +6,8 @@
 #include "fs/ext2/ext2.h"
 #include "fs/stat.h"
 #include "fs/vfs.h"
+#include "memory/kmalloc.h"
+#include "net/socket.h"
 #include "sys/file/fcntl.h"
 #include "sys/file/file.h"
 #include "sys/process/process.h"
@@ -194,27 +196,34 @@ SYSCALL_ATTR static int sys_unlink(char const* path)
 
 SYSCALL_ATTR static int sys_chdir(char const* path)
 {
-    vfs_inode_t* root = inode_get(root_inode->i_sb, 2);
-    if (!root) {
+
+    vfs_inode_t* base = NULL;
+    if (path[0] == '/') {
+        base = inode_get(myproc()->root->i_sb, 2); // FIXME: EXT2 Specific
+    } else {
+        base = inode_get(myproc()->pwd->i_sb, myproc()->pwd->i_ino);
+    }
+
+    if (!base) {
         return -EIO;
     }
 
-    vfs_inode_t* node = vfs_lookup(root, path);
+    vfs_inode_t* node = vfs_lookup(base, path);
     if (!node) {
-        inode_put(root);
+        inode_put(base);
         return -ENOENT;
     }
 
     if (!S_ISDIR(node->i_mode)) {
-        inode_put(root);
+        inode_put(node);
+        inode_put(base);
         return -ENOTDIR;
     }
 
     inode_put(myproc()->pwd);
-
     myproc()->pwd = node;
+    inode_put(base);
 
-    inode_put(root);
     return 0;
 }
 
@@ -413,15 +422,15 @@ SYSCALL_ATTR static uid_t sys_geteuid(void) { return geteuid(); }
 
 SYSCALL_ATTR static s32 sys_readdir(u32 fd, dirent_t* dirent, s32 count)
 {
-    file_t* f = fd_get((s32)fd);
-    if (!f) {
+    file_t* file = fd_get((s32)fd);
+    if (!file) {
         return -EBADF;
     }
 
     s32 result = -1;
 
-    if (f->f_op && f->f_op->readdir) {
-        result = f->f_op->readdir(f->f_inode, f, dirent, count);
+    if (file->f_op && file->f_op->readdir) {
+        result = file->f_op->readdir(file->f_inode, file, dirent, count);
     }
 
     return result;
@@ -504,6 +513,81 @@ SYSCALL_ATTR static int sys_fchdir(s32 fd)
 }
 
 SYSCALL_ATTR static s32 sys_nanosleep(void) { return knanosleep(1000); }
+
+SYSCALL_ATTR static s32 sys_getcwd(char* buf, unsigned long size)
+{
+    if (!buf || size == 0) {
+        return -EINVAL;
+    }
+
+    vfs_inode_t* root = myproc()->root;
+    vfs_inode_t* pwd = myproc()->pwd;
+
+    if (pwd == root) {
+        if (size < 2) {
+            return -ERANGE;
+        }
+
+        buf[0] = '/';
+        buf[1] = '\0';
+        return 2;
+    }
+
+    u8 tmp[256];
+    int pos = 255;
+    tmp[pos] = '\0';
+
+    vfs_inode_t* current = inode_get(pwd->i_sb, pwd->i_ino);
+    if (!current) {
+        return -EIO;
+    }
+
+    while (current != root) {
+        vfs_inode_t* parent = vfs_lookup(current, "..");
+        if (!parent) {
+            inode_put(current);
+            return -EIO;
+        }
+
+        ext2_entry_t* entry = NULL;
+        int retval = ext2_find_entry_by_ino(parent, current->i_ino, &entry);
+        if (retval) {
+            inode_put(current);
+            inode_put(parent);
+
+            return retval;
+        }
+
+        if (pos < entry->name_len + 1) {
+            kfree(entry);
+            inode_put(current);
+            inode_put(parent);
+
+            return -ENAMETOOLONG;
+        }
+
+        pos -= entry->name_len;
+        memcpy(tmp + pos, entry->name, entry->name_len);
+        kfree(entry);
+
+        pos -= 1;
+        tmp[pos] = '/';
+
+        inode_put(current);
+        current = parent;
+    }
+
+    inode_put(current);
+
+    unsigned long path_len = 256 - pos;
+
+    if (path_len > size) {
+        return -ERANGE;
+    }
+
+    memcpy(buf, tmp + pos, path_len);
+    return path_len;
+}
 
 __attribute__((target("general-regs-only"))) void
 syscall_dispatcher_c(registers_t* reg)
@@ -610,6 +694,10 @@ syscall_dispatcher_c(registers_t* reg)
 
     case SYS_NANOSLEEP:
         reg->eax = sys_nanosleep();
+        break;
+
+    case SYS_GETCWD:
+        reg->eax = sys_getcwd((char*)reg->ebx, reg->ecx);
         break;
 
     default:

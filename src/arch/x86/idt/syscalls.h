@@ -41,6 +41,7 @@ enum syscalls_e {
     SYS_SOCKETCALL = 102,
     SYS_FCHDIR = 133,
     SYS_NANOSLEEP = 162,
+    SYS_GETCWD = 183,
 };
 
 void syscall_dispatcher_c(registers_t*);

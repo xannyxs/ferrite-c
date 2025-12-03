@@ -179,6 +179,12 @@ int ext2_find_entry(
     ext2_entry_t** result
 );
 
+s32 ext2_find_entry_by_ino(
+    vfs_inode_t* dir,
+    unsigned long ino,
+    ext2_entry_t** result
+);
+
 s32 ext2_write_entry(vfs_inode_t* dir, ext2_entry_t* entry);
 
 s32 ext2_delete_entry(vfs_inode_t* dir, ext2_entry_t* entry);

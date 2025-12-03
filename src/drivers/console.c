@@ -62,6 +62,7 @@ static void print_help(void)
     printk("  cat     - Concatenate files and print\n");
     printk("  echo    - Display a line of text\n");
     printk("  cd      - Change Directory\n");
+    printk("  pwd     - Print Working Directory\n");
     printk("  help    - Show this help message\n");
 }
 
@@ -155,6 +156,23 @@ static void change_directory(char const* path)
                      : "=a"(ret)
                      : "a"(SYS_CHDIR), "b"(path)
                      : "memory");
+}
+
+static void print_working_directory(void)
+{
+    int ret;
+    u8 buf[512];
+    long size = 512;
+
+    __asm__ volatile("int $0x80"
+                     : "=a"(ret)
+                     : "a"(SYS_GETCWD), "b"(buf), "c"(size)
+                     : "memory");
+    if (ret < 0) {
+        printk("Failed to show pwd: error code: %d\n", ret);
+    } else {
+        printk("%s\n", buf);
+    }
 }
 
 static void touch_file(char const* path)
@@ -281,31 +299,42 @@ static void remove_directory(char const* path)
 
 static void list_directory_contents(char const* path)
 {
+    int ret = 1;
+    u8 buf[512];
+    long size = 512;
+
+    if (!path) {
+        __asm__ volatile("int $0x80"
+                         : "=a"(ret)
+                         : "a"(SYS_GETCWD), "b"(buf), "c"(size)
+                         : "memory");
+    }
+
+    char const* dir = path ? path : (char*)buf;
+
     // Open File
     int fd;
     __asm__ volatile("int $0x80"
                      : "=a"(fd)
-                     : "a"(5), "b"(path ? path : "/"), "c"(0), "d"(0)
+                     : "a"(5), "b"(dir), "c"(0), "d"(0)
                      : "memory");
     if (fd < 0) {
         printk("Could not open dir\n");
         return;
     }
 
-    int ret = 1;
     dirent_t dirent = { 0 };
 
     while (1) {
         __asm__ volatile("int $0x80"
                          : "=a"(ret)
-                         : "a"(89), "b"(fd), "c"(&dirent), "d"(1)
+                         : "a"(SYS_READDIR), "b"(fd), "c"(&dirent), "d"(1)
                          : "memory");
         if (ret <= 0) {
             break;
         }
 
         char fullpath[256];
-        char const* dir = path ? path : "/";
         strlcpy(fullpath, dir, sizeof(fullpath));
 
         size_t len = strlen(fullpath);
@@ -406,6 +435,7 @@ static void execute_buffer(void)
                                             { "top", process_list },
                                             { "devices", print_devices },
                                             { "sleep", exec_sleep },
+                                            { "pwd", print_working_directory },
                                             { NULL, NULL } };
 
     printk("\n");

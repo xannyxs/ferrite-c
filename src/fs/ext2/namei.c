@@ -55,12 +55,8 @@ int ext2_create(
     return 0;
 }
 
-/*
- * Consumes reference to inode (always calls inode_put).
- * On success, returns new reference in *result.
- */
 s32 ext2_lookup(
-    struct vfs_inode* inode,
+    struct vfs_inode* node,
     char const* name,
     int len,
     struct vfs_inode** result
@@ -68,29 +64,25 @@ s32 ext2_lookup(
 {
     *result = NULL;
 
-    if (!inode) {
+    if (!node) {
         return -EINVAL;
     }
 
-    if (!S_ISDIR(inode->i_mode)) {
-        inode_put(inode);
+    if (!S_ISDIR(node->i_mode)) {
         return -ENOTDIR;
     }
 
     ext2_entry_t* entry = NULL;
-    if (ext2_find_entry(inode, name, len, &entry) < 0) {
-        inode_put(inode);
+    if (ext2_find_entry(node, name, len, &entry) < 0) {
         return -ENOENT;
     }
     unsigned long ino = entry->inode;
     kfree(entry);
 
-    *result = inode_get(inode->i_sb, ino);
+    *result = inode_get(node->i_sb, ino);
     if (!*result) {
-        inode_put(inode);
         return -ENOMEM;
     }
 
-    inode_put(inode);
     return 0;
 }
