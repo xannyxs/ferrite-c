@@ -62,15 +62,24 @@ void register_block_device(block_device_type_e type, void* data)
 void root_device_init(char* cmdline)
 {
     char* root_device_line = strnstr(cmdline, "root=", 32);
+    if (!root_device_line) {
+        abort("No root= parameter in cmdline");
+    }
+
     char* device = strrchr(root_device_line, '/');
+    if (!device) {
+        abort("Invalid root device format");
+    }
+
     char* type_device = strnstr(device, "hd", 12);
-
-    s32 major = (type_device[2] - 'a' == 0) ? IDE0_MAJOR : IDE1_MAJOR;
-    s32 minor = type_device[3] - '0';
-
-    if (strncmp(type_device, "hd", 2) != 0) {
+    if (!type_device || strncmp(type_device, "hd", 2) != 0) {
         abort("No root device");
     }
+
+    s32 index = type_device[2] - 'a'; // 0=a, 1=b, 2=c, 3=d
+    s32 major = (index < 2) ? IDE0_MAJOR : IDE1_MAJOR;
+
+    s32 minor = type_device[3] - '0';
 
     if (ide_mount(major, minor) < 0) {
         abort("Failed to mount root device");

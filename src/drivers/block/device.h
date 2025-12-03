@@ -22,15 +22,9 @@ typedef struct {
 } block_device_t;
 
 struct device_operations {
-    s32 (*read)(block_device_t* d, u32 lba, u32 count, void* buf, size_t len);
-    s32 (*write)(
-        block_device_t* d,
-        u32 lba,
-        u32 count,
-        void const*,
-        size_t len
-    );
-    void (*shutdown)(block_device_t* d);
+    s32 (*read)(block_device_t*, u32 lba, u32 count, void*, size_t len);
+    s32 (*write)(block_device_t*, u32 lba, u32 count, void const*, size_t len);
+    void (*shutdown)(block_device_t*);
 };
 
 block_device_t* get_devices(void);
