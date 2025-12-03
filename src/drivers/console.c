@@ -310,11 +310,13 @@ static void list_directory_contents(char const* path)
                          : "memory");
     }
 
+    char const* dir = path ? path : (char*)buf;
+
     // Open File
     int fd;
     __asm__ volatile("int $0x80"
                      : "=a"(fd)
-                     : "a"(5), "b"(path ? path : (char*)buf), "c"(0), "d"(0)
+                     : "a"(5), "b"(dir), "c"(0), "d"(0)
                      : "memory");
     if (fd < 0) {
         printk("Could not open dir\n");
@@ -326,14 +328,13 @@ static void list_directory_contents(char const* path)
     while (1) {
         __asm__ volatile("int $0x80"
                          : "=a"(ret)
-                         : "a"(89), "b"(fd), "c"(&dirent), "d"(1)
+                         : "a"(SYS_READDIR), "b"(fd), "c"(&dirent), "d"(1)
                          : "memory");
         if (ret <= 0) {
             break;
         }
 
         char fullpath[256];
-        char const* dir = path ? path : "/";
         strlcpy(fullpath, dir, sizeof(fullpath));
 
         size_t len = strlen(fullpath);
