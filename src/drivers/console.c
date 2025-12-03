@@ -299,18 +299,28 @@ static void remove_directory(char const* path)
 
 static void list_directory_contents(char const* path)
 {
+    int ret = 1;
+    u8 buf[512];
+    long size = 512;
+
+    if (!path) {
+        __asm__ volatile("int $0x80"
+                         : "=a"(ret)
+                         : "a"(SYS_GETCWD), "b"(buf), "c"(size)
+                         : "memory");
+    }
+
     // Open File
     int fd;
     __asm__ volatile("int $0x80"
                      : "=a"(fd)
-                     : "a"(5), "b"(path ? path : "/"), "c"(0), "d"(0)
+                     : "a"(5), "b"(path ? path : (char*)buf), "c"(0), "d"(0)
                      : "memory");
     if (fd < 0) {
         printk("Could not open dir\n");
         return;
     }
 
-    int ret = 1;
     dirent_t dirent = { 0 };
 
     while (1) {
