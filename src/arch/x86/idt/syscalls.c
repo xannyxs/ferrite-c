@@ -196,27 +196,34 @@ SYSCALL_ATTR static int sys_unlink(char const* path)
 
 SYSCALL_ATTR static int sys_chdir(char const* path)
 {
-    vfs_inode_t* root = inode_get(root_inode->i_sb, 2);
-    if (!root) {
+
+    vfs_inode_t* base = NULL;
+    if (path[0] == '/') {
+        base = inode_get(myproc()->root->i_sb, 2); // FIXME: EXT2 Specific
+    } else {
+        base = inode_get(myproc()->pwd->i_sb, myproc()->pwd->i_ino);
+    }
+
+    if (!base) {
         return -EIO;
     }
 
-    vfs_inode_t* node = vfs_lookup(root, path);
+    vfs_inode_t* node = vfs_lookup(base, path);
     if (!node) {
-        inode_put(root);
+        inode_put(base);
         return -ENOENT;
     }
 
     if (!S_ISDIR(node->i_mode)) {
-        inode_put(root);
+        inode_put(node);
+        inode_put(base);
         return -ENOTDIR;
     }
 
     inode_put(myproc()->pwd);
-
     myproc()->pwd = node;
+    inode_put(base);
 
-    inode_put(root);
     return 0;
 }
 
