@@ -422,15 +422,15 @@ SYSCALL_ATTR static uid_t sys_geteuid(void) { return geteuid(); }
 
 SYSCALL_ATTR static s32 sys_readdir(u32 fd, dirent_t* dirent, s32 count)
 {
-    file_t* f = fd_get((s32)fd);
-    if (!f) {
+    file_t* file = fd_get((s32)fd);
+    if (!file) {
         return -EBADF;
     }
 
     s32 result = -1;
 
-    if (f->f_op && f->f_op->readdir) {
-        result = f->f_op->readdir(f->f_inode, f, dirent, count);
+    if (file->f_op && file->f_op->readdir) {
+        result = file->f_op->readdir(file->f_inode, file, dirent, count);
     }
 
     return result;

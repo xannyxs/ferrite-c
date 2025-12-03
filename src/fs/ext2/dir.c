@@ -115,37 +115,37 @@ static s32 ext2_is_empty_dir(vfs_inode_t const* node)
     return 0;
 }
 
-s32 ext2_readdir(vfs_inode_t* inode, file_t* file, dirent_t* dirent, s32 count)
+s32 ext2_readdir(vfs_inode_t* node, file_t* file, dirent_t* dirent, s32 count)
 {
     (void)count;
 
-    if (!inode || !S_ISDIR(inode->i_mode)) {
-        return -1;
+    if (!node || !S_ISDIR(node->i_mode)) {
+        return -ENOTDIR;
     }
 
     ext2_entry_t* entry;
-    vfs_superblock_t* sb = inode->i_sb;
+    vfs_superblock_t* sb = node->i_sb;
     ext2_super_t* es = sb->u.ext2_sb.s_es;
 
-    while (file->f_pos < (long)inode->i_size) {
+    while (file->f_pos < (long)node->i_size) {
         unsigned long offset = file->f_pos & (sb->s_blocksize - 1);
         unsigned long block = (file->f_pos) >> (es->s_log_block_size + 10);
 
         if (block >= 12) {
-            return -1;
+            return -ENOSYS;
         }
 
-        u32 block_num = inode->u.i_ext2->i_block[block];
+        u32 block_num = node->u.i_ext2->i_block[block];
         u8 buff[sb->s_blocksize];
 
-        if (ext2_read_block(inode, buff, block_num) < 0) {
+        if (ext2_read_block(node, buff, block_num) < 0) {
             return -1;
         }
 
         entry = (ext2_entry_t*)&buff[offset];
-        while (offset < sb->s_blocksize && file->f_pos < (long)inode->i_size) {
+        while (offset < sb->s_blocksize && file->f_pos < (long)node->i_size) {
             if (entry->rec_len == 0 || entry->rec_len > sb->s_blocksize) {
-                return -1;
+                return -EIO;
             }
 
             offset += entry->rec_len;
