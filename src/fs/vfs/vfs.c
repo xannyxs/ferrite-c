@@ -36,6 +36,11 @@ static void create_initial_directories(void)
     // }
 }
 
+/*
+ * @brief Lookup a path starting from the given inode.
+ *
+ * @note Does NOT release the start node - caller must call inode_put(start).
+ */
 vfs_inode_t* vfs_lookup(vfs_inode_t* start, char const* path)
 {
     if (!start || !path) {
