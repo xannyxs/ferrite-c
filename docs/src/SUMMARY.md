@@ -19,6 +19,13 @@
 <!-- - [Build Pipeline](architecture/build.md) -->
 <!-- - [Design Decisions](architecture/design.md) -->
 
+# Filesystem
+
+- [Overview](filesystem/overview.md)
+- [Block Devices](filesystem/devices.md)
+- [VFS Layer](filesystem/vfs.md)
+- [ext2 Implementation](filesystem/ext2.md)
+
 # CPU
 
 - [Global Descriptor Table (GDT)](cpu/gdt.md)
