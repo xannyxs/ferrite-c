@@ -350,7 +350,6 @@ int ext2_rmdir(vfs_inode_t* dir, char const* name, int len)
 
 end_rmdir:
     kfree(entry);
-    inode_put(dir);
     inode_put(node);
 
     return retval;
