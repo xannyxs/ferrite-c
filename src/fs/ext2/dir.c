@@ -15,7 +15,7 @@
 #include <lib/string.h>
 
 static s32
-ext2_dir_read(vfs_inode_t* inode, struct file* file, void* buff, int count)
+ext2_dir_read(vfs_inode_t* inode, file_t* file, void* buff, int count)
 {
     (void)inode;
     (void)file;
@@ -51,13 +51,13 @@ struct inode_operations ext2_dir_inode_operations = {
     .mkdir = ext2_mkdir,
     .rmdir = ext2_rmdir,
     .unlink = ext2_unlink,
+    .truncate = ext2_truncate,
     //     ext2_symlink,         /* symlink */
     //     ext2_mknod,           /* mknod */
     //     ext2_rename,          /* rename */
     //     NULL,                 /* readlink */
     //     NULL,                 /* follow_link */
     //     NULL,                 /* bmap */
-    .truncate = ext2_truncate,
     //     ext2_permission       /* permission */
 };
 
@@ -138,8 +138,9 @@ s32 ext2_readdir(vfs_inode_t* node, file_t* file, dirent_t* dirent, s32 count)
         u32 block_num = node->u.i_ext2->i_block[block];
         u8 buff[sb->s_blocksize];
 
-        if (ext2_read_block(node, buff, block_num) < 0) {
-            return -1;
+        int retval = ext2_read_block(node, buff, block_num);
+        if (retval < 0) {
+            return retval;
         }
 
         entry = (ext2_entry_t*)&buff[offset];
@@ -169,7 +170,7 @@ s32 ext2_readdir(vfs_inode_t* node, file_t* file, dirent_t* dirent, s32 count)
     return 0;
 }
 
-int ext2_mkdir(struct vfs_inode* dir, char const* name, int len, int mode)
+int ext2_mkdir(vfs_inode_t* dir, char const* name, int len, int mode)
 {
     int err;
 
@@ -184,7 +185,7 @@ int ext2_mkdir(struct vfs_inode* dir, char const* name, int len, int mode)
     }
 
     struct vfs_inode* new = ext2_new_inode(dir, mode, &err);
-    if (err < 0) {
+    if (!new) {
         return err;
     }
 
@@ -212,14 +213,16 @@ int ext2_mkdir(struct vfs_inode* dir, char const* name, int len, int mode)
     memcpy(tmp.name, name, len);
 
     tmp.rec_len = ALIGN(sizeof(ext2_entry_t) + tmp.name_len, 4);
-    if (ext2_write_entry(dir, &tmp) < 0) {
+    err = ext2_write_entry(dir, &tmp);
+    if (err < 0) {
         inode_put(new);
-        return -1;
+        return err;
     }
 
-    if (sb->s_op->write_inode(new) < 0) {
+    err = sb->s_op->write_inode(new);
+    if (err < 0) {
         inode_put(new);
-        return -1;
+        return err;
     }
 
     u8 buff[sb->s_blocksize];
@@ -254,26 +257,25 @@ int ext2_mkdir(struct vfs_inode* dir, char const* name, int len, int mode)
     u32 const sector_pos = addr / d->d_sector_size;
     u32 const count = sb->s_blocksize / d->d_sector_size;
 
-    if (d->d_op->write(d, sector_pos, count, buff, sb->s_blocksize) < 0) {
+    err = d->d_op->write(d, sector_pos, count, buff, sb->s_blocksize);
+    if (err < 0) {
         return -1;
     }
 
-    if (sb->s_op->write_inode(new) < 0) {
+    err = sb->s_op->write_inode(new);
+    if (err < 0) {
         return -1;
     }
+
+    inode_put(new);
 
     time_t now = getepoch();
     dir->i_links_count += 1;
     dir->i_ctime = now;
     dir->i_mtime = now;
 
-    if (sb->s_op->write_inode(dir) < 0) {
-        return -1;
-    }
-
-    inode_put(new);
-
-    return 0;
+    err = sb->s_op->write_inode(dir);
+    return err;
 }
 
 int ext2_rmdir(vfs_inode_t* dir, char const* name, int len)

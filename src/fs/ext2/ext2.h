@@ -8,7 +8,6 @@ struct vfs_inode;
 struct vfs_dentry;
 
 #define EXT2_MAGIC 0xEF53
-
 #define EXT2_ROOT_INO 2
 
 #define FIFO 0x1000
