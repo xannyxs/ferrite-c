@@ -9,6 +9,9 @@ on:
   push:
     branches:
       - master
+    paths:
+      - 'src/**'
+      - 'include/**'
 
 jobs:
   check-formatting:
