@@ -321,6 +321,23 @@ SYSCALL_ATTR static s32 sys_kill(pid_t pid, s32 sig)
 
 SYSCALL_ATTR static s32 sys_mkdir(char const* pathname, int mode)
 {
+    if (!pathname) {
+        return -EINVAL;
+    }
+
+    size_t len = strlen(pathname);
+    while (len > 1 && pathname[len - 1] == '/') {
+        len--;
+    }
+
+    char clean_path[256];
+    memcpy(clean_path, pathname, len);
+    clean_path[len] = '\0';
+
+    if (strcmp(clean_path, "/") == 0) {
+        return -EEXIST; // Root already exists
+    }
+
     char* last_slash = strrchr(pathname, '/');
     if (!last_slash) {
         return -ENOENT;
