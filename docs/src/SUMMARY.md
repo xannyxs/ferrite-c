@@ -23,8 +23,6 @@
 - [Overview](filesystem/overview.md)
 - [Block Devices](filesystem/devices.md)
 - [VFS Layer](filesystem/vfs.md)
-- [ext2 Implementation](filesystem/ext2.md)
-- [Functions](filesystem/functions.md)
 
 # CPU
 
