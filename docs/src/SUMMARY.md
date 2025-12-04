@@ -9,7 +9,6 @@
 - [KFS 02](project/kfs_02.md)
 <!-- - [KFS 03](project/kfs_03.md) -->
 - [KFS 04](project/kfs_04.md)
-- [To Do](project/todo.md)
 
 # Architecture
 
@@ -18,6 +17,12 @@
 - [Buddy Allocator](architecture/buddy.md)
 <!-- - [Build Pipeline](architecture/build.md) -->
 <!-- - [Design Decisions](architecture/design.md) -->
+
+# Filesystem
+
+- [Overview](filesystem/overview.md)
+- [Block Devices](filesystem/devices.md)
+- [VFS Layer](filesystem/vfs.md)
 
 # CPU
 

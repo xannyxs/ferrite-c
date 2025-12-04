@@ -330,10 +330,7 @@ s32 ide_mount(s32 major, s32 minor)
         }
 
         register_block_device(BLOCK_DEVICE_IDE, d);
-        return 0;
-    }
-
-    if (major == IDE1_MAJOR) {
+    } else if (major == IDE1_MAJOR) {
         ata_drive_t* d = detect_harddrives(1);
         if (!d) {
             return -1;
