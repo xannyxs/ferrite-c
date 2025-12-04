@@ -1,0 +1,35 @@
+name: Format Check
+
+on:
+  pull_request:
+    paths:
+      - 'src/**'
+      - 'include/**'
+  push:
+    branches:
+      - main
+
+jobs:
+  check-formatting:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Install clang-format
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang-format
+      
+      - name: Check C/H files formatting
+        run: |
+          UNFORMATTED=$(find src include -name '*.c' -o -name '*.h' | xargs clang-format --dry-run --Werror 2>&1 || true)
+          if [ ! -z "$UNFORMATTED" ]; then
+            echo "❌ The following files are not formatted:"
+            echo "$UNFORMATTED"
+            echo ""
+            echo "Run 'clang-format -i \$(find src include -name \"*.c\" -o -name \"*.h\")' to fix"
+            exit 1
+          fi
+          echo "✅ All files are properly formatted"
