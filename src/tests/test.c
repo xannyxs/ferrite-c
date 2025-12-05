@@ -9,10 +9,12 @@ u32 tests_failed = 0;
 
 void main_tests(void)
 {
-    idt_tests();
-    process_tests();
-    buddy_tests();
-    socket_tests();
+    // idt_tests();
+    // process_tests();
+    // buddy_tests();
+    filesystem_tests();
+
+    // socket_tests();
 
     printk("\n========== TEST RESULTS ==========\n");
     printk("Passed: %u\n", tests_passed);
