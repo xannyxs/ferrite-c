@@ -424,3 +424,5 @@ void socket_tests(void)
 }
 
 #endif
+
+typedef int _test_translation_unit_not_empty;
