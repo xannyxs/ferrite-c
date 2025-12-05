@@ -75,12 +75,6 @@ static s32 ext2_bgd_read(vfs_superblock_t* sb, u32 num_block_groups)
     return 0;
 }
 
-/**
- * Write the superblock to disk at offset 1024.
- *
- * @param m Mount point containing the superblock to write
- * @return 0 on success, -1 on failure
- */
 s32 ext2_superblock_write(vfs_superblock_t* sb)
 {
     block_device_t* d = get_device(sb->s_dev);
@@ -105,9 +99,6 @@ s32 ext2_superblock_write(vfs_superblock_t* sb)
     return 0;
 }
 
-/**
- * Read the superblock from disk at offset 1024 and validate it.
- */
 vfs_superblock_t*
 ext2_superblock_read(vfs_superblock_t* sb, void* data, int silent)
 {
@@ -118,13 +109,12 @@ ext2_superblock_read(vfs_superblock_t* sb, void* data, int silent)
         abort("ext2_super_t should ALWAYS be 1024");
     }
 
-    block_device_t* d = get_device(sb->s_dev);
-    if (!d) {
-        printk("%s: device is NULL\n", __func__);
-        return NULL;
+    if (!sb) {
+        abort("Given superblock is NULL");
     }
 
-    if (!d->d_op || !d->d_op->read) {
+    block_device_t* d = get_device(sb->s_dev);
+    if (!d || !d->d_op || !d->d_op->read) {
         printk("%s: device has no read operation\n", __func__);
         return NULL;
     }
@@ -160,7 +150,7 @@ ext2_superblock_read(vfs_superblock_t* sb, void* data, int silent)
         = CEIL_DIV(es->s_blocks_count, es->s_blocks_per_group);
     ext2_bgd_read(sb, sb->u.ext2_sb.s_groups_count);
 
-    sb->s_root_node = inode_get(sb, 2);
+    sb->s_root_node = inode_get(sb, EXT2_ROOT_INO);
     sb->s_root_node->i_sb = sb;
 
     return sb;

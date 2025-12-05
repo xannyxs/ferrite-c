@@ -17,7 +17,7 @@ int ext2_create(
 )
 {
     if (!dir) {
-        return -1;
+        return -EINVAL;
     }
 
     s32 err = 0;
@@ -26,32 +26,39 @@ int ext2_create(
         return err;
     }
 
+    new->i_op = &ext2_file_inode_operations;
+
+    err = dir->i_sb->s_op->write_inode(new);
+    if (err < 0) {
+        ext2_free_inode(new);
+        inode_put(new);
+        return err;
+    }
+
     ext2_entry_t entry = { 0 };
     entry.inode = new->i_ino;
     entry.name_len = len;
     entry.file_type = 0;
     memcpy(entry.name, name, entry.name_len);
-
     entry.rec_len = ALIGN(sizeof(ext2_entry_t) + entry.name_len, 4);
-    if (ext2_write_entry(dir, &entry) < 0) {
+
+    err = ext2_write_entry(dir, &entry);
+    if (err < 0) {
         ext2_free_inode(new);
         inode_put(new);
-        return -1;
+        return -err;
     }
 
-    if (dir->i_sb->s_op->write_inode(dir) < 0) {
+    err = dir->i_sb->s_op->write_inode(dir);
+    if (err < 0) {
+        // NOTE: Can't rollback - directory entry already on disk
+
         inode_put(new);
-        return -1;
+        return err;
     }
-
-    if (dir->i_sb->s_op->write_inode(new) < 0) {
-        inode_put(new);
-        return -1;
-    }
-
-    new->i_op = &ext2_file_inode_operations;
 
     *result = new;
+
     return 0;
 }
 

@@ -5,9 +5,9 @@
 #include "fs/vfs.h"
 #include "memory/kmalloc.h"
 
+#include <ferrite/errno.h>
 #include <ferrite/types.h>
 #include <lib/string.h>
-#include <stdbool.h>
 
 static s32 ext2_read_inode(vfs_inode_t*);
 static s32 ext2_write_inode(vfs_inode_t*);
@@ -26,7 +26,7 @@ s32 ext2_write_inode(vfs_inode_t* dir)
 {
     if (!dir || !dir->i_sb) {
         printk("ext2_write_inode: invalid inode\n");
-        return -1;
+        return -EINVAL;
     }
 
     vfs_superblock_t* sb = dir->i_sb;
@@ -105,11 +105,6 @@ s32 ext2_read_inode(vfs_inode_t* dir)
 
     u8 buff[d->d_sector_size];
     if (d->d_op->read(d, sector_pos, 1, buff, d->d_sector_size) < 0) {
-        printk(
-            "%s: failed to read from device (LBA %u, "
-            "count %u)\n",
-            __func__, sector_pos, 1
-        );
         return -1;
     }
 
@@ -118,6 +113,7 @@ s32 ext2_read_inode(vfs_inode_t* dir)
         printk("%s: offset it bigger than sector size\n", __func__);
         return -1;
     }
+
     memcpy(node, &buff[offset], sizeof(ext2_inode_t));
 
     dir->i_atime = (time_t)node->i_atime;
@@ -134,7 +130,6 @@ s32 ext2_read_inode(vfs_inode_t* dir)
         dir->i_op = &ext2_dir_inode_operations;
     } else {
         dir->i_op = &ext2_file_inode_operations;
-        return -1;
     }
 
     return 0;
