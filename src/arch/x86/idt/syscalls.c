@@ -334,8 +334,11 @@ SYSCALL_ATTR static s32 sys_mkdir(char const* pathname, int mode)
     memcpy(clean_path, pathname, len);
     clean_path[len] = '\0';
 
-    if (strcmp(clean_path, "/") == 0) {
-        return -EEXIST; // Root already exists
+    vfs_inode_t* node = vfs_lookup(myproc()->root, clean_path);
+    if (node) {
+        inode_put(node);
+
+        return -EEXIST;
     }
 
     char* last_slash = strrchr(pathname, '/');
@@ -507,6 +510,10 @@ SYSCALL_ATTR static s32 sys_getcwd(char* buf, unsigned long size)
 
     vfs_inode_t* root = myproc()->root;
     vfs_inode_t* pwd = myproc()->pwd;
+    if (!pwd) {
+        pwd = root;
+        pwd->i_count += 1;
+    }
 
     if (pwd == root) {
         if (size < 2) {
