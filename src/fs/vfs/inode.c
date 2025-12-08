@@ -38,6 +38,8 @@ vfs_inode_t* inode_get(vfs_superblock_t* sb, unsigned long ino)
         if (inode_cache[i].i_sb == sb && inode_cache[i].i_ino == ino) {
             inode_cache[i].i_count += 1;
 
+            sb->s_op->read_inode(&inode_cache[i]);
+
             return &inode_cache[i];
         }
     }
@@ -64,7 +66,7 @@ void inode_put(vfs_inode_t* n)
     }
 
     if (n->i_count == 0) {
-        printk("inode_put: already at count 0!");
+        printk("warning: inode_put: already at count 0!");
         return;
     }
 
