@@ -1,8 +1,10 @@
 #include "fs/vfs.h"
 #include "drivers/block/device.h"
+#include "fs/ext2/ext2.h"
 #include "fs/filesystem.h"
 #include "lib/stdlib.h"
 #include "memory/kmalloc.h"
+#include "sys/process/process.h"
 
 #include <ferrite/types.h>
 #include <lib/string.h>
@@ -36,6 +38,8 @@ static void create_initial_directories(void)
     // }
 }
 
+#include "drivers/printk.h"
+
 /*
  * @brief Lookup a path starting from the given inode.
  *
@@ -48,7 +52,7 @@ vfs_inode_t* vfs_lookup(vfs_inode_t* start, char const* path)
     }
 
     if (path[0] == '/' && path[1] == '\0') {
-        return start;
+        return inode_get(myproc()->root->i_sb, EXT2_ROOT_INO);
     }
 
     char** components = split(path, '/');

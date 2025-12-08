@@ -18,8 +18,6 @@
 #include <ferrite/types.h>
 #include <lib/string.h>
 
-extern vfs_inode_t* root_inode;
-
 __attribute__((target("general-regs-only"))) static void sys_exit(s32 status)
 {
     do_exit(status);
@@ -57,12 +55,7 @@ SYSCALL_ATTR static s32 sys_write(s32 fd, void* buf, int count)
 // https://man7.org/linux/man-pages/man2/open.2.html
 SYSCALL_ATTR static s32 sys_open(char const* path, int flags, int mode)
 {
-    vfs_inode_t* root = inode_get(root_inode->i_sb, 2);
-    if (!root) {
-        return -1;
-    }
-
-    vfs_inode_t* new = vfs_lookup(root, path);
+    vfs_inode_t* new = vfs_lookup(myproc()->root, path);
     if (!new) {
         if (!(flags & O_CREAT)) {
             return -ENOENT;
@@ -85,7 +78,7 @@ SYSCALL_ATTR static s32 sys_open(char const* path, int flags, int mode)
         char* name = last_slash + 1;
         size_t name_len = strlen(name);
 
-        vfs_inode_t* parent = vfs_lookup(root, parent_path);
+        vfs_inode_t* parent = vfs_lookup(myproc()->root, parent_path);
         if (!parent) {
             return -ENOENT;
         }
@@ -94,6 +87,7 @@ SYSCALL_ATTR static s32 sys_open(char const* path, int flags, int mode)
                 parent, name, (s32)name_len, S_IFREG | (mode & 0777), &new
             )
             < 0) {
+            inode_put(new);
             inode_put(parent);
             return -1;
         }
@@ -107,7 +101,6 @@ SYSCALL_ATTR static s32 sys_open(char const* path, int flags, int mode)
 
     file_t* file = fd_get(fd);
     if (!file) {
-        file_put(myproc()->open_files[fd]);
         inode_put(new);
         return -1;
     }
@@ -129,18 +122,18 @@ SYSCALL_ATTR static s32 sys_open(char const* path, int flags, int mode)
 
 SYSCALL_ATTR static int sys_close(int fd)
 {
-    file_t* f = fd_get(fd);
-    if (!f) {
+    file_t* file = fd_get(fd);
+    if (!file) {
         return -1;
     }
 
     myproc()->open_files[fd] = NULL;
 
-    if (f->f_op && f->f_op->release) {
-        f->f_op->release(f->f_inode, f);
+    if (file->f_op && file->f_op->release) {
+        file->f_op->release(file->f_inode, file);
     }
 
-    file_put(f);
+    file_put(file);
     return 0;
 }
 
@@ -155,13 +148,8 @@ SYSCALL_ATTR static pid_t sys_waitpid(pid_t pid, s32* status, s32 options)
 
 SYSCALL_ATTR static int sys_unlink(char const* path)
 {
-    vfs_inode_t* root = inode_get(root_inode->i_sb, 2);
-    if (!root) {
-        return -ENOTDIR;
-    }
-
+    vfs_inode_t* root = myproc()->root;
     if (!root->i_op || !root->i_op->unlink) {
-        inode_put(root);
         return -EPERM;
     }
 
@@ -198,7 +186,9 @@ SYSCALL_ATTR static int sys_chdir(char const* path)
 
     vfs_inode_t* base = NULL;
     if (path[0] == '/') {
-        base = inode_get(myproc()->root->i_sb, 2); // FIXME: EXT2 Specific
+        vfs_inode_t* root = myproc()->root;
+
+        base = inode_get(root->i_sb, root->i_ino);
     } else {
         base = inode_get(myproc()->pwd->i_sb, myproc()->pwd->i_ino);
     }
@@ -208,20 +198,18 @@ SYSCALL_ATTR static int sys_chdir(char const* path)
     }
 
     vfs_inode_t* node = vfs_lookup(base, path);
+    inode_put(base);
     if (!node) {
-        inode_put(base);
         return -ENOENT;
     }
 
     if (!S_ISDIR(node->i_mode)) {
         inode_put(node);
-        inode_put(base);
         return -ENOTDIR;
     }
 
     inode_put(myproc()->pwd);
     myproc()->pwd = node;
-    inode_put(base);
 
     return 0;
 }
@@ -239,14 +227,8 @@ SYSCALL_ATTR static time_t sys_time(time_t* tloc)
 
 SYSCALL_ATTR int sys_stat(char const* filename, struct stat* statbuf)
 {
-    vfs_inode_t* root = inode_get(root_inode->i_sb, 2);
-    if (!root) {
-        return -ENOTDIR;
-    }
-
-    vfs_inode_t* node = vfs_lookup(root, filename);
+    vfs_inode_t* node = vfs_lookup(myproc()->root, filename);
     if (!node) {
-        inode_put(root);
         return -ENOENT;
     }
 
@@ -339,9 +321,24 @@ SYSCALL_ATTR static s32 sys_kill(pid_t pid, s32 sig)
 
 SYSCALL_ATTR static s32 sys_mkdir(char const* pathname, int mode)
 {
-    vfs_inode_t* node = inode_get(root_inode->i_sb, 2);
-    if (!node) {
-        return -EIO;
+    if (!pathname) {
+        return -EINVAL;
+    }
+
+    size_t len = strlen(pathname);
+    while (len > 1 && pathname[len - 1] == '/') {
+        len--;
+    }
+
+    char clean_path[256];
+    memcpy(clean_path, pathname, len);
+    clean_path[len] = '\0';
+
+    vfs_inode_t* node = vfs_lookup(myproc()->root, clean_path);
+    if (node) {
+        inode_put(node);
+
+        return -EEXIST;
     }
 
     char* last_slash = strrchr(pathname, '/');
@@ -361,13 +358,12 @@ SYSCALL_ATTR static s32 sys_mkdir(char const* pathname, int mode)
     char* name = last_slash + 1;
     size_t name_len = strlen(name);
 
-    vfs_inode_t* parent = vfs_lookup(node, parent_path);
+    vfs_inode_t* parent = vfs_lookup(myproc()->root, parent_path);
     if (!parent) {
         return -ENOENT;
     }
 
     if (!parent->i_op || !parent->i_op->mkdir) {
-        inode_put(node);
         inode_put(parent);
         return -ENOTDIR;
     }
@@ -376,17 +372,12 @@ SYSCALL_ATTR static s32 sys_mkdir(char const* pathname, int mode)
         parent, name, (s32)name_len, S_IFDIR | (mode & 0777)
     );
 
-    inode_put(node);
+    inode_put(parent);
     return result;
 }
 
 SYSCALL_ATTR static int sys_rmdir(char const* path)
 {
-    vfs_inode_t* root = inode_get(root_inode->i_sb, 2);
-    if (!root) {
-        return -ENOTDIR;
-    }
-
     char const* last_slash = strrchr(path, '/');
     if (!last_slash) {
         return -ENOENT;
@@ -404,17 +395,20 @@ SYSCALL_ATTR static int sys_rmdir(char const* path)
     char const* name = last_slash + 1;
     size_t name_len = strlen(name);
 
-    vfs_inode_t* parent = vfs_lookup(root, parent_path);
+    vfs_inode_t* parent = vfs_lookup(myproc()->root, parent_path);
     if (!parent) {
         return -ENOTDIR;
     }
 
-    if (!parent || !parent->i_op || !parent->i_op->rmdir) {
+    if (!parent->i_op || !parent->i_op->rmdir) {
         inode_put(parent);
         return -ENOTDIR;
     }
 
-    return parent->i_op->rmdir(parent, name, (int)name_len);
+    int retval = parent->i_op->rmdir(parent, name, (int)name_len);
+    inode_put(parent);
+
+    return retval;
 }
 
 SYSCALL_ATTR static uid_t sys_geteuid(void) { return geteuid(); }
@@ -437,12 +431,7 @@ SYSCALL_ATTR static s32 sys_readdir(u32 fd, dirent_t* dirent, s32 count)
 
 SYSCALL_ATTR static s32 sys_truncate(char const* path, off_t len)
 {
-    vfs_inode_t* root = inode_get(root_inode->i_sb, 2);
-    if (!root) {
-        return -EIO;
-    }
-
-    vfs_inode_t* node = vfs_lookup(root, path);
+    vfs_inode_t* node = vfs_lookup(myproc()->root, path);
     if (!node) {
         return -ENOENT;
     }
@@ -500,13 +489,13 @@ SYSCALL_ATTR static int sys_fchdir(s32 fd)
         return -EBADF;
     }
 
-    if (!S_ISDIR(file->f_inode->i_mode)) {
+    if (!file->f_inode || !S_ISDIR(file->f_inode->i_mode)) {
         return -ENOTDIR;
     }
 
     inode_put(myproc()->pwd);
-
     myproc()->pwd = file->f_inode;
+
     file->f_inode->i_count += 1;
     return 0;
 }
@@ -521,6 +510,10 @@ SYSCALL_ATTR static s32 sys_getcwd(char* buf, unsigned long size)
 
     vfs_inode_t* root = myproc()->root;
     vfs_inode_t* pwd = myproc()->pwd;
+    if (!pwd) {
+        pwd = root;
+        pwd->i_count += 1;
+    }
 
     if (pwd == root) {
         if (size < 2) {

@@ -1,4 +1,5 @@
 #ifdef __TEST
+#    include "arch/x86/idt/syscalls.h"
 #    include "drivers/printk.h"
 #    include "lib/string.h"
 #    include "net/socket.h"
@@ -12,13 +13,6 @@
 
 extern u32 tests_passed;
 extern u32 tests_failed;
-
-#    define SYS_SOCKETCALL 102
-#    define SYS_SOCKET 1
-#    define SYS_BIND 2
-#    define SYS_CONNECT 3
-#    define SYS_LISTEN 4
-#    define SYS_ACCEPT 5
 
 static inline int k_socket(int family, int type, int protocol)
 {
