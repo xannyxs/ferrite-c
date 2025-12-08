@@ -385,12 +385,10 @@ TEST(fs_readdir_basic)
     int fd1 = k_open("/test_readdir/file1", O_CREAT | O_RDWR, 0644);
     ASSERT(fd1 >= 0, "open() should succeed");
 
-    int fd2 = k_open("/test_readdir/file2", O_CREAT | O_RDWR, 0644);
-    ASSERT(fd2 >= 0, "open() should succeed");
-
     result = k_close(fd1);
     ASSERT(result == 0, "close() should succeed");
 
+    int fd2 = k_open("/test_readdir/file2", O_CREAT | O_RDWR, 0644);
     result = k_close(fd2);
     ASSERT(result == 0, "close() should succeed");
 
@@ -399,11 +397,13 @@ TEST(fs_readdir_basic)
 
     dirent_t dirent;
     int count = 0;
-    while (k_readdir(dirfd, &dirent, 1) > 0) {
-        printk("  Entry: %s (inode=%ld)\n", dirent.d_name, dirent.d_ino);
+    int ret;
+    while ((ret = k_readdir(dirfd, &dirent, 1)) > 0) {
+        printk("  Entry: %s (inode=%d)\n", dirent.d_name, dirent.d_ino);
         count++;
     }
 
+    ASSERT(ret == 0, "Dirent should return a 0");
     ASSERT(count >= 4, "Should have at least . .. file1 file2");
     printk("  Read %d directory entries\n", count);
 
