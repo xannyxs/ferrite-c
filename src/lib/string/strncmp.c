@@ -1,16 +1,16 @@
 #include <ferrite/types.h>
 
-s32 strncmp(char const* str1, char const* str2, size_t n)
+s32 strncmp(char const* _l, char const* _r, size_t n)
 {
-    if (n == 0) {
+    u8 const* l = (void*)_l;
+    u8 const* r = (void*)_r;
+
+    if (!n--) {
         return 0;
     }
 
-    size_t i = 0;
+    for (; *l && *r && n && *l == *r; l++, r++, n--)
+        ;
 
-    for (size_t i = 0;
-         str1[i] != 0 && str2[i] != 0 && (str1[i] == str2[i] && n - 1 > i);
-         i += 1) { }
-
-    return ((unsigned char)str1[i] - (unsigned char)str2[i]);
+    return *l - *r;
 }
