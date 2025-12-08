@@ -12,34 +12,6 @@
 extern struct super_operations ext2_sops;
 vfs_inode_t* root_inode = NULL;
 
-/**
- * Creates initial directory structure: /sys, /var, /dev, /proc
- *
- * These directories persist on disk as mount points.
- * /var contains persistent files. /proc, /sys, and /dev will hold
- * RAM-based contents when virtual filesystems are mounted.
- *
- * NOTE:
- * /sys, /dev & /proc do not function yet, and need to be implemented
- */
-static void create_initial_directories(void)
-{
-    // if (vfs_mkdir("/proc", 0) < 0) {
-    //     abort("Could not create /proc");
-    // }
-    // if (vfs_mkdir("/var", 0) < 0) {
-    //     abort("Could not create /var");
-    // }
-    // if (vfs_mkdir("/dev", 0) < 0) {
-    //     abort("Could not create /dev");
-    // }
-    // if (vfs_mkdir("/sys", 0) < 0) {
-    //     abort("Could not create /sys");
-    // }
-}
-
-#include "drivers/printk.h"
-
 /*
  * @brief Lookup a path starting from the given inode.
  *
@@ -123,6 +95,4 @@ void vfs_init(void)
     if (!root_inode) {
         abort("Root Device is missing");
     }
-
-    create_initial_directories();
 }

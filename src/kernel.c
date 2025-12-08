@@ -49,9 +49,7 @@ __attribute__((noreturn)) void kmain(u32 magic, multiboot_info_t* mbd)
     vmalloc_init();
 
     inode_cache_init();
-
     root_device_init((char*)mbd->cmdline);
-
     vfs_init();
 
     init_ptables(); // rename

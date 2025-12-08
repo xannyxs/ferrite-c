@@ -1,4 +1,5 @@
 #include "arch/x86/gdt/gdt.h"
+#include "arch/x86/idt/syscalls.h"
 #include "arch/x86/memlayout.h"
 #include "drivers/printk.h"
 #include "lib/stdlib.h"
@@ -6,6 +7,7 @@
 #include "memory/consts.h"
 #include "memory/page.h"
 #include "memory/vmm.h"
+#include "sys/file/fcntl.h"
 #include "sys/process/process.h"
 #include <ferrite/types.h>
 
@@ -37,11 +39,7 @@ __attribute__((naked)) void user_init(void)
                      "jmp .hang");
 }
 
-/* Public */
-
-inline proc_t* initproc(void) { return initial_proc; }
-
-void prepare_for_jmp(void)
+static void prepare_for_jmp(void)
 {
     void* page_kaddr = get_free_page();
     if (!page_kaddr) {
@@ -67,6 +65,50 @@ void prepare_for_jmp(void)
     jump_to_usermode(user_code_vaddr, (void*)0xBFFFFFFC);
 }
 
+/**
+ * Creates initial directory structure: /sys, /var, /dev, /proc
+ *
+ * These directories persist on disk as mount points.
+ * /var contains persistent files. /proc, /sys, and /dev will hold
+ * RAM-based contents when virtual filesystems are mounted.
+ *
+ * NOTE:
+ * /sys, /dev & /proc do not function yet, and need to be implemented
+ */
+static void create_initial_directories(void)
+{
+    int ret;
+    // NOTE: /proc is a different file name, and should be mounted instead of
+    // being created.
+    // __asm__ volatile("int $0x80"
+    //                  : "=a"(ret)
+    //                  : "a"(SYS_MKDIR), "b"("/proc"), "c"(O_CREAT | O_WRONLY),
+    //                    "d"(0644)
+    //                  : "memory");
+
+    __asm__ volatile("int $0x80"
+                     : "=a"(ret)
+                     : "a"(SYS_MKDIR), "b"("/var"), "c"(O_CREAT | O_WRONLY),
+                       "d"(0644)
+                     : "memory");
+
+    __asm__ volatile("int $0x80"
+                     : "=a"(ret)
+                     : "a"(SYS_MKDIR), "b"("/dev"), "c"(O_CREAT | O_WRONLY),
+                       "d"(0644)
+                     : "memory");
+
+    __asm__ volatile("int $0x80"
+                     : "=a"(ret)
+                     : "a"(SYS_MKDIR), "b"("/sys"), "c"(O_CREAT | O_WRONLY),
+                       "d"(0644)
+                     : "memory");
+}
+
+/* Public */
+
+inline proc_t* initproc(void) { return initial_proc; }
+
 void init_process(void)
 {
     proc_t const* current = myproc();
@@ -74,6 +116,7 @@ void init_process(void)
         abort("Init process should be PID 1!");
     }
 
+    create_initial_directories();
     printk("Initial process started...!\n");
 
     pid_t pid = do_exec("user space", prepare_for_jmp);
