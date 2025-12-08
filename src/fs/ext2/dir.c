@@ -285,13 +285,13 @@ int ext2_rmdir(vfs_inode_t* dir, char const* name, int len)
     }
 
     int retval = 0;
-    vfs_inode_t* node = NULL;
     ext2_entry_t* entry = NULL;
     retval = ext2_find_entry(dir, name, len, &entry);
     if (retval < 0) {
-        goto end_rmdir;
+        return retval;
     }
 
+    vfs_inode_t* node = NULL;
     retval = -EPERM;
     node = inode_get(dir->i_sb, entry->inode);
     if (!node) {
