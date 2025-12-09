@@ -3,6 +3,7 @@
 #include "arch/x86/time/time.h"
 #include "drivers/printk.h"
 #include "ferrite/dirent.h"
+#include "fs/exec.h"
 #include "fs/ext2/ext2.h"
 #include "fs/stat.h"
 #include "fs/vfs.h"
@@ -181,6 +182,17 @@ SYSCALL_ATTR static int sys_unlink(char const* path)
     return error;
 }
 
+SYSCALL_ATTR static int sys_execve(
+    char const* filename,
+    char const* const* argv,
+    char const* const* envp
+)
+{
+    return -ENOSYS;
+
+    return do_execve(filename, argv, envp);
+}
+
 SYSCALL_ATTR static int sys_chdir(char const* path)
 {
 
@@ -255,10 +267,6 @@ SYSCALL_ATTR int sys_stat(char const* filename, struct stat* statbuf)
 // https://man7.org/linux/man-pages/man2/lseek.2.html
 SYSCALL_ATTR int sys_lseek(u32 fd, off_t offset, u32 whence)
 {
-#define SEEK_SET 0
-#define SEEK_CUR 1
-#define SEEK_END 2
-
     file_t* file = fd_get((s32)fd);
     if (!file) {
         return -EBADF;
@@ -615,6 +623,18 @@ syscall_dispatcher_c(registers_t* reg)
 
     case SYS_UNLINK:
         reg->eax = sys_unlink((char*)reg->ebx);
+        break;
+
+    case SYS_EXECVE:
+        if (reg->cs != USER_CS) {
+            reg->eax = -EINVAL;
+            break;
+        }
+
+        reg->eax = sys_execve(
+            (char*)reg->ebx, (char const* const*)reg->ecx,
+            (char const* const*)reg->edx
+        );
         break;
 
     case SYS_CHDIR:

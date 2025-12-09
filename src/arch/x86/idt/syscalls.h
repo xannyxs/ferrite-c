@@ -3,6 +3,8 @@
 
 #include "arch/x86/idt/idt.h"
 
+#define USER_CS 0x23
+
 #define SYSCALL_ATTR \
     __attribute__((target("general-regs-only"), warn_unused_result))
 
@@ -23,6 +25,7 @@ enum syscalls_e {
     SYS_CLOSE = 6,
     SYS_WAITPID = 7,
     SYS_UNLINK = 10,
+    SYS_EXECVE = 11,
     SYS_CHDIR = 12,
     SYS_TIME = 13,
     SYS_STAT = 18,
