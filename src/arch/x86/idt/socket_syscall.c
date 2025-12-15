@@ -125,10 +125,6 @@ static int sys_accept(int fd, void* addr, int const* addrlen)
 
 int sys_socketcall(int call, unsigned long* args)
 {
-    (void)args;
-
-    printk("Call: %d\n", call);
-
     switch (call) {
     case SYS_SOCKET:
         return sys_socket((int)args[0], (s16)args[1], (int)args[2]);
