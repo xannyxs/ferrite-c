@@ -1,5 +1,7 @@
 #include "net/unix.h"
 #include "drivers/printk.h"
+#include "fs/stat.h"
+#include "fs/vfs.h"
 #include "lib/string.h"
 #include "memory/kmalloc.h"
 #include "net/socket.h"
@@ -41,7 +43,7 @@ static int unix_register_socket(socket_t* sock)
 {
     unix_socket_node_t* node = kmalloc(sizeof(unix_socket_node_t));
     if (!node) {
-        return -1;
+        return -ENOMEM;
     }
 
     node->socket = sock;
@@ -67,23 +69,6 @@ int unix_unregister_socket(socket_t* sock)
     }
 
     return -1;
-}
-
-static socket_t* unix_find_socket(char const* sun_path)
-{
-    unix_socket_node_t* node = unix_sockets_head;
-
-    while (node != NULL) {
-        unix_sock_t* usock = (unix_sock_t*)node->socket->data;
-
-        if (strcmp(usock->path, sun_path) == 0) {
-            return node->socket;
-        }
-
-        node = node->next;
-    }
-
-    return NULL;
 }
 
 static int unix_create(socket_t* s, int protocol)
@@ -122,18 +107,58 @@ static int unix_bind(socket_t* s, void* addr, s32 addrlen)
     struct sockaddr_un* sun = (struct sockaddr_un*)addr;
     unix_sock_t* usock = (unix_sock_t*)s->data;
 
-    if ((u32)addrlen < sizeof(struct sockaddr_un)
-        || sun->sun_family != AF_UNIX) {
-        return -1;
+    if ((u32)addrlen < sizeof(struct sockaddr_un) || sun->sun_family != AF_UNIX
+        || usock->path[0] != '\0') {
+        return -EINVAL;
     }
 
-    if (usock->path[0] != '\0') {
-        return -1;
+    char* path = sun->sun_path;
+    char* last_slash = strrchr(path, '/');
+    if (!last_slash) {
+        return -EINVAL;
     }
 
-    if (unix_find_socket(sun->sun_path) != NULL) {
-        return -1;
+    char dir_path[256];
+    memcpy(dir_path, path, last_slash - path);
+    dir_path[last_slash - path] = '\0';
+    char* filename = last_slash + 1;
+    size_t name_len = strlen(filename);
+
+    vfs_inode_t* parent = vfs_lookup(myproc()->root, dir_path);
+    if (!parent) {
+        return -ENOENT;
     }
+
+    if (!S_ISDIR(parent->i_mode)) {
+        inode_put(parent);
+        return -ENOTDIR;
+    }
+
+    vfs_inode_t* existing = vfs_lookup(parent, filename);
+    if (existing) {
+        inode_put(existing);
+        inode_put(parent);
+        return -EADDRINUSE;
+    }
+
+    if (!parent->i_op || !parent->i_op->create) {
+        inode_put(parent);
+        return -EPERM;
+    }
+
+    vfs_inode_t* sock_inode = NULL;
+    int err = parent->i_op->create(
+        parent, filename, (s32)name_len, S_IFSOCK | 0666, &sock_inode
+    );
+
+    inode_put(parent);
+
+    if (err < 0) {
+        return err;
+    }
+
+    sock_inode->u.i_socket = s;
+    s->inode = sock_inode;
 
     strlcpy(usock->path, sun->sun_path, UNIX_PATH_MAX);
 
@@ -142,27 +167,43 @@ static int unix_bind(socket_t* s, void* addr, s32 addrlen)
         return -1;
     }
 
+    printk("node: 0x%x\n", sock_inode);
+
     return 0;
 }
 
 static int unix_connect(socket_t* s, void* addr, int len)
 {
     struct sockaddr_un* sun = addr;
-    if ((u32)len < sizeof(struct sockaddr_un)) {
-        return -1;
-    }
-    if (sun->sun_family != AF_UNIX) {
-        return -1;
+    if ((u32)len < sizeof(struct sockaddr_un) || sun->sun_family != AF_UNIX) {
+        return -EINVAL;
     }
 
-    socket_t* server = unix_find_socket(sun->sun_path);
-    if (!server) {
-        return -1;
+    vfs_inode_t* node = vfs_lookup(myproc()->root, sun->sun_path);
+    if (!node) {
+        return -ENOENT;
     }
 
+    printk(
+        "[CONNECT] Found inode=%x, i_ino=%d, i_sb=%x\n", node, node->i_ino,
+        node->i_sb
+    );
+    printk("[CONNECT] node->u.i_socket=%x\n", node->u.i_socket);
+
+    if (!S_ISSOCK(node->i_mode)) {
+        inode_put(node);
+        return -ECONNREFUSED;
+    }
+
+    socket_t* server = node->u.i_socket;
     if (server->conn) {
         return -1;
     }
+
+    printk(
+        "[CONNECT] server=%x, server->ops=%x, server->state=%d\n", server,
+        server->ops, server->state
+    );
 
     s->conn = server;
     server->conn = s;

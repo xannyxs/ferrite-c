@@ -103,6 +103,12 @@ static void create_initial_directories(void)
                      : "a"(SYS_MKDIR), "b"("/sys"), "c"(O_CREAT | O_WRONLY),
                        "d"(0644)
                      : "memory");
+
+    __asm__ volatile("int $0x80"
+                     : "=a"(ret)
+                     : "a"(SYS_MKDIR), "b"("/tmp"), "c"(O_CREAT | O_RDWR),
+                       "d"(0777)
+                     : "memory");
 }
 
 /* Public */

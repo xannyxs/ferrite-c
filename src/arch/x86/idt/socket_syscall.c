@@ -73,7 +73,7 @@ static int sys_accept(int fd, void* addr, int const* addrlen)
     }
 
     socket_t* s = f->f_inode->u.i_socket;
-    if (!s || !s->ops || !s->ops->bind) {
+    if (!s || !s->ops || !s->ops->accept) {
         return -EIO;
     }
 
@@ -143,6 +143,6 @@ int sys_socketcall(int call, unsigned long* args)
 
     default:
         printk("Nothing...?\n");
-        return -1;
+        return -ENOSYS;
     }
 }
