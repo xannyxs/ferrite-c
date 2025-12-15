@@ -3,7 +3,9 @@
 #include "lib/string.h"
 #include "memory/kmalloc.h"
 #include "net/socket.h"
+#include "sys/process/process.h"
 
+#include <ferrite/errno.h>
 #include <ferrite/types.h>
 
 #define MAX_UNIX_SOCKETS 64
@@ -171,14 +173,14 @@ static int unix_connect(socket_t* s, void* addr, int len)
 
 static int unix_accept(socket_t* s, socket_t* newsock)
 {
-    if (!s->conn) {
-        return -1;
+    while (!s->conn) {
+        yield();
     }
 
     socket_t* client = s->conn;
     unix_sock_t* new_usock = kmalloc(sizeof(unix_sock_t));
     if (!new_usock) {
-        return -1;
+        return -ENOMEM;
     }
 
     memset(new_usock, 0, sizeof(unix_sock_t));
