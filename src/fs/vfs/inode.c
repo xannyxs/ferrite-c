@@ -58,6 +58,12 @@ vfs_inode_t* inode_get(vfs_superblock_t* sb, unsigned long ino)
         if (inode_cache[i].i_sb == sb && inode_cache[i].i_ino == ino) {
 
             inode_cache[i].i_count += 1;
+
+            // This is extremely fragile. Should take a closer look at this
+            if (sb && sb->s_op && !S_ISSOCK(inode_cache[i].i_mode)) {
+                sb->s_op->read_inode(&inode_cache[i]);
+            }
+
             return &inode_cache[i];
         }
     }

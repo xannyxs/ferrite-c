@@ -9,7 +9,7 @@ u32 tests_failed = 0;
 
 void main_tests(void)
 {
-    // filesystem_tests();
+    filesystem_tests();
     idt_tests();
     process_tests();
     buddy_tests();
