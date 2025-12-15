@@ -38,8 +38,6 @@ struct file_operations {
 
 int fd_alloc(void);
 
-struct file* file_get(void);
-
 int fd_install(struct vfs_inode*, file_t*);
 
 void file_put(file_t*);

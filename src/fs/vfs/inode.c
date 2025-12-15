@@ -14,6 +14,25 @@ void inode_cache_init(void)
     }
 }
 
+vfs_inode_t* inode_get_empty(vfs_superblock_t* sb, unsigned long ino)
+{
+    for (int i = 0; i < MAX_INODES; i += 1) {
+        if (inode_cache[i].i_count == 0) {
+            inode_cache[i].i_sb = sb;
+            inode_cache[i].i_ino = ino;
+            inode_cache[i].i_count = 1;
+
+            if (sb && sb->s_op) {
+                sb->s_op->read_inode(&inode_cache[i]);
+            }
+
+            return &inode_cache[i];
+        }
+    }
+
+    return NULL;
+}
+
 /*
  * NOTE: Only minimal fields are set here:
  *   - i_sb, i_ino, i_count
