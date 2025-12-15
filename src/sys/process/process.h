@@ -26,6 +26,9 @@ typedef struct process {
     uid_t uid;
     uid_t euid;
 
+    gid_t gid;
+    gid_t egid;
+
     procstate_e state;
 
     context_t* context;
