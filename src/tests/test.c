@@ -13,8 +13,7 @@ void main_tests(void)
     process_tests();
     buddy_tests();
     filesystem_tests();
-
-    // socket_tests();
+    socket_tests();
 
     printk("\n========== TEST RESULTS ==========\n");
     printk("Passed: %u\n", tests_passed);

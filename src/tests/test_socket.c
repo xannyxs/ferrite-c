@@ -144,8 +144,6 @@ static void server_process_simple(void)
 
     server_ready = 1;
 
-    yield();
-
     int client_fd = k_accept(sockfd);
     if (client_fd < 0) {
         printk("  [SERVER] Failed to accept\n");
@@ -155,6 +153,7 @@ static void server_process_simple(void)
     printk("  [SERVER] Accepted connection on fd=%d\n", client_fd);
 
     yield();
+
     char buf[100];
     int n = k_read(client_fd, buf, sizeof(buf));
     if (n <= 0) {
@@ -179,6 +178,8 @@ static void client_process_simple(void)
 {
     struct sockaddr_un addr
         = { .sun_family = AF_UNIX, .sun_path = "/tmp/test_simple" };
+
+    printk("  [CLIENT] Server is ready, connecting...\n");
 
     int sockfd = k_socket(AF_UNIX, SOCK_STREAM, 0);
     if (sockfd < 0) {
@@ -237,7 +238,6 @@ TEST(socket_client_server)
     do_wait(0);
     do_wait(0);
 
-    process_list();
     ASSERT(test_result == 1, "Communication should succeed");
 
     return true;
