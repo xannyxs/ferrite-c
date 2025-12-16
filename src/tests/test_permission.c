@@ -190,7 +190,7 @@ TEST(priv_get_uid_gid)
     ASSERT(uid == 0, "Initial UID should be 0 (root)");
     ASSERT(euid == 0, "Initial EUID should be 0 (root)");
 
-    return true;
+    do_exit(0);
 }
 
 // Test: Root can read owner-only file
@@ -220,7 +220,7 @@ TEST(priv_root_read_owner_file)
     k_unlink("/test_owner_file");
 
     printk("  Root successfully accessed owner-only file\n");
-    return true;
+    do_exit(0);
 }
 
 TEST(priv_nonroot_cannot_read_owner_file)
@@ -242,7 +242,7 @@ TEST(priv_nonroot_cannot_read_owner_file)
     k_seteuid(0);
     k_unlink("/test_root_file");
 
-    return true;
+    do_exit(0);
 }
 
 // Test: Group permissions work
@@ -283,7 +283,7 @@ TEST(priv_group_permissions)
     k_setegid(0);
     k_unlink("/test_group_file");
 
-    return true;
+    do_exit(0);
 }
 
 // Test: World-readable file
@@ -316,7 +316,7 @@ TEST(priv_world_readable)
     k_setegid(0);
     k_unlink("/test_world_file");
 
-    return true;
+    do_exit(0);
 }
 
 // Test: Directory execute permission
@@ -347,7 +347,7 @@ TEST(priv_directory_execute)
     k_unlink("/test_priv_dir/file");
     k_rmdir("/test_priv_dir");
 
-    return true;
+    do_exit(0);
 }
 
 // Test: setuid/setgid behavior
@@ -376,7 +376,7 @@ TEST(priv_setuid_behavior)
 
     // Restore (this will fail since we're not root anymore)
     // In real test, you'd need to restart the process or use saved UID
-    return true;
+    do_exit(0);
 }
 
 TEST(priv_seteuid_toggle)
@@ -411,7 +411,7 @@ TEST(priv_seteuid_toggle)
     ASSERT(ret == 0, "Should regain root via saved UID");
     ASSERT(k_geteuid() == 0, "EUID should be 0 again");
 
-    return true;
+    do_exit(0);
 }
 
 // Test: Cannot write to read-only file
@@ -431,22 +431,22 @@ TEST(priv_readonly_file)
     printk("  Read-only file test completed\n");
 
     k_unlink("/test_readonly");
-    return true;
+    do_exit(0);
 }
 
 void privilege_tests(void)
 {
     printk("\n========== PRIVILEGE TEST SUITE ==========\n\n");
 
-    // RUN_TEST(priv_get_uid_gid));
-    // RUN_TEST(priv_root_read_owner_file);
-    // RUN_TEST(priv_nonroot_cannot_read_owner_file);
-    // RUN_TEST(priv_group_permissions);
-    // RUN_TEST(priv_world_readable);
-    // RUN_TEST(priv_directory_execute);
-    // RUN_TEST(priv_setuid_behavior);
-    // RUN_TEST(priv_seteuid_toggle);
-    // RUN_TEST(priv_readonly_file);
+    RUN_TEST(priv_get_uid_gid);
+    RUN_TEST(priv_root_read_owner_file);
+    RUN_TEST(priv_nonroot_cannot_read_owner_file);
+    RUN_TEST(priv_group_permissions);
+    RUN_TEST(priv_world_readable);
+    RUN_TEST(priv_directory_execute);
+    RUN_TEST(priv_setuid_behavior);
+    RUN_TEST(priv_seteuid_toggle);
+    RUN_TEST(priv_readonly_file);
 
     printk("\n============================================\n");
 }
