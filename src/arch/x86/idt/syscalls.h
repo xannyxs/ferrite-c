@@ -31,24 +31,81 @@ enum syscalls_e {
     SYS_STAT = 18,
     SYS_LSEEK = 19,
     SYS_GETPID = 20,
+
     SYS_SETUID = 23,
     SYS_GETUID = 24,
+
     SYS_KILL = 37,
     SYS_MKDIR = 39,
     SYS_RMDIR = 40,
+
+    SYS_SETGID = 46,
+    SYS_GETGID = 47,
+
     SYS_SIGNAL = 48,
+
     SYS_GETEUID = 49,
+    SYS_GETEGID = 50,
+    SYS_SETREUID = 70,
+    SYS_SETREGID = 71,
+    SYS_GETGROUPS = 80,
+    SYS_SETGROUPS = 81,
+
     SYS_READDIR = 89,
     SYS_TRUNCATE = 92,
     SYS_FTRUNCATE = 93,
     SYS_SOCKETCALL = 102,
     SYS_FCHDIR = 133,
     SYS_NANOSLEEP = 162,
+
+    SYS_SETRESUID = 164,
+    SYS_GETRESUID = 165,
+    SYS_SETRESGID = 170,
+    SYS_GETRESGID = 171,
+
     SYS_GETCWD = 183,
 };
 
 void syscall_dispatcher_c(registers_t*);
 
 int sys_socketcall(int call, unsigned long* args);
+
+/* sys.c */
+
+/* UID */
+
+SYSCALL_ATTR uid_t sys_getuid(void);
+
+SYSCALL_ATTR uid_t sys_geteuid(void);
+
+SYSCALL_ATTR s32 sys_setuid(uid_t uid);
+
+SYSCALL_ATTR s32 sys_seteuid(uid_t uid);
+
+SYSCALL_ATTR s32 sys_setreuid(uid_t ruid, uid_t euid);
+
+SYSCALL_ATTR s32 sys_setresuid(uid_t ruid, uid_t euid, uid_t suid);
+
+/* GID */
+
+SYSCALL_ATTR uid_t sys_getgid(void);
+
+SYSCALL_ATTR uid_t sys_getegid(void);
+
+SYSCALL_ATTR uid_t sys_getsgid(void);
+
+SYSCALL_ATTR s32 sys_setgid(gid_t gid);
+
+SYSCALL_ATTR s32 sys_setegid(uid_t gid);
+
+SYSCALL_ATTR s32 sys_setregid(gid_t rgid, gid_t egid);
+
+SYSCALL_ATTR s32 sys_setresgid(gid_t rgid, gid_t egid, gid_t sgid);
+
+/* GROUPS */
+
+SYSCALL_ATTR gid_t sys_getgroups(gid_t* grouplist, int len);
+
+SYSCALL_ATTR gid_t sys_setgroups(gid_t* grouplist, int len);
 
 #endif /* SYSCALLS_H */

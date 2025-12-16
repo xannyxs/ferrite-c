@@ -17,4 +17,12 @@
 #define NAME_MAX 255 /* Chars in a file name */
 #define MAX_BLOCK_DEVICES 64
 
+#ifndef NGROUPS
+#    define NGROUPS 32
+#endif
+
+#ifndef NOGROUP
+#    define NOGROUP (-1)
+#endif
+
 #endif

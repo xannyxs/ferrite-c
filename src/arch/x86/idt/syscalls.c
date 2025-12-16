@@ -306,8 +306,6 @@ SYSCALL_ATTR int sys_lseek(u32 fd, off_t offset, u32 whence)
 
 SYSCALL_ATTR static pid_t sys_getpid(void) { return myproc()->pid; }
 
-SYSCALL_ATTR static uid_t sys_getuid(void) { return getuid(); }
-
 SYSCALL_ATTR static s32 sys_kill(pid_t pid, s32 sig)
 {
     proc_t* caller = myproc();
@@ -419,8 +417,6 @@ SYSCALL_ATTR static int sys_rmdir(char const* path)
     return retval;
 }
 
-SYSCALL_ATTR static uid_t sys_geteuid(void) { return geteuid(); }
-
 SYSCALL_ATTR static s32 sys_readdir(u32 fd, dirent_t* dirent, s32 count)
 {
     file_t* file = fd_get((s32)fd);
@@ -468,26 +464,6 @@ SYSCALL_ATTR static s32 sys_ftruncate(s32 fd, off_t len)
 
     int ret = file->f_inode->i_op->truncate(file->f_inode, len);
     return ret;
-}
-
-SYSCALL_ATTR static s32 sys_setuid(uid_t uid)
-{
-    proc_t* p = myproc();
-
-    if (p->euid == 0) {
-        p->uid = uid;
-        p->euid = uid;
-
-        return 0;
-    }
-
-    if (p->uid == uid || p->euid == uid) {
-        p->euid = uid;
-
-        return 0;
-    }
-
-    return -1;
 }
 
 SYSCALL_ATTR static int sys_fchdir(s32 fd)
@@ -677,15 +653,40 @@ syscall_dispatcher_c(registers_t* reg)
         reg->eax = sys_rmdir((char*)reg->ebx);
         break;
 
-    case SYS_SOCKETCALL:
-        reg->eax = sys_socketcall((s32)reg->ebx, (unsigned long*)reg->ecx);
+    case SYS_SETGID:
+        reg->eax = sys_setgid(reg->ebx);
+        break;
+
+    case SYS_GETGID:
+        reg->eax = sys_getgid();
         break;
 
     case SYS_SIGNAL:
+        reg->eax = -ENOSYS;
         break;
 
     case SYS_GETEUID:
         reg->eax = sys_geteuid();
+        break;
+
+    case SYS_GETEGID:
+        reg->eax = sys_getegid();
+        break;
+
+    case SYS_SETREUID:
+        reg->eax = sys_setreuid(reg->ebx, reg->ecx);
+        break;
+
+    case SYS_SETREGID:
+        reg->eax = sys_setregid(reg->ebx, reg->ecx);
+        break;
+
+    case SYS_SETGROUPS:
+        reg->eax = sys_setgroups((gid_t*)reg->ebx, reg->ecx);
+        break;
+
+    case SYS_GETGROUPS:
+        reg->eax = sys_getgroups((gid_t*)reg->ebx, reg->ecx);
         break;
 
     case SYS_READDIR:
@@ -700,6 +701,10 @@ syscall_dispatcher_c(registers_t* reg)
         reg->eax = sys_ftruncate((s32)reg->ebx, (off_t)reg->ecx);
         break;
 
+    case SYS_SOCKETCALL:
+        reg->eax = sys_socketcall((s32)reg->ebx, (unsigned long*)reg->ecx);
+        break;
+
     case SYS_FCHDIR:
         reg->eax = sys_fchdir(reg->ebx);
         break;
@@ -708,11 +713,28 @@ syscall_dispatcher_c(registers_t* reg)
         reg->eax = sys_nanosleep();
         break;
 
+    case SYS_SETRESUID:
+        reg->eax = sys_setresuid(reg->ebx, reg->ecx, reg->edx);
+        break;
+
+    case SYS_GETRESUID:
+        reg->eax = -ENOSYS;
+        break;
+
+    case SYS_SETRESGID:
+        reg->eax = sys_setresgid(reg->ebx, reg->ecx, reg->edx);
+        break;
+
+    case SYS_GETRESGID:
+        reg->eax = -ENOSYS;
+        break;
+
     case SYS_GETCWD:
         reg->eax = sys_getcwd((char*)reg->ebx, reg->ecx);
         break;
 
     default:
+        reg->eax = -EINVAL;
         printk("Nothing...?\n");
         break;
     }
