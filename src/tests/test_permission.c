@@ -319,30 +319,24 @@ TEST(priv_world_readable)
     do_exit(0);
 }
 
-// Test: Directory execute permission
 TEST(priv_directory_execute)
 {
     printk("  Testing directory execute permission...\n");
 
-    // Create directory with 0700 (owner only)
     int ret = k_mkdir("/test_priv_dir", 0700);
     ASSERT(ret == 0, "Root should create directory");
 
-    // Create file inside
     int fd = k_open("/test_priv_dir/file", O_CREAT | O_RDWR, 0666);
     ASSERT(fd >= 0, "Root should create file in directory");
     k_close(fd);
 
-    // Drop privileges
     k_seteuid(1000);
 
-    // Try to access file (should fail due to directory permissions)
     fd = k_open("/test_priv_dir/file", O_RDONLY, 0);
     ASSERT(fd < 0, "Should NOT access file in non-executable directory");
 
     printk("  Directory execute permission enforced\n");
 
-    // Cleanup
     k_seteuid(0);
     k_unlink("/test_priv_dir/file");
     k_rmdir("/test_priv_dir");

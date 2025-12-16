@@ -17,7 +17,7 @@
 
 #    define ASSERT_EQ(a, b, message) ASSERT((a) == (b), message)
 
-#    define TEST(name) static void test_##name(void)
+#    define TEST(name) static void __attribute__((unused)) test_##name(void)
 
 #    define RUN_TEST(name)                          \
         do {                                        \

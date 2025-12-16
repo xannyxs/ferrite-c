@@ -86,6 +86,13 @@ vfs_inode_t* vfs_lookup(vfs_inode_t* start, char const* path)
         }
 
         current = new;
+
+        if (S_ISDIR(current->i_mode) && components[i + 1]) {
+            if (!vfs_permission(current, MAY_EXEC)) {
+                inode_put(current);
+                goto error;
+            }
+        }
     }
 
     for (int i = 0; components[i]; i += 1) {
