@@ -206,6 +206,9 @@ extern struct inode_operations ext2_dir_inode_operations;
 /* file.c */
 extern struct inode_operations ext2_file_inode_operations;
 
+/* acl.c */
+int ext2_permission(vfs_inode_t* node, int mask);
+
 /* truncate.c */
 extern int ext2_truncate(vfs_inode_t*, off_t);
 

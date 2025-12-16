@@ -52,13 +52,13 @@ struct inode_operations ext2_dir_inode_operations = {
     .rmdir = ext2_rmdir,
     .unlink = ext2_unlink,
     .truncate = ext2_truncate,
+    .permission = ext2_permission,
     //     ext2_symlink,         /* symlink */
     //     ext2_mknod,           /* mknod */
     //     ext2_rename,          /* rename */
     //     NULL,                 /* readlink */
     //     NULL,                 /* follow_link */
     //     NULL,                 /* bmap */
-    //     ext2_permission       /* permission */
 };
 
 static s32 ext2_is_empty_dir(vfs_inode_t const* node)
