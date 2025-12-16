@@ -79,6 +79,7 @@ struct inode_operations {
 
     int (*unlink)(vfs_inode_t*, char const*, int);
     int (*truncate)(vfs_inode_t*, off_t);
+    int (*permission)(vfs_inode_t*, int);
 };
 
 vfs_inode_t* inode_get_empty(vfs_superblock_t* sb, unsigned long ino);
@@ -94,5 +95,9 @@ vfs_inode_t* vfs_lookup(vfs_inode_t*, char const*);
 s32 vfs_mkdir(char const* path, mode_t mode);
 
 void vfs_init(void);
+
+/* namei.c */
+
+int in_group_p(gid_t grp);
 
 #endif /* FS_VFS_H */
