@@ -10,6 +10,22 @@
 struct ext2_superblock;
 struct ext2_block_group_descriptor;
 
+#define MAY_EXEC 1
+#define MAY_WRITE 2
+#define MAY_READ 4
+
+#define MS_RDONLY 1   /* mount read-only */
+#define MS_NOSUID 2   /* ignore suid and sgid bits */
+#define MS_NODEV 4    /* disallow access to device special files */
+#define MS_NOEXEC 8   /* disallow program execution */
+#define MS_SYNC 16    /* writes are synced at once */
+#define MS_REMOUNT 32 /* alter flags of a mounted FS */
+
+#define IS_RDONLY(inode) \
+    (((inode)->i_sb) && ((inode)->i_sb->s_flags & MS_RDONLY))
+#define IS_NOSUID(inode) ((inode)->i_flags & MS_NOSUID)
+#define IS_NOEXEC(inode) ((inode)->i_flags & MS_NOEXEC)
+
 typedef struct {
     dev_t s_dev;
     unsigned long s_blocksize;
@@ -90,8 +106,6 @@ void inode_put(vfs_inode_t*);
 
 void inode_cache_init(void);
 
-vfs_inode_t* vfs_lookup(vfs_inode_t*, char const*);
-
 s32 vfs_mkdir(char const* path, mode_t mode);
 
 void vfs_init(void);
@@ -99,5 +113,9 @@ void vfs_init(void);
 /* namei.c */
 
 int in_group_p(gid_t grp);
+
+int vfs_permission(vfs_inode_t* node, int mask);
+
+vfs_inode_t* vfs_lookup(vfs_inode_t*, char const*);
 
 #endif /* FS_VFS_H */

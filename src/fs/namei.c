@@ -4,6 +4,7 @@
 #include "memory/kmalloc.h"
 #include "sys/process/process.h"
 
+#include <ferrite/errno.h>
 #include <lib/string.h>
 
 int in_group_p(gid_t grp)
@@ -56,6 +57,10 @@ int vfs_permission(vfs_inode_t* node, int mask)
 vfs_inode_t* vfs_lookup(vfs_inode_t* start, char const* path)
 {
     if (!start || !path) {
+        return NULL;
+    }
+
+    if (!vfs_permission(start, MAY_EXEC)) {
         return NULL;
     }
 

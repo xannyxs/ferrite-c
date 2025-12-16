@@ -176,6 +176,16 @@ SYSCALL_ATTR static int sys_unlink(char const* path)
         return -ENOTDIR;
     }
 
+    // if (IS_RDONLY(dir)) {
+    //     inode_put(parent);
+    //     return -EROFS;
+    // }
+
+    if (!vfs_permission(parent, MAY_WRITE | MAY_EXEC)) {
+        inode_put(parent);
+        return -EACCES;
+    }
+
     int error = root->i_op->unlink(parent, name, name_len);
 
     inode_put(parent);
@@ -218,6 +228,11 @@ SYSCALL_ATTR static int sys_chdir(char const* path)
     if (!S_ISDIR(node->i_mode)) {
         inode_put(node);
         return -ENOTDIR;
+    }
+
+    if (!vfs_permission(node, MAY_EXEC)) {
+        inode_put(node);
+        return -EACCES;
     }
 
     inode_put(myproc()->pwd);
@@ -369,6 +384,16 @@ SYSCALL_ATTR static s32 sys_mkdir(char const* pathname, int mode)
         return -ENOENT;
     }
 
+    // if (IS_RDONLY(parent)) {
+    //     iput(dir);
+    //     return -EROFS;
+    // }
+
+    if (!vfs_permission(parent, MAY_WRITE | MAY_EXEC)) {
+        inode_put(parent);
+        return -EACCES;
+    }
+
     if (!parent->i_op || !parent->i_op->mkdir) {
         inode_put(parent);
         return -ENOTDIR;
@@ -406,6 +431,16 @@ SYSCALL_ATTR static int sys_rmdir(char const* path)
         return -ENOTDIR;
     }
 
+    // if (IS_RDONLY(dir)) {
+    //     iput(dir);
+    //     return -EROFS;
+    // }
+
+    if (!vfs_permission(parent, MAY_WRITE | MAY_EXEC)) {
+        inode_put(parent);
+        return -EACCES;
+    }
+
     if (!parent->i_op || !parent->i_op->rmdir) {
         inode_put(parent);
         return -ENOTDIR;
@@ -439,6 +474,16 @@ SYSCALL_ATTR static s32 sys_truncate(char const* path, off_t len)
     if (!node) {
         return -ENOENT;
     }
+
+    if (S_ISDIR(node->i_mode) || !vfs_permission(node, MAY_WRITE)) {
+        inode_put(node);
+        return -EACCES;
+    }
+
+    // if (IS_RDONLY(node)) {
+    //     inode_put(node);
+    //     return -EROFS;
+    // }
 
     if (!node->i_op->truncate) {
         inode_put(node);
@@ -475,6 +520,10 @@ SYSCALL_ATTR static int sys_fchdir(s32 fd)
 
     if (!file->f_inode || !S_ISDIR(file->f_inode->i_mode)) {
         return -ENOTDIR;
+    }
+
+    if (!vfs_permission(file->f_inode, MAY_EXEC)) {
+        return -EACCES;
     }
 
     inode_put(myproc()->pwd);
