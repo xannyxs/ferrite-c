@@ -60,14 +60,14 @@ TEST(parent_child_wait_exit)
 
     pid_t result = do_wait(NULL);
     ASSERT_EQ(result, child, "Parent should reap child");
-    return true;
+    do_exit(0);
 }
 
 TEST(wait_with_no_children)
 {
     s32 result = do_wait(NULL);
     ASSERT_EQ(result, -1, "wait() should return -1 with no children");
-    return true;
+    do_exit(0);
 }
 
 TEST(wait_returns_exit_status)
@@ -80,7 +80,7 @@ TEST(wait_returns_exit_status)
 
     ASSERT_EQ(result, child, "Should return child PID");
     ASSERT_EQ(status, 42, "Exit status should be 42");
-    return true;
+    do_exit(0);
 }
 
 TEST(wait_returns_different_exit_status)
@@ -93,7 +93,7 @@ TEST(wait_returns_different_exit_status)
 
     ASSERT_EQ(result, child, "Should return child PID");
     ASSERT_EQ(status, 123, "Exit status should be 123");
-    return true;
+    do_exit(0);
 }
 
 TEST(wait_with_multiple_children)
@@ -118,7 +118,7 @@ TEST(wait_with_multiple_children)
     );
     ASSERT(result1 != result2, "Should reap different children");
 
-    return true;
+    do_exit(0);
 }
 
 TEST(wait_after_all_children_exit)
@@ -134,7 +134,7 @@ TEST(wait_after_all_children_exit)
     pid_t result2 = do_wait(NULL);
     ASSERT_EQ(result2, -1, "Second wait should return -1 (no more children)");
 
-    return true;
+    do_exit(0);
 }
 
 TEST(wait_for_child_that_does_work)
@@ -147,7 +147,7 @@ TEST(wait_for_child_that_does_work)
 
     ASSERT_EQ(result, child, "Should reap worker child");
     ASSERT_EQ(status, 0, "Worker should exit with status 0");
-    return true;
+    do_exit(0);
 }
 
 TEST(wait_for_sleeping_child)
@@ -161,7 +161,7 @@ TEST(wait_for_sleeping_child)
 
     ASSERT_EQ(result, child, "Should reap sleeping child");
     ASSERT_EQ(status, 99, "Sleeping child should exit with status 99");
-    return true;
+    do_exit(0);
 }
 
 TEST(wait_with_three_children)
@@ -185,7 +185,7 @@ TEST(wait_with_three_children)
     pid_t r4 = do_wait(NULL);
     ASSERT_EQ(r4, -1, "Fourth wait should return -1");
 
-    return true;
+    do_exit(0);
 }
 
 TEST(wait_preserves_null_status)
@@ -197,7 +197,7 @@ TEST(wait_preserves_null_status)
     pid_t result = do_wait(NULL);
     ASSERT_EQ(result, child, "Should reap child even with NULL status");
 
-    return true;
+    do_exit(0);
 }
 
 // ========== Test Runner ==========

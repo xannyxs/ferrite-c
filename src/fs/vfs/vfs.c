@@ -1,67 +1,14 @@
 #include "fs/vfs.h"
 #include "drivers/block/device.h"
-#include "fs/ext2/ext2.h"
 #include "fs/filesystem.h"
 #include "lib/stdlib.h"
 #include "memory/kmalloc.h"
-#include "sys/process/process.h"
 
 #include <ferrite/types.h>
 #include <lib/string.h>
 
 extern struct super_operations ext2_sops;
 vfs_inode_t* root_inode = NULL;
-
-/*
- * @brief Lookup a path starting from the given inode.
- *
- * @note Does NOT release the start node - caller must call inode_put(start).
- */
-vfs_inode_t* vfs_lookup(vfs_inode_t* start, char const* path)
-{
-    if (!start || !path) {
-        return NULL;
-    }
-
-    if (path[0] == '/' && path[1] == '\0') {
-        return inode_get(myproc()->root->i_sb, EXT2_ROOT_INO);
-    }
-
-    char** components = split(path, '/');
-    if (!components) {
-        return NULL;
-    }
-
-    vfs_inode_t* current = start;
-    vfs_inode_t* new = NULL;
-    for (int i = 0; components[i]; i += 1) {
-        if (components[i][0] == '\0') {
-            continue;
-        }
-
-        s32 name_len = (s32)strlen(components[i]);
-        if (current->i_op->lookup(current, components[i], name_len, &new) < 0) {
-            goto error;
-        }
-
-        current = new;
-    }
-
-    for (int i = 0; components[i]; i += 1) {
-        kfree(components[i]);
-    }
-    kfree(components);
-
-    return current;
-
-error:
-    for (int i = 0; components[i]; i += 1) {
-        kfree(components[i]);
-    }
-    kfree(components);
-
-    return NULL;
-}
 
 vfs_superblock_t* vfs_mount_root(block_device_t* root_device)
 {

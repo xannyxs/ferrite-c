@@ -2,6 +2,7 @@
 #define PROCESS_H
 
 #include "arch/x86/pit.h"
+#include "ferrite/limits.h"
 #include "fs/vfs.h"
 #include "sys/file/file.h"
 
@@ -25,9 +26,12 @@ typedef struct process {
 
     uid_t uid;
     uid_t euid;
+    uid_t suid;
 
     gid_t gid;
     gid_t egid;
+    gid_t sgid;
+    int groups[NGROUPS];
 
     procstate_e state;
 
@@ -50,10 +54,6 @@ typedef struct process {
 } proc_t;
 
 extern void swtch(context_t** old, context_t* new);
-
-uid_t getuid(void);
-
-uid_t geteuid(void);
 
 void schedule(void);
 

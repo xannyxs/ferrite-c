@@ -107,7 +107,7 @@ TEST(fs_mkdir_basic)
     result = k_rmdir("/test_dir");
     ASSERT(result == 0, "rmdir() should succeed");
 
-    return true;
+    do_exit(0);
 }
 
 TEST(fs_mkdir_trailing_slash)
@@ -126,7 +126,7 @@ TEST(fs_mkdir_trailing_slash)
     result = k_rmdir("/test_slash");
     ASSERT(result == 0, "rmdir should succeed");
 
-    return true;
+    do_exit(0);
 }
 
 TEST(fs_mkdir_nested)
@@ -147,7 +147,7 @@ TEST(fs_mkdir_nested)
     result = k_rmdir("/test_parent");
     ASSERT(result == 0, "parent rmdir() should succeed");
 
-    return true;
+    do_exit(0);
 }
 
 TEST(fs_mkdir_already_exists)
@@ -165,7 +165,7 @@ TEST(fs_mkdir_already_exists)
     result = k_rmdir("/test_exists");
     ASSERT(result == 0, "rmdir() should succeed");
 
-    return true;
+    do_exit(0);
 }
 
 TEST(fs_rmdir_nonexistent)
@@ -176,7 +176,7 @@ TEST(fs_rmdir_nonexistent)
     ASSERT(result < 0, "rmdir() should fail on nonexistent directory");
 
     printk("  Correctly failed on nonexistent directory\n");
-    return true;
+    do_exit(0);
 }
 
 TEST(fs_open_create)
@@ -194,7 +194,7 @@ TEST(fs_open_create)
     result = k_unlink("/test_file");
     ASSERT(result == 0, "unlink() should succeed");
 
-    return true;
+    do_exit(0);
 }
 
 TEST(fs_open_nonexistent)
@@ -205,7 +205,7 @@ TEST(fs_open_nonexistent)
     ASSERT(fd < 0, "open() should fail on nonexistent file");
 
     printk("  Correctly failed on nonexistent file\n");
-    return true;
+    do_exit(0);
 }
 
 TEST(fs_unlink_basic)
@@ -222,7 +222,7 @@ TEST(fs_unlink_basic)
     ASSERT(result == 0, "unlink() should succeed");
 
     printk("  File unlinked successfully\n");
-    return true;
+    do_exit(0);
 }
 
 TEST(fs_unlink_nonexistent)
@@ -233,7 +233,7 @@ TEST(fs_unlink_nonexistent)
     ASSERT(result < 0, "unlink() should fail on nonexistent file");
 
     printk("  Correctly failed on nonexistent file\n");
-    return true;
+    do_exit(0);
 }
 
 TEST(fs_chdir_basic)
@@ -257,7 +257,7 @@ TEST(fs_chdir_basic)
     result = k_rmdir("/test_chdir");
     ASSERT(result == 0, "rmdir() should succeed");
 
-    return true;
+    do_exit(0);
 }
 
 TEST(fs_chdir_relative)
@@ -290,7 +290,7 @@ TEST(fs_chdir_relative)
     result = k_rmdir("/test_rel_parent");
     ASSERT(result == 0, "parent rmdir() should succeed");
 
-    return true;
+    do_exit(0);
 }
 
 TEST(fs_chdir_dotdot)
@@ -324,7 +324,7 @@ TEST(fs_chdir_dotdot)
     result = k_rmdir("/test_parent");
     ASSERT(result == 0, "parent rmdir() should succeed");
 
-    return true;
+    do_exit(0);
 }
 
 TEST(fs_chdir_nonexistent)
@@ -335,7 +335,7 @@ TEST(fs_chdir_nonexistent)
     ASSERT(result < 0, "chdir() should fail on nonexistent directory");
 
     printk("  Correctly failed on nonexistent directory\n");
-    return true;
+    do_exit(0);
 }
 
 TEST(fs_getcwd_basic)
@@ -347,7 +347,7 @@ TEST(fs_getcwd_basic)
     ASSERT(result > 0, "getcwd() should succeed");
 
     printk("  Current directory: %s\n", buf);
-    return true;
+    do_exit(0);
 }
 
 TEST(fs_getcwd_after_chdir)
@@ -372,7 +372,7 @@ TEST(fs_getcwd_after_chdir)
     result = k_rmdir("/test_getcwd");
     ASSERT(result == 0, "rmdir() should succeed");
 
-    return true;
+    do_exit(0);
 }
 
 TEST(fs_readdir_basic)
@@ -419,7 +419,7 @@ TEST(fs_readdir_basic)
     result = k_rmdir("/test_readdir");
     ASSERT(result == 0, "rmdir() should succeed");
 
-    return true;
+    do_exit(0);
 }
 
 TEST(fs_readdir_empty)
@@ -447,7 +447,7 @@ TEST(fs_readdir_empty)
     result = k_rmdir("/test_empty");
     ASSERT(result == 0, "rmdir() should succeed");
 
-    return true;
+    do_exit(0);
 }
 
 void filesystem_tests(void)

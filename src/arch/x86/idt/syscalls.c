@@ -58,6 +58,9 @@ SYSCALL_ATTR static s32 sys_open(char const* path, int flags, int mode)
 {
     vfs_inode_t* new = vfs_lookup(myproc()->root, path);
     if (!new) {
+        // FIXME: We do not know if there is an error, or it actually does not
+        // exist
+
         if (!(flags & O_CREAT)) {
             return -ENOENT;
         }
@@ -84,6 +87,11 @@ SYSCALL_ATTR static s32 sys_open(char const* path, int flags, int mode)
             return -ENOENT;
         }
 
+        if (!vfs_permission(parent, MAY_EXEC)) {
+            inode_put(parent);
+            return -EPERM;
+        }
+
         if (parent->i_op->create(
                 parent, name, (s32)name_len, S_IFREG | (mode & 0777), &new
             )
@@ -91,6 +99,19 @@ SYSCALL_ATTR static s32 sys_open(char const* path, int flags, int mode)
             inode_put(new);
             inode_put(parent);
             return -1;
+        }
+    } else {
+        int mask = 0;
+        if ((flags & O_ACCMODE) == O_RDONLY || (flags & O_ACCMODE) == O_RDWR) {
+            mask |= MAY_READ;
+        }
+        if ((flags & O_ACCMODE) == O_WRONLY || (flags & O_ACCMODE) == O_RDWR) {
+            mask |= MAY_WRITE;
+        }
+
+        if (!vfs_permission(new, mask)) {
+            inode_put(new);
+            return -EPERM;
         }
     }
 
@@ -116,7 +137,14 @@ SYSCALL_ATTR static s32 sys_open(char const* path, int flags, int mode)
     file->f_inode = new;
     file->f_pos = 0;
     file->f_flags = flags;
-    file->f_mode = mode;
+
+    file->f_mode = 0;
+    if ((flags & O_ACCMODE) == O_RDONLY || (flags & O_ACCMODE) == O_RDWR) {
+        file->f_mode |= FMODE_READ;
+    }
+    if ((flags & O_ACCMODE) == O_WRONLY || (flags & O_ACCMODE) == O_RDWR) {
+        file->f_mode |= FMODE_WRITE;
+    }
 
     return fd;
 }
@@ -176,6 +204,16 @@ SYSCALL_ATTR static int sys_unlink(char const* path)
         return -ENOTDIR;
     }
 
+    // if (IS_RDONLY(dir)) {
+    //     inode_put(parent);
+    //     return -EROFS;
+    // }
+
+    if (!vfs_permission(parent, MAY_WRITE | MAY_EXEC)) {
+        inode_put(parent);
+        return -EACCES;
+    }
+
     int error = root->i_op->unlink(parent, name, name_len);
 
     inode_put(parent);
@@ -218,6 +256,11 @@ SYSCALL_ATTR static int sys_chdir(char const* path)
     if (!S_ISDIR(node->i_mode)) {
         inode_put(node);
         return -ENOTDIR;
+    }
+
+    if (!vfs_permission(node, MAY_EXEC)) {
+        inode_put(node);
+        return -EACCES;
     }
 
     inode_put(myproc()->pwd);
@@ -306,8 +349,6 @@ SYSCALL_ATTR int sys_lseek(u32 fd, off_t offset, u32 whence)
 
 SYSCALL_ATTR static pid_t sys_getpid(void) { return myproc()->pid; }
 
-SYSCALL_ATTR static uid_t sys_getuid(void) { return getuid(); }
-
 SYSCALL_ATTR static s32 sys_kill(pid_t pid, s32 sig)
 {
     proc_t* caller = myproc();
@@ -371,6 +412,16 @@ SYSCALL_ATTR static s32 sys_mkdir(char const* pathname, int mode)
         return -ENOENT;
     }
 
+    // if (IS_RDONLY(parent)) {
+    //     iput(dir);
+    //     return -EROFS;
+    // }
+
+    if (!vfs_permission(parent, MAY_WRITE | MAY_EXEC)) {
+        inode_put(parent);
+        return -EACCES;
+    }
+
     if (!parent->i_op || !parent->i_op->mkdir) {
         inode_put(parent);
         return -ENOTDIR;
@@ -408,6 +459,16 @@ SYSCALL_ATTR static int sys_rmdir(char const* path)
         return -ENOTDIR;
     }
 
+    // if (IS_RDONLY(dir)) {
+    //     iput(dir);
+    //     return -EROFS;
+    // }
+
+    if (!vfs_permission(parent, MAY_WRITE | MAY_EXEC)) {
+        inode_put(parent);
+        return -EACCES;
+    }
+
     if (!parent->i_op || !parent->i_op->rmdir) {
         inode_put(parent);
         return -ENOTDIR;
@@ -418,8 +479,6 @@ SYSCALL_ATTR static int sys_rmdir(char const* path)
 
     return retval;
 }
-
-SYSCALL_ATTR static uid_t sys_geteuid(void) { return geteuid(); }
 
 SYSCALL_ATTR static s32 sys_readdir(u32 fd, dirent_t* dirent, s32 count)
 {
@@ -443,6 +502,16 @@ SYSCALL_ATTR static s32 sys_truncate(char const* path, off_t len)
     if (!node) {
         return -ENOENT;
     }
+
+    if (S_ISDIR(node->i_mode) || !vfs_permission(node, MAY_WRITE)) {
+        inode_put(node);
+        return -EACCES;
+    }
+
+    // if (IS_RDONLY(node)) {
+    //     inode_put(node);
+    //     return -EROFS;
+    // }
 
     if (!node->i_op->truncate) {
         inode_put(node);
@@ -470,26 +539,6 @@ SYSCALL_ATTR static s32 sys_ftruncate(s32 fd, off_t len)
     return ret;
 }
 
-SYSCALL_ATTR static s32 sys_setuid(uid_t uid)
-{
-    proc_t* p = myproc();
-
-    if (p->euid == 0) {
-        p->uid = uid;
-        p->euid = uid;
-
-        return 0;
-    }
-
-    if (p->uid == uid || p->euid == uid) {
-        p->euid = uid;
-
-        return 0;
-    }
-
-    return -1;
-}
-
 SYSCALL_ATTR static int sys_fchdir(s32 fd)
 {
     file_t* file = fd_get(fd);
@@ -499,6 +548,10 @@ SYSCALL_ATTR static int sys_fchdir(s32 fd)
 
     if (!file->f_inode || !S_ISDIR(file->f_inode->i_mode)) {
         return -ENOTDIR;
+    }
+
+    if (!vfs_permission(file->f_inode, MAY_EXEC)) {
+        return -EACCES;
     }
 
     inode_put(myproc()->pwd);
@@ -677,15 +730,40 @@ syscall_dispatcher_c(registers_t* reg)
         reg->eax = sys_rmdir((char*)reg->ebx);
         break;
 
-    case SYS_SOCKETCALL:
-        reg->eax = sys_socketcall((s32)reg->ebx, (unsigned long*)reg->ecx);
+    case SYS_SETGID:
+        reg->eax = sys_setgid(reg->ebx);
+        break;
+
+    case SYS_GETGID:
+        reg->eax = sys_getgid();
         break;
 
     case SYS_SIGNAL:
+        reg->eax = -ENOSYS;
         break;
 
     case SYS_GETEUID:
         reg->eax = sys_geteuid();
+        break;
+
+    case SYS_GETEGID:
+        reg->eax = sys_getegid();
+        break;
+
+    case SYS_SETREUID:
+        reg->eax = sys_setreuid(reg->ebx, reg->ecx);
+        break;
+
+    case SYS_SETREGID:
+        reg->eax = sys_setregid(reg->ebx, reg->ecx);
+        break;
+
+    case SYS_SETGROUPS:
+        reg->eax = sys_setgroups((gid_t*)reg->ebx, reg->ecx);
+        break;
+
+    case SYS_GETGROUPS:
+        reg->eax = sys_getgroups((gid_t*)reg->ebx, reg->ecx);
         break;
 
     case SYS_READDIR:
@@ -700,6 +778,10 @@ syscall_dispatcher_c(registers_t* reg)
         reg->eax = sys_ftruncate((s32)reg->ebx, (off_t)reg->ecx);
         break;
 
+    case SYS_SOCKETCALL:
+        reg->eax = sys_socketcall((s32)reg->ebx, (unsigned long*)reg->ecx);
+        break;
+
     case SYS_FCHDIR:
         reg->eax = sys_fchdir(reg->ebx);
         break;
@@ -708,11 +790,28 @@ syscall_dispatcher_c(registers_t* reg)
         reg->eax = sys_nanosleep();
         break;
 
+    case SYS_SETRESUID:
+        reg->eax = sys_setresuid(reg->ebx, reg->ecx, reg->edx);
+        break;
+
+    case SYS_GETRESUID:
+        reg->eax = -ENOSYS;
+        break;
+
+    case SYS_SETRESGID:
+        reg->eax = sys_setresgid(reg->ebx, reg->ecx, reg->edx);
+        break;
+
+    case SYS_GETRESGID:
+        reg->eax = -ENOSYS;
+        break;
+
     case SYS_GETCWD:
         reg->eax = sys_getcwd((char*)reg->ebx, reg->ecx);
         break;
 
     default:
+        reg->eax = -EINVAL;
         printk("Nothing...?\n");
         break;
     }

@@ -32,6 +32,7 @@ struct inode_operations ext2_file_inode_operations = {
     .mkdir = NULL,
     .unlink = NULL,
     .truncate = ext2_truncate,
+    .permission = ext2_permission,
 };
 
 int ext2_file_read(vfs_inode_t* node, file_t* file, void* buff, s32 count)

@@ -18,7 +18,7 @@ TEST(buddy_single_page_alloc)
 
     buddy_dealloc(page, 0);
     printk("  Freed page successfully\n");
-    return true;
+    do_exit(0);
 }
 
 TEST(buddy_multiple_orders)
@@ -39,7 +39,7 @@ TEST(buddy_multiple_orders)
     buddy_dealloc(page1, 0);
     buddy_dealloc(page2, 1);
     buddy_dealloc(page3, 2);
-    return true;
+    do_exit(0);
 }
 
 TEST(buddy_alloc_free_alloc)
@@ -60,7 +60,7 @@ TEST(buddy_alloc_free_alloc)
     ASSERT(page1 == page2, "Should reuse the freed page");
 
     buddy_dealloc(page2, 0);
-    return true;
+    do_exit(0);
 }
 
 TEST(buddy_alignment)
@@ -102,7 +102,7 @@ TEST(buddy_alignment)
 
         buddy_dealloc(block, order);
     }
-    return true;
+    do_exit(0);
 }
 
 TEST(buddy_exhaustion)
@@ -132,7 +132,7 @@ TEST(buddy_exhaustion)
     ASSERT(page != 0, "Should be able to allocate after freeing all");
     buddy_dealloc(page, 0);
 
-    return true;
+    do_exit(0);
 }
 
 TEST(buddy_double_free_detection)
@@ -149,7 +149,7 @@ TEST(buddy_double_free_detection)
     // For now, we'll just note that it shouldn't crash
     printk("  Note: Double-free behavior depends on implementation\n");
 
-    return true;
+    do_exit(0);
 }
 
 TEST(buddy_coalescing)
@@ -171,7 +171,7 @@ TEST(buddy_coalescing)
     ASSERT(large == large2, "Should get same block back (coalesced)");
 
     buddy_dealloc(large2, 2);
-    return true;
+    do_exit(0);
 }
 
 TEST(buddy_fragmentation_recovery)
@@ -202,7 +202,7 @@ TEST(buddy_fragmentation_recovery)
 
     printk("  Successfully allocated 4-page block at %x\n", large);
     buddy_dealloc(large, 2);
-    return true;
+    do_exit(0);
 }
 
 TEST(buddy_split_and_merge)
@@ -265,7 +265,7 @@ TEST(buddy_split_and_merge)
     }
 
     buddy_dealloc(large2, 3);
-    return true;
+    do_exit(0);
 }
 
 TEST(buddy_mixed_workload)
@@ -291,7 +291,7 @@ TEST(buddy_mixed_workload)
     buddy_dealloc(large1, 3);
 
     printk("  Freed in different order - no crashes\n");
-    return true;
+    do_exit(0);
 }
 
 TEST(buddy_max_order_allocation)
@@ -315,7 +315,7 @@ TEST(buddy_max_order_allocation)
         printk("  Max order allocation failed (fragmented or in use)\n");
     }
 
-    return true;
+    do_exit(0);
 }
 
 TEST(buddy_alternating_alloc_free)
@@ -329,7 +329,7 @@ TEST(buddy_alternating_alloc_free)
     }
 
     printk("  10 alloc/free cycles completed successfully\n");
-    return true;
+    do_exit(0);
 }
 
 void buddy_tests(void)

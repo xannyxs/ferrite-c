@@ -114,7 +114,7 @@ TEST(socket_create)
     ASSERT(sockfd >= 0, "socket() should succeed");
 
     printk("  Created socket with fd=%d\n", sockfd);
-    return true;
+    do_exit(0);
 }
 
 static void server_process_simple(void)
@@ -240,7 +240,7 @@ TEST(socket_client_server)
 
     ASSERT(test_result == 1, "Communication should succeed");
 
-    return true;
+    do_exit(0);
 }
 
 static void server_process_multi(void)
@@ -370,7 +370,7 @@ TEST(socket_multiple_messages)
     process_list();
     ASSERT(test_result == 1, "Multiple messages should work");
 
-    return true;
+    do_exit(0);
 }
 
 TEST(socket_connection_refused)
@@ -387,7 +387,7 @@ TEST(socket_connection_refused)
     ASSERT(result < 0, "connect() should fail to nonexistent socket");
 
     printk("  Connection correctly refused\n");
-    return true;
+    do_exit(0);
 }
 
 void socket_tests(void)

@@ -15,7 +15,7 @@ TEST(breakpoint_instruction)
     printk("  Testing breakpoint (int 3)...\n");
     __asm__ volatile("int $0x03");
     printk("  Returned from breakpoint\n");
-    return true;
+    do_exit(0);
 }
 
 TEST(timer_interrupt_fires)
@@ -28,7 +28,7 @@ TEST(timer_interrupt_fires)
     u32 end_ticks = ticks;
     ASSERT(end_ticks > start_ticks, "Timer should have incremented");
     printk("  Timer ticks: %u -> %u\n", start_ticks, end_ticks);
-    return true;
+    do_exit(0);
 }
 
 void idt_tests(void)

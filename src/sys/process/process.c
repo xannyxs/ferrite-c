@@ -35,10 +35,17 @@ static inline void inherit_credentials(proc_t* child, proc_t* parent)
     if (parent) {
         child->uid = parent->uid;
         child->euid = parent->euid;
+        child->suid = parent->suid;
+
+        child->gid = parent->gid;
+        child->egid = parent->egid;
+        child->sgid = parent->sgid;
+
         return;
     }
 
-    child->uid = child->euid = ROOT_UID;
+    child->uid = child->euid = child->suid = ROOT_UID;
+    child->gid = child->egid = child->sgid = ROOT_UID;
 }
 
 proc_t* __alloc_proc(void)
@@ -82,13 +89,6 @@ proc_t* __alloc_proc(void)
 /* Public */
 
 inline proc_t* myproc(void) { return current_proc; }
-
-// Real UID: actual user who started the process (for accounting/auditing)
-inline uid_t getuid(void) { return current_proc->uid; }
-
-// Effective UID: determines permissions for system access (files, syscalls,
-// etc.)
-inline uid_t geteuid(void) { return current_proc->euid; }
 
 inline proc_t* find_process(pid_t pid)
 {
