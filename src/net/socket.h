@@ -1,14 +1,13 @@
 #ifndef SOCKET_H
 #define SOCKET_H
 
-#include "fs/vfs.h"
 #include "sys/file/file.h"
 #include <ferrite/types.h>
 
 #define SOCK_STREAM 1 /* Stream socket (TCP, Unix STREAM) */
 #define SOCK_DGRAM 2  /* Datagram socket (UDP, Unix DGRAM) */
 
-struct inode;
+struct vfs_inode;
 
 typedef enum {
     SS_FREE = 0,     /* not allocated		*/
@@ -22,9 +21,9 @@ typedef struct socket {
     s16 type;
     socket_state_e state; /* Connection state */
 
-    struct proto_ops* ops; /* Protocol operations (TCP/UDP) */
-    void* data;            /* Protocol-specific data */
-    vfs_inode_t* inode;    /* Back pointer to inode */
+    struct proto_ops* ops;   /* Protocol operations (TCP/UDP) */
+    void* data;              /* Protocol-specific data */
+    struct vfs_inode* inode; /* Back pointer to inode */
 
     struct socket* conn;
 } socket_t;
@@ -39,6 +38,8 @@ struct proto_ops {
     int (*accept)(socket_t* s, socket_t* newsock);
     int (*shutdown)(socket_t* sock, int how);
 };
+
+struct vfs_inode* __alloc_socket(socket_t* _s);
 
 s32 socket_create(s32 family, s16 type, s32 protocol);
 

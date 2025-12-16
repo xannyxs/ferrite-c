@@ -3,18 +3,22 @@
 #include "memory/kmalloc.h"
 #include "sys/process/process.h"
 
+#include <ferrite/errno.h>
 #include <ferrite/types.h>
 #include <lib/string.h>
 
 int fd_alloc(void)
 {
     proc_t* p = myproc();
+    if (!p) {
+        return -ENOENT;
+    }
 
     for (int i = 0; i < MAX_OPEN_FILES; i += 1) {
         if (!p->open_files[i]) {
             p->open_files[i] = kmalloc(sizeof(file_t));
             if (!p->open_files[i]) {
-                return -1;
+                return -ENOMEM;
             }
 
             return i;

@@ -1,3 +1,4 @@
+#include "fs/stat.h"
 #include "fs/vfs.h"
 
 #include <drivers/printk.h>
@@ -12,6 +13,25 @@ void inode_cache_init(void)
     for (int i = 0; i < MAX_INODES; i++) {
         inode_cache[i].i_count = 0;
     }
+}
+
+vfs_inode_t* inode_get_empty(vfs_superblock_t* sb, unsigned long ino)
+{
+    for (int i = 0; i < MAX_INODES; i += 1) {
+        if (inode_cache[i].i_count == 0) {
+            inode_cache[i].i_sb = sb;
+            inode_cache[i].i_ino = ino;
+            inode_cache[i].i_count = 1;
+
+            if (sb && sb->s_op && !S_ISSOCK(inode_cache[i].i_mode)) {
+                sb->s_op->read_inode(&inode_cache[i]);
+            }
+
+            return &inode_cache[i];
+        }
+    }
+
+    return NULL;
 }
 
 /*
@@ -36,27 +56,19 @@ vfs_inode_t* inode_get(vfs_superblock_t* sb, unsigned long ino)
 
     for (int i = 0; i < MAX_INODES; i += 1) {
         if (inode_cache[i].i_sb == sb && inode_cache[i].i_ino == ino) {
+
             inode_cache[i].i_count += 1;
 
-            sb->s_op->read_inode(&inode_cache[i]);
+            // This is extremely fragile. Should take a closer look at this
+            if (sb && sb->s_op && !S_ISSOCK(inode_cache[i].i_mode)) {
+                sb->s_op->read_inode(&inode_cache[i]);
+            }
 
             return &inode_cache[i];
         }
     }
 
-    for (int i = 0; i < MAX_INODES; i += 1) {
-        if (inode_cache[i].i_count == 0) {
-            inode_cache[i].i_sb = sb;
-            inode_cache[i].i_ino = ino;
-            inode_cache[i].i_count = 1;
-
-            sb->s_op->read_inode(&inode_cache[i]);
-
-            return &inode_cache[i];
-        }
-    }
-
-    return NULL;
+    return inode_get_empty(sb, ino);
 }
 
 void inode_put(vfs_inode_t* n)

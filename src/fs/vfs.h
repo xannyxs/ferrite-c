@@ -2,6 +2,7 @@
 #define FS_VFS_H
 
 #include "fs/vfs/mode_t.h"
+#include "net/socket.h"
 #include "sys/file/file.h"
 
 #include <ferrite/types.h>
@@ -45,6 +46,7 @@ typedef struct vfs_inode {
 
     struct inode_operations* i_op;
     union {
+        struct socket* i_socket;
         struct ext2_inode* i_ext2;
     } u;
 } vfs_inode_t;
@@ -78,6 +80,8 @@ struct inode_operations {
     int (*unlink)(vfs_inode_t*, char const*, int);
     int (*truncate)(vfs_inode_t*, off_t);
 };
+
+vfs_inode_t* inode_get_empty(vfs_superblock_t* sb, unsigned long ino);
 
 vfs_inode_t* inode_get(vfs_superblock_t* sb, unsigned long ino);
 
