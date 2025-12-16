@@ -58,6 +58,9 @@ SYSCALL_ATTR static s32 sys_open(char const* path, int flags, int mode)
 {
     vfs_inode_t* new = vfs_lookup(myproc()->root, path);
     if (!new) {
+        // FIXME: We do not know if there is an error, or it actually does not
+        // exist
+
         if (!(flags & O_CREAT)) {
             return -ENOENT;
         }
@@ -84,6 +87,11 @@ SYSCALL_ATTR static s32 sys_open(char const* path, int flags, int mode)
             return -ENOENT;
         }
 
+        if (!vfs_permission(parent, MAY_EXEC)) {
+            inode_put(parent);
+            return -EPERM;
+        }
+
         if (parent->i_op->create(
                 parent, name, (s32)name_len, S_IFREG | (mode & 0777), &new
             )
@@ -91,6 +99,19 @@ SYSCALL_ATTR static s32 sys_open(char const* path, int flags, int mode)
             inode_put(new);
             inode_put(parent);
             return -1;
+        }
+    } else {
+        int mask = 0;
+        if ((flags & O_ACCMODE) == O_RDONLY || (flags & O_ACCMODE) == O_RDWR) {
+            mask |= MAY_READ;
+        }
+        if ((flags & O_ACCMODE) == O_WRONLY || (flags & O_ACCMODE) == O_RDWR) {
+            mask |= MAY_WRITE;
+        }
+
+        if (!vfs_permission(new, mask)) {
+            inode_put(new);
+            return -EPERM;
         }
     }
 
@@ -116,7 +137,14 @@ SYSCALL_ATTR static s32 sys_open(char const* path, int flags, int mode)
     file->f_inode = new;
     file->f_pos = 0;
     file->f_flags = flags;
-    file->f_mode = mode;
+
+    file->f_mode = 0;
+    if ((flags & O_ACCMODE) == O_RDONLY || (flags & O_ACCMODE) == O_RDWR) {
+        file->f_mode |= FMODE_READ;
+    }
+    if ((flags & O_ACCMODE) == O_WRONLY || (flags & O_ACCMODE) == O_RDWR) {
+        file->f_mode |= FMODE_WRITE;
+    }
 
     return fd;
 }
