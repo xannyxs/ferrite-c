@@ -35,10 +35,17 @@ static inline void inherit_credentials(proc_t* child, proc_t* parent)
     if (parent) {
         child->uid = parent->uid;
         child->euid = parent->euid;
+        child->suid = parent->suid;
+
+        child->gid = parent->gid;
+        child->egid = parent->egid;
+        child->sgid = parent->sgid;
+
         return;
     }
 
-    child->uid = child->euid = ROOT_UID;
+    child->uid = child->euid = child->suid = ROOT_UID;
+    child->gid = child->egid = child->sgid = ROOT_UID;
 }
 
 proc_t* __alloc_proc(void)

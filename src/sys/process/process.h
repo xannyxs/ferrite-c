@@ -55,10 +55,6 @@ typedef struct process {
 
 extern void swtch(context_t** old, context_t* new);
 
-uid_t getuid(void);
-
-uid_t geteuid(void);
-
 void schedule(void);
 
 void create_initial_process(void);
