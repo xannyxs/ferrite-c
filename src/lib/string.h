@@ -3,7 +3,30 @@
 
 #include <ferrite/types.h>
 
-size_t strlen(char const* s);
+static inline size_t strlen(char const* s)
+{
+    int d0; // Dummy variable to capture modified RDI pointer (unused, but
+            // required)
+    register int __res __asm__("cx"); // Pre-allocate __res to RCX register
+
+    __asm__(
+        "cld\n\t"   // Clear Direction Flag: scan forward (increment RDI)
+        "repne\n\t" // REPeat while Not Equal: loop while byte != AL and RCX !=
+                    // 0
+        "scasb\n\t" // SCAn String Byte: compare [RDI] with AL, inc RDI, dec RCX
+        "notl %0\n\t" // Bitwise NOT RCX: convert "remaining" to "done" count
+        "decl %0\n\t" // Decrement RCX: subtract 1 to exclude the '\0' byte
+
+        : "=c"(__res),
+          "=&D"(d0) // Outputs: RCX→__res (length), RDI→d0 (final ptr)
+
+        : "1"(s), // Input: s → RDI (same register as output #1)
+          "a"(0), // Input: 0 → AL (searching for null byte)
+          "0"(0xffffffff)
+    ); // Input: 0xffffffff → RCX (max count, same as output #0)
+
+    return __res;
+}
 
 void* memcpy(void* dest, void const* src, size_t n);
 
