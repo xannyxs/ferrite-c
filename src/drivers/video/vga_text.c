@@ -1,6 +1,7 @@
-#include "lib/string.h"
 #include "vga.h"
+
 #include <ferrite/types.h>
+#include <lib/string.h>
 
 size_t terminal_row;
 size_t terminal_column;
