@@ -193,7 +193,6 @@ TEST(priv_get_uid_gid)
     do_exit(0);
 }
 
-// Test: Root can read owner-only file
 TEST(priv_root_read_owner_file)
 {
     printk("  Testing root can read owner-only file...\n");

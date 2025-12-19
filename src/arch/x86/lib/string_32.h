@@ -3,23 +3,20 @@
 
 #include <ferrite/types.h>
 
-/* Builtin functions */
-extern void* memcpy(void*, void const*, size_t);
-extern void memset(void*, int, size_t);
-
-#define memcpy(dest, src, n) __builtin_memcpy(dest, src, n)
-#define memset(src, c, n) __builtin_memset(src, c, n)
-
-/* Internal functions */
+/* Optimized functions */
 size_t strlen(char const*);
-
-void* memmove(void*, void const*, size_t);
 
 int strcmp(char const*, char const*);
 
 int strncmp(char const*, char const*, size_t);
 
-// TODO still
+/* Normal functions */
+
+void* memmove(void*, void const*, size_t);
+
+void* memset(void*, int, size_t);
+
+void* memcpy(void*, void const*, size_t);
 
 char* strchr(char const* s, char c);
 
