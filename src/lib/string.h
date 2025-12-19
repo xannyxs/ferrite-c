@@ -27,73 +27,16 @@ static inline size_t strlen(char const* s)
     return __res;
 }
 
-static inline char* strchr(char const* str, s32 c)
-{
-    register char* __res __asm__("ax");
-
-    __asm__("cld\n\t"
-            "movb %%al, %%ah\n"
-            "1:\tlodsb\n\t"
-            "cmpb %%ah, %%al\n\t"
-            "je 2f\n\t"
-            "test %%al, %%al\n\t"
-            "jne 1b\n\t"
-            "movl $1,%1\n"
-            "2:\tmovl %1,%0\n\t"
-            "decl %0"
-
-            : "=a"(__res)
-            : "S"(str), "0"(c));
-
-    return __res;
-}
-
-static inline char* strrchr(char const* str, s32 c)
-{
-    register char* __res __asm__("dx");
-
-    __asm__("cld\n\t"
-            "movb %%al, %%ah\n"
-            "1:\tlodsb\n\t"
-
-            "cmpb %%ah, %%al\n\t"
-            "je 2f\n\t"
-
-            "movl %%esi, %0\n\t"
-            "decl %0\n"
-
-            "2:\ttestb %%al, %%al\n\t"
-            "jne 1b\n\t"
-
-            : "=a"(__res)
-            : "S"(str), "0"(c));
-
-    return __res;
-}
-
-static inline void* memcpy(void* dest, void const* src, size_t n)
-{
-    __asm__("cld\n\t"
-            "movl %%edx, %%ecx\n\t"
-            "shrl $2,%%ecx\n\t"
-            "rep ; movsl\n\t"
-            "testb $1,%%dl\n\t"
-            "je 1f\n\t"
-            "movsb\n"
-            "1:\ttestb $2,%%dl\n\t"
-            "je 2f\n\t"
-            "movsw\n"
-            "2:\n"
-            : /* no output */
-            : "d"(n), "D"((long)dest), "S"((long)src)
-            : "cx", "memory");
-
-    return dest;
-}
+extern void* memcpy(void*, void const*, size_t);
+#define memcpy(dest, from, n) __builtin_memcpy(dest, from, n)
 
 void* memmove(void* dest, void const* src, size_t len);
 
 void memset(void* s, int c, size_t n);
+
+char* strchr(char const* s, char c);
+
+char* strrchr(char const* s, char c);
 
 s32 strcmp(char const* s1, char const* s2);
 
