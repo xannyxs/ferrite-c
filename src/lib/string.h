@@ -28,9 +28,10 @@ static inline size_t strlen(char const* s)
 }
 
 extern void* memcpy(void*, void const*, size_t);
-#define memcpy(dest, from, n) __builtin_memcpy(dest, from, n)
+extern void* memmove(void*, void const*, size_t);
 
-void* memmove(void* dest, void const* src, size_t len);
+#define memcpy(dest, from, n) __builtin_memcpy(dest, from, n)
+#define memmove(dest, from, n) __builtin_memmove(dest, from, n)
 
 void memset(void* s, int c, size_t n);
 
