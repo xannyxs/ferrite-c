@@ -84,10 +84,9 @@ static inline void* memcpy(void* dest, void const* src, size_t n)
             "je 2f\n\t"
             "movsw\n"
             "2:\n"
-
-            : /* No output */
+            : /* no output */
             : "d"(n), "D"((long)dest), "S"((long)src)
-            : "memory");
+            : "cx", "memory");
 
     return dest;
 }

@@ -128,8 +128,10 @@ s32 ext2_read_inode(vfs_inode_t* dir)
 
     if (S_ISDIR(dir->i_mode)) {
         dir->i_op = &ext2_dir_inode_operations;
-    } else {
+    } else if (S_ISREG(dir->i_mode)) {
         dir->i_op = &ext2_file_inode_operations;
+    } else {
+        printk("Warning: no operation for inode %d\n", dir->i_ino);
     }
 
     return 0;
