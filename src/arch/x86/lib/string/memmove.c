@@ -1,7 +1,6 @@
 #include <ferrite/types.h>
 
-/* No builtin function fromg GCC of memmove */
-inline void* memmove(void* dest, void const* src, size_t len)
+void* memmove(void* dest, void const* src, size_t len)
 {
     if (len == 0 || !dest || !src) {
         return dest;
