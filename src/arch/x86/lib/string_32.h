@@ -10,9 +10,9 @@ int strcmp(char const*, char const*);
 
 int strncmp(char const*, char const*, size_t);
 
-/* Normal functions */
-
 void* memmove(void*, void const*, size_t);
+
+/* Normal functions */
 
 void* memset(void*, int, size_t);
 
