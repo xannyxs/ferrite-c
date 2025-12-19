@@ -11,17 +11,19 @@ extern void memset(void*, int, size_t);
 #define memset(src, c, n) __builtin_memset(src, c, n)
 
 /* Internal functions */
-size_t strlen(char const* s);
+size_t strlen(char const*);
 
-void* memmove(void* dest, void const* src, size_t len);
+void* memmove(void*, void const*, size_t);
 
-s32 strcmp(char const* s1, char const* s2);
+int strcmp(char const*, char const*);
+
+int strncmp(char const*, char const*, size_t);
+
+// TODO still
 
 char* strchr(char const* s, char c);
 
 char* strrchr(char const* s, char c);
-
-s32 strncmp(char const* str1, char const* str2, size_t n);
 
 char** split(char const* s, char c);
 

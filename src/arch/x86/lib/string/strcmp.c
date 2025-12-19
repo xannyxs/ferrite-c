@@ -1,6 +1,6 @@
 #include <ferrite/types.h>
 
-int strcmp(char const* s1, char const* s2)
+int strcmp(char const* _l, char const* _r)
 {
     int d0, d1;
     int __res;
@@ -15,13 +15,14 @@ int strcmp(char const* s1, char const* s2)
 
                      "xorl %%eax,%%eax\n\t"
                      "jmp 3f\n"
+
                      "2:\tsbbl %%eax,%%eax\n\t"
                      "orb $1,%%al\n"
 
                      "3:"
 
                      : "=a"(__res), "=&S"(d0), "=&D"(d1)
-                     : "1"(s1), "2"(s2)
+                     : "1"(_l), "2"(_r)
                      : "memory");
 
     return __res;
