@@ -1,7 +1,7 @@
 #ifdef __TEST
 #    include "arch/x86/idt/syscalls.h"
 #    include "drivers/printk.h"
-#    include "lib/string.h"
+#    include "ferrite/string.h"
 #    include "net/socket.h"
 #    include "net/unix.h"
 #    include "sys/process/process.h"

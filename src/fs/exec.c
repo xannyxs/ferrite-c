@@ -9,7 +9,7 @@
 
 #include <ferrite/errno.h>
 #include <lib/stdlib.h>
-#include <lib/string.h>
+#include <ferrite/string.h>
 #include <memory/consts.h>
 #include <sys/file/fcntl.h>
 

@@ -1,5 +1,5 @@
 #include "debug/debug.h"
-#include "lib/string.h"
+#include "ferrite/string.h"
 #include "video/vga.h"
 
 #include <stdarg.h>

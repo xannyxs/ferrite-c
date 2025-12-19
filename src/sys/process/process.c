@@ -6,7 +6,7 @@
 #include "drivers/printk.h"
 #include "fs/vfs.h"
 #include "lib/stdlib.h"
-#include "lib/string.h"
+#include "ferrite/string.h"
 #include "memory/consts.h"
 #include "memory/page.h"
 #include "memory/vmm.h"

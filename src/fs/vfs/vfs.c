@@ -4,8 +4,8 @@
 #include "lib/stdlib.h"
 #include "memory/kmalloc.h"
 
+#include <ferrite/string.h>
 #include <ferrite/types.h>
-#include <lib/string.h>
 
 extern struct super_operations ext2_sops;
 vfs_inode_t* root_inode = NULL;

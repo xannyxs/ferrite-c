@@ -2,7 +2,7 @@
 #include "drivers/printk.h"
 #include "fs/stat.h"
 #include "fs/vfs.h"
-#include "lib/string.h"
+#include "ferrite/string.h"
 #include "memory/kmalloc.h"
 #include "net/socket.h"
 #include "sys/process/process.h"

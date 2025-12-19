@@ -5,7 +5,7 @@
 
 #include <ferrite/limits.h>
 #include <lib/stdlib.h>
-#include <lib/string.h>
+#include <ferrite/string.h>
 
 extern struct device_operations ide_device_ops;
 

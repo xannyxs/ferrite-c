@@ -2,7 +2,7 @@
 #include "arch/x86/memlayout.h"
 #include "drivers/printk.h"
 #include "lib/stdlib.h"
-#include "lib/string.h"
+#include "ferrite/string.h"
 #include "memory/buddy_allocator/buddy.h"
 #include "memory/consts.h"
 #include "memory/memblock.h"

@@ -18,7 +18,7 @@
 
 #include <ferrite/types.h>
 #include <lib/stdlib.h>
-#include <lib/string.h>
+#include <ferrite/string.h>
 
 extern proc_t* current_proc;
 

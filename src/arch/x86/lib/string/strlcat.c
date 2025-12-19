@@ -1,5 +1,5 @@
 #include <ferrite/types.h>
-#include <lib/string.h>
+#include <ferrite/string.h>
 
 size_t strlcat(char* dst, char const* src, size_t n)
 {

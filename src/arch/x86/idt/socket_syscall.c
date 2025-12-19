@@ -10,7 +10,7 @@
 #include <ferrite/errno.h>
 #include <ferrite/types.h>
 #include <lib/stdlib.h>
-#include <lib/string.h>
+#include <ferrite/string.h>
 
 SYSCALL_ATTR static s32 sys_bind(s32 fd, void* addr, s32 addrlen)
 {

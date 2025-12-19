@@ -1,4 +1,4 @@
-#include "lib/string.h"
+#include "ferrite/string.h"
 #include "memory/kmalloc.h"
 #include <ferrite/types.h>
 

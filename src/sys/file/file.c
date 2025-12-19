@@ -5,7 +5,7 @@
 
 #include <ferrite/errno.h>
 #include <ferrite/types.h>
-#include <lib/string.h>
+#include <ferrite/string.h>
 
 int fd_alloc(void)
 {

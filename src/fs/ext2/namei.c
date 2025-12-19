@@ -6,7 +6,7 @@
 
 #include <ferrite/errno.h>
 #include <ferrite/types.h>
-#include <lib/string.h>
+#include <ferrite/string.h>
 
 int ext2_create(
     vfs_inode_t* dir,
