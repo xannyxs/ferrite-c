@@ -28,12 +28,35 @@ static inline size_t strlen(char const* s)
 }
 
 extern void* memcpy(void*, void const*, size_t);
-extern void* memmove(void*, void const*, size_t);
+extern void memset(void*, int, size_t);
 
-#define memcpy(dest, from, n) __builtin_memcpy(dest, from, n)
-#define memmove(dest, from, n) __builtin_memmove(dest, from, n)
+#define memcpy(dest, src, n) __builtin_memcpy(dest, src, n)
+#define memset(src, c, n) __builtin_memset(src, c, n)
 
-void memset(void* s, int c, size_t n);
+/* No builtin function fromg GCC of memmove */
+static inline void* memmove(void* dest, void const* src, size_t len)
+{
+    if (len == 0 || !dest || !src) {
+        return dest;
+    }
+
+    u8* __d = dest;
+    u8 const* __s = src;
+
+    if (__d < __s) {
+        while (len--) {
+            *__d++ = *__s++;
+        }
+    } else if (__d > __s) {
+        __d += len;
+        __s += len;
+
+        while (len--)
+            *--__d = *--__s;
+    }
+
+    return dest;
+}
 
 char* strchr(char const* s, char c);
 
