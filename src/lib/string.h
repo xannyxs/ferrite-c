@@ -5,9 +5,8 @@
 
 static inline size_t strlen(char const* s)
 {
-    int d0; // Dummy variable to capture modified RDI pointer (unused, but
-            // required)
-    register int __res __asm__("cx"); // Pre-allocate __res to RCX register
+    int d0;
+    register int __res __asm__("cx");
 
     __asm__(
         "cld\n\t"   // Clear Direction Flag: scan forward (increment RDI)
@@ -28,7 +27,70 @@ static inline size_t strlen(char const* s)
     return __res;
 }
 
-void* memcpy(void* dest, void const* src, size_t n);
+static inline char* strchr(char const* str, s32 c)
+{
+    register char* __res __asm__("ax");
+
+    __asm__("cld\n\t"
+            "movb %%al, %%ah\n"
+            "1:\tlodsb\n\t"
+            "cmpb %%ah, %%al\n\t"
+            "je 2f\n\t"
+            "test %%al, %%al\n\t"
+            "jne 1b\n\t"
+            "movl $1,%1\n"
+            "2:\tmovl %1,%0\n\t"
+            "decl %0"
+
+            : "=a"(__res)
+            : "S"(str), "0"(c));
+
+    return __res;
+}
+
+static inline char* strrchr(char const* str, s32 c)
+{
+    register char* __res __asm__("dx");
+
+    __asm__("cld\n\t"
+            "movb %%al, %%ah\n"
+            "1:\tlodsb\n\t"
+
+            "cmpb %%ah, %%al\n\t"
+            "je 2f\n\t"
+
+            "movl %%esi, %0\n\t"
+            "decl %0\n"
+
+            "2:\ttestb %%al, %%al\n\t"
+            "jne 1b\n\t"
+
+            : "=a"(__res)
+            : "S"(str), "0"(c));
+
+    return __res;
+}
+
+static inline void* memcpy(void* dest, void const* src, size_t n)
+{
+    __asm__("cld\n\t"
+            "movl %%edx, %%ecx\n\t"
+            "shrl $2,%%ecx\n\t"
+            "rep ; movsl\n\t"
+            "testb $1,%%dl\n\t"
+            "je 1f\n\t"
+            "movsb\n"
+            "1:\ttestb $2,%%dl\n\t"
+            "je 2f\n\t"
+            "movsw\n"
+            "2:\n"
+
+            : /* No output */
+            : "d"(n), "D"((long)dest), "S"((long)src)
+            : "memory");
+
+    return dest;
+}
 
 void* memmove(void* dest, void const* src, size_t len);
 
@@ -43,10 +105,6 @@ char** split(char const* s, char c);
 char* substr(char const* str, u32 start, size_t len);
 
 size_t strlcpy(char* dest, char const* src, size_t n);
-
-char* strchr(char const* str, s32 c);
-
-char* strrchr(char const* str, s32 c);
 
 char* strnstr(char const* str, char const* to_find, size_t len);
 
