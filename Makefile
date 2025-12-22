@@ -24,7 +24,7 @@ C_OBJECTS = $(patsubst $(SDIR)/%.c,$(ODIR)/%.o,$(C_SOURCES))
 ASM_OBJECTS = $(patsubst $(SDIR)/%.asm,$(ODIR)/%.o,$(ASM_SOURCES))
 
 DISK_IMG = disk.img
-QEMUFLAGS = -serial stdio -m 16 -cpu 486 -drive file=disk.img,format=raw,if=ide
+QEMUFLAGS = -serial stdio -m 4 -cpu 486 -drive file=disk.img,format=raw,if=ide
 
 
 all: $(NAME)
