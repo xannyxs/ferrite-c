@@ -1,58 +1,29 @@
-#include <ferrite/string.h>
 #include <ferrite/types.h>
 
-typedef __attribute__((__may_alias__)) size_t WT;
-#define WS (sizeof(WT))
-
-void* memmove(void* dest, void const* src, size_t n)
+void* memmove(void* dest, void const* src, size_t len)
 {
-    char* d = dest;
-    char const* s = src;
+    int d0, d1, d2;
 
-    if (d == s) {
-        return d;
+    if (dest == src || len == 0) {
+        return dest;
     }
 
-    if (s - d - n <= -2 * n) {
-        return memcpy(d, s, n);
-    }
+    if (dest < src) {
+        __asm__ volatile("cld\n\t"
+                         "rep; movsb"
 
-    if (d < s) {
-        if ((u32)s % WS == (u32)d % WS) {
-            while ((u32)d % WS) {
-                if (!n--) {
-                    return dest;
-                }
-
-                *d++ = *s++;
-            }
-
-            for (; n >= WS; n -= WS, d += WS, s += WS) {
-                *(WT*)d = *(WT*)s;
-            }
-        }
-
-        for (; n; n--) {
-            *d++ = *s++;
-        }
+                         : "=&S"(d0), "=&D"(d1), "=&c"(d2)
+                         : "0"(src), "1"(dest), "2"(len)
+                         : "memory");
     } else {
-        if ((u32)s % WS == (u32)d % WS) {
-            while ((u32)(d + n) % WS) {
-                if (!n--) {
-                    return dest;
-                }
+        __asm__ volatile("std\n\t"
+                         "rep; movsb\n\t"
+                         "cld"
 
-                d[n] = s[n];
-            }
-
-            while (n >= WS) {
-                n -= WS, *(WT*)(d + n) = *(WT*)(s + n);
-            }
-        }
-
-        while (n) {
-            n--, d[n] = s[n];
-        }
+                         : "=&S"(d0), "=&D"(d1), "=&c"(d2)
+                         : "0"((char const*)src + len - 1),
+                           "1"((char*)dest + len - 1), "2"(len)
+                         : "memory");
     }
 
     return dest;
