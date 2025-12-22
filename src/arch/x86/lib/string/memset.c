@@ -2,13 +2,15 @@
 
 void* memset(void* str, int c, size_t len)
 {
-    size_t i = 0;
-    unsigned char* s = str;
+    int d0, d1, d2;
 
-    for (; len; len--) {
-        s[i] = c;
-        i++;
-    }
+    __asm__ volatile("cld\n\t"
+                     "rep\n\t"
+                     "stosb"
 
-    return s;
+                     : "=&c"(d0), "=&a"(d1), "=&D"(d2)
+                     : "0"(len), "1"(c), "2"(str)
+                     : "memory");
+
+    return str;
 }
