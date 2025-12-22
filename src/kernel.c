@@ -18,10 +18,6 @@
 #include <lib/stdlib.h>
 #include <stdbool.h>
 
-#if !defined(__i386__)
-#    error "This tutorial needs to be compiled with a ix86-elf compiler"
-#endif
-
 __attribute__((noreturn)) void kmain(u32 magic, multiboot_info_t* mbd)
 {
     if (magic != MULTIBOOT_BOOTLOADER_MAGIC) {
@@ -52,7 +48,7 @@ __attribute__((noreturn)) void kmain(u32 magic, multiboot_info_t* mbd)
     root_device_init((char*)mbd->cmdline);
     vfs_init();
 
-    init_ptables(); // rename
+    ptables_init();
 
     sti();
 

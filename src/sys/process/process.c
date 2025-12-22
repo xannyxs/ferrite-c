@@ -101,7 +101,7 @@ inline proc_t* find_process(pid_t pid)
     return NULL;
 }
 
-void init_ptables(void)
+inline void ptables_init(void)
 {
     for (s32 i = 0; i < NUM_PROC; i += 1) {
         ptables[i].state = UNUSED;

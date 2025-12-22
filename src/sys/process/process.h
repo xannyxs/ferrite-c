@@ -59,7 +59,7 @@ void schedule(void);
 
 void create_initial_process(void);
 
-void init_ptables(void);
+void ptables_init(void);
 
 void yield(void);
 
