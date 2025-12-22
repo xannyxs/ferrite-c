@@ -23,7 +23,7 @@ int strncmp(char const* _l, char const* _r, size_t n)
 
                      "4:"
 
-                     : "=a"(__res), "=%S"(d0), "=&D"(d1), "=&c"(d2)
+                     : "=a"(__res), "=&S"(d0), "=&D"(d1), "=&c"(d2)
                      : "1"(_l), "2"(_r), "3"(n)
                      : "memory");
 
