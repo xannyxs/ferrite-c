@@ -5,8 +5,8 @@
 #include "memory/kmalloc.h"
 
 #include <ferrite/errno.h>
+#include <ferrite/string.h>
 #include <ferrite/types.h>
-#include <lib/string.h>
 
 int ext2_create(
     vfs_inode_t* dir,

@@ -6,7 +6,7 @@
 #include "lib/math.h"
 
 #include <ferrite/errno.h>
-#include <lib/string.h>
+#include <ferrite/string.h>
 
 int ext2_new_block(vfs_inode_t const* node, int* err)
 {

@@ -4,7 +4,7 @@
 #include "fs/vfs.h"
 
 #include <ferrite/errno.h>
-#include <lib/string.h>
+#include <ferrite/string.h>
 #include <stdbool.h>
 
 s32 ext2_read_block(vfs_inode_t const* node, u8* buff, u32 block_num)

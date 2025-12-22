@@ -4,8 +4,8 @@
 #include "sys/process/process.h"
 
 #include <ferrite/errno.h>
+#include <ferrite/string.h>
 #include <ferrite/types.h>
-#include <lib/string.h>
 
 int fd_alloc(void)
 {

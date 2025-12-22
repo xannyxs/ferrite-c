@@ -1,5 +1,6 @@
-#include "lib/string.h"
 #include "vga.h"
+
+#include <ferrite/string.h>
 #include <ferrite/types.h>
 
 size_t terminal_row;

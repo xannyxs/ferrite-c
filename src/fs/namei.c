@@ -5,7 +5,7 @@
 #include "sys/process/process.h"
 
 #include <ferrite/errno.h>
-#include <lib/string.h>
+#include <ferrite/string.h>
 
 int in_group_p(gid_t grp)
 {

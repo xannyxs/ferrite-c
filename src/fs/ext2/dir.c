@@ -11,8 +11,8 @@
 
 #include <ferrite/dirent.h>
 #include <ferrite/errno.h>
+#include <ferrite/string.h>
 #include <ferrite/types.h>
-#include <lib/string.h>
 
 static s32
 ext2_dir_read(vfs_inode_t* inode, file_t* file, void* buff, int count)
@@ -228,28 +228,32 @@ int ext2_mkdir(vfs_inode_t* dir, char const* name, int len, int mode)
     u8 buff[sb->s_blocksize];
     memset(buff, 0, sb->s_blocksize);
 
-    char const* current_str = ".";
-    ext2_entry_t current_entry = { 0 };
-    current_entry.inode = new->i_ino;
-    current_entry.name_len = 1;
-    current_entry.file_type = 0;
-    memcpy(current_entry.name, current_str, current_entry.name_len);
+    u8 current_buf[sizeof(ext2_entry_t) + 1];
+    u8 parent_buf[sizeof(ext2_entry_t) + 2];
 
-    u32 rec_len = sizeof(ext2_entry_t) + current_entry.name_len;
-    current_entry.rec_len = ALIGN(rec_len, 4);
-    memcpy(buff, &current_entry, sizeof(ext2_entry_t) + current_entry.name_len);
+    ext2_entry_t* current_entry = (ext2_entry_t*)current_buf;
+    ext2_entry_t* parent_entry = (ext2_entry_t*)parent_buf;
 
-    char const* parent_str = "..";
-    ext2_entry_t parent_entry = { 0 };
-    parent_entry.inode = dir->i_ino;
-    parent_entry.name_len = 2;
-    parent_entry.file_type = 0;
-    memcpy(parent_entry.name, parent_str, parent_entry.name_len);
+    // Build parent entry "."
+    memset(current_buf, 0, sizeof(current_buf));
+    current_entry->inode = new->i_ino;
+    current_entry->name_len = 1;
+    current_entry->file_type = 0;
+    current_entry->name[0] = '.';
+    current_entry->rec_len = ALIGN(sizeof(ext2_entry_t) + 1, 4);
 
-    parent_entry.rec_len = sb->s_blocksize - current_entry.rec_len;
+    // Build parent entry ".."
+    memset(parent_buf, 0, sizeof(parent_buf));
+    parent_entry->inode = dir->i_ino;
+    parent_entry->name_len = 2;
+    parent_entry->file_type = 0;
+    parent_entry->name[0] = '.';
+    parent_entry->name[1] = '.';
+    parent_entry->rec_len = sb->s_blocksize - current_entry->rec_len;
+
+    memcpy(buff, current_entry, sizeof(ext2_entry_t) + 1);
     memcpy(
-        buff + current_entry.rec_len, &parent_entry,
-        sizeof(ext2_entry_t) + parent_entry.name_len
+        buff + current_entry->rec_len, parent_entry, sizeof(ext2_entry_t) + 2
     );
 
     block_device_t* d = get_device(sb->s_dev);

@@ -3,13 +3,17 @@ LD = i686-elf-gcc # Change to "ld -m elf_i386"?
 AS = nasm 
 
 NAME = ferrite-c.elf
+ARCH = x86
 
 INCDIR = ./include
 SDIR = ./src
 ODIR = ./build
 
-CFLAGS = -I$(SDIR) -I$(INCDIR) -m32 -ffreestanding -ggdb3 -O2 -Wall -Wextra -Werror \
+CFLAGS = -I$(SDIR) -I$(INCDIR) -I$(SDIR)/arch/$(ARCH) -m32 -ffreestanding -ggdb3 -O2 -Wall -Wextra -Werror \
          -fno-stack-protector -D__DEBUG -D__is_libk -D__print_serial -D__bochs -pedantic -std=c17 -march=i386 -nostdlib
+
+# CFLAGS += -save-temps=obj
+
 ASFLAGS = -felf32
 LDFLAGS = -T $(SDIR)/arch/x86/x86.ld -ffreestanding -nostdlib -lgcc -march=i386 
 
@@ -20,7 +24,7 @@ C_OBJECTS = $(patsubst $(SDIR)/%.c,$(ODIR)/%.o,$(C_SOURCES))
 ASM_OBJECTS = $(patsubst $(SDIR)/%.asm,$(ODIR)/%.o,$(ASM_SOURCES))
 
 DISK_IMG = disk.img
-QEMUFLAGS = -serial stdio -m 16 -cpu 486 -drive file=disk.img,format=raw,if=ide
+QEMUFLAGS = -serial stdio -m 4 -cpu 486 -drive file=disk.img,format=raw,if=ide
 
 
 all: $(NAME)

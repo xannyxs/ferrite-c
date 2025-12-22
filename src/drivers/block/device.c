@@ -4,8 +4,8 @@
 #include "ferrite/major.h"
 
 #include <ferrite/limits.h>
+#include <ferrite/string.h>
 #include <lib/stdlib.h>
-#include <lib/string.h>
 
 extern struct device_operations ide_device_ops;
 
