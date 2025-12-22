@@ -9,9 +9,9 @@
 #include "sys/process/process.h"
 
 #include <ferrite/errno.h>
+#include <ferrite/string.h>
 #include <ferrite/types.h>
 #include <lib/stdlib.h>
-#include <ferrite/string.h>
 
 static int socket_read(vfs_inode_t* node, file_t* file, void* buf, int len);
 static int

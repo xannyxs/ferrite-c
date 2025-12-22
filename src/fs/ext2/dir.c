@@ -11,8 +11,8 @@
 
 #include <ferrite/dirent.h>
 #include <ferrite/errno.h>
-#include <ferrite/types.h>
 #include <ferrite/string.h>
+#include <ferrite/types.h>
 
 static s32
 ext2_dir_read(vfs_inode_t* inode, file_t* file, void* buff, int count)

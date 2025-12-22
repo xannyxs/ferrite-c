@@ -1,7 +1,7 @@
 #include "vga.h"
 
-#include <ferrite/types.h>
 #include <ferrite/string.h>
+#include <ferrite/types.h>
 
 size_t terminal_row;
 size_t terminal_column;

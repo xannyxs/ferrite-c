@@ -7,9 +7,9 @@
 #include "memory/memblock.h"
 #include "memory/vmm.h"
 
+#include <ferrite/string.h>
 #include <ferrite/types.h>
 #include <lib/stdlib.h>
-#include <ferrite/string.h>
 #include <stdbool.h>
 
 static buddy_allocator_t g_buddy = { 0 };

@@ -6,8 +6,8 @@
 #include "memory/kmalloc.h"
 
 #include <ferrite/errno.h>
-#include <ferrite/types.h>
 #include <ferrite/string.h>
+#include <ferrite/types.h>
 
 static s32 ext2_read_inode(vfs_inode_t*);
 static s32 ext2_write_inode(vfs_inode_t*);

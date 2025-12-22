@@ -16,9 +16,9 @@
 #include "sys/signal/signal.h"
 #include "sys/timer/timer.h"
 
+#include <ferrite/string.h>
 #include <ferrite/types.h>
 #include <lib/stdlib.h>
-#include <ferrite/string.h>
 
 extern proc_t* current_proc;
 

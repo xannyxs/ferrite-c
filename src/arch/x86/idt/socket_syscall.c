@@ -8,9 +8,9 @@
 #include "sys/file/file.h"
 
 #include <ferrite/errno.h>
+#include <ferrite/string.h>
 #include <ferrite/types.h>
 #include <lib/stdlib.h>
-#include <ferrite/string.h>
 
 SYSCALL_ATTR static s32 sys_bind(s32 fd, void* addr, s32 addrlen)
 {

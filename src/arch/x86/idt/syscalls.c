@@ -16,8 +16,8 @@
 #include "syscalls.h"
 
 #include <ferrite/errno.h>
-#include <ferrite/types.h>
 #include <ferrite/string.h>
+#include <ferrite/types.h>
 
 __attribute__((target("general-regs-only"))) static void sys_exit(s32 status)
 {

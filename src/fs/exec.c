@@ -8,8 +8,8 @@
 #include "sys/process/process.h"
 
 #include <ferrite/errno.h>
-#include <lib/stdlib.h>
 #include <ferrite/string.h>
+#include <lib/stdlib.h>
 #include <memory/consts.h>
 #include <sys/file/fcntl.h>
 

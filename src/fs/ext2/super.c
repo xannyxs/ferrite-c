@@ -5,9 +5,9 @@
 #include "lib/math.h"
 #include "memory/kmalloc.h"
 
+#include <ferrite/string.h>
 #include <ferrite/types.h>
 #include <lib/stdlib.h>
-#include <ferrite/string.h>
 
 extern struct super_operations ext2_sops;
 

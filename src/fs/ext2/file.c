@@ -9,8 +9,8 @@
 #include "sys/file/fcntl.h"
 
 #include <ferrite/errno.h>
-#include <ferrite/types.h>
 #include <ferrite/string.h>
+#include <ferrite/types.h>
 
 static int ext2_file_read(struct vfs_inode*, struct file*, void*, int);
 static int ext2_file_write(struct vfs_inode*, struct file*, void const*, int);

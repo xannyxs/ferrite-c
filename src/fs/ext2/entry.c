@@ -5,8 +5,8 @@
 #include "lib/math.h"
 #include "memory/kmalloc.h"
 
-#include <ferrite/types.h>
 #include <ferrite/string.h>
+#include <ferrite/types.h>
 
 s32 ext2_delete_entry(vfs_inode_t* dir, ext2_entry_t* entry)
 {
