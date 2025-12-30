@@ -9,7 +9,7 @@
 #include <ferrite/types.h>
 
 #define MAX_OPEN_FILES 64
-#define NUM_PROC 64
+#define NUM_PROC 32
 #define TIME_QUANTUM (100 * HZ / 1000)
 #define ROOT_UID 0
 
