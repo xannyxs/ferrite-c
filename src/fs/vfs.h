@@ -59,7 +59,7 @@ typedef struct vfs_inode {
     time_t i_mtime;
     time_t i_ctime;
 
-    struct vfs_mount* i_mount;
+    struct vfs_inode* i_mount;
     vfs_superblock_t* i_sb;
 
     struct inode_operations* i_op;

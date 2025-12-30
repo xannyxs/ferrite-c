@@ -4,8 +4,10 @@
 #include "drivers/printk.h"
 #include "ferrite/limits.h"
 #include "ferrite/major.h"
+#include "fs/filesystem.h"
 #include "fs/stat.h"
 #include "fs/vfs.h"
+#include "idt/syscalls.h"
 #include "memory/kmalloc.h"
 #include "sys/process/process.h"
 
@@ -73,39 +75,56 @@ static parsed_device_t parse_device_path(char const* device)
 
 /* Public */
 
+vfs_mount_t* find_mount(char const* path)
+{
+    vfs_mount_t* tmp = mount_table;
+
+    while (tmp) {
+        if (strcmp(tmp->m_name, path) == 0) {
+            return tmp;
+        }
+
+        tmp = tmp->next;
+    }
+
+    return NULL;
+}
+
 int vfs_mount(
     char const* device,
     char const* dir_name,
-    char const* fs_type,
+    char const* type,
     unsigned long flags
 )
 {
-    (void)fs_type;
-    (void)flags;
-
     if (strlen(dir_name) >= NAME_MAX) {
         return -ENAMETOOLONG;
     }
 
-    vfs_inode_t* mount_inode = vfs_lookup(myproc()->root, dir_name);
-    if (!mount_inode) {
-        printk("Mount point %s does not exist\n", dir_name);
-        return -ENOENT;
-    }
-
-    if (!S_ISDIR(mount_inode->i_mode)) {
-        printk("Mount point %s is not a directory\n", dir_name);
-        return -ENOTDIR;
-    }
-
-    if (mount_inode->i_mount != NULL) {
-        if (!(flags & MS_REMOUNT)) {
-            printk("Device already mounted at %s\n", dir_name);
-            return -EBUSY;
+    vfs_inode_t* mount_inode = NULL;
+    if (strcmp(dir_name, "/") == 0) {
+        printk("vfs_mount: Mounting root filesystem\n");
+    } else {
+        mount_inode = vfs_lookup(myproc()->root, dir_name);
+        if (!mount_inode) {
+            printk("Mount point %s does not exist\n", dir_name);
+            return -ENOENT;
         }
 
-        // TODO: Handle remount (Do we really care though rn?)
-        return -ENOSYS;
+        if (!S_ISDIR(mount_inode->i_mode)) {
+            printk("Mount point %s is not a directory\n", dir_name);
+            return -ENOTDIR;
+        }
+
+        if (mount_inode->i_mount != NULL) {
+            if (!(flags & MS_REMOUNT)) {
+                printk("Device already mounted at %s\n", dir_name);
+                return -EBUSY;
+            }
+
+            // TODO: Handle remount (Do we really care though rn?)
+            return -ENOSYS;
+        }
     }
 
     parsed_device_t parsed = parse_device_path(device);
@@ -113,10 +132,32 @@ int vfs_mount(
         return -EINVAL;
     }
 
-    block_device_t* d = allocate_device_slot(parsed.dev);
+    block_device_t* d = get_device(parsed.dev);
     if (!d) {
         printk("Device %x already mounted or no free slots\n", parsed.dev);
         return -EBUSY;
+    }
+
+    vfs_superblock_t* sb = kmalloc(sizeof(vfs_superblock_t));
+    if (!sb) {
+        abort("Memory alloc went wrong");
+    }
+
+    for (int i = 0; file_systems[i].name; i++) {
+        if (strcmp(file_systems[i].name, type) == 0) {
+            sb->s_dev = d->d_dev;
+
+            sb = file_systems[i].read_super(sb, NULL, 0);
+
+            if (sb) {
+                break;
+            }
+        }
+    }
+
+    if (!sb) {
+        kfree(sb);
+        return -ENOSYS;
     }
 
     vfs_mount_t* entry = kmalloc(sizeof(vfs_mount_t));
@@ -124,8 +165,6 @@ int vfs_mount(
         mount_inode->i_mount = NULL;
         return -ENOMEM;
     }
-
-    vfs_superblock_t* sb = NULL;
 
     memcpy(entry->m_name, dir_name, NAME_MAX - 1);
     entry->m_name[NAME_MAX - 1] = '\0';
@@ -136,47 +175,20 @@ int vfs_mount(
     entry->next = mount_table;
     mount_table = entry;
 
-    // int ret = ide_mount(parsed.dev);
-    // if (ret < 0) {
-    //     d->d_data = NULL;
-    //     d->d_dev = 0;
-    //     return ret;
-    // }
+    if (strcmp(dir_name, "/") != 0 && mount_inode) {
+        mount_inode->i_mount = sb->s_root_node;
+    }
 
     return 0;
 }
 
 int vfs_unmount(char const* device)
 {
-    parsed_device_t parsed = parse_device_path(device);
-    if (!parsed.valid) {
-        return -EINVAL;
-    }
-
-    block_device_t* d = get_device(parsed.dev);
-    if (!d) {
-        printk("Device %x is not mounted\n", parsed.dev);
-        return -ENODEV;
-    }
-
-    if (d == root_device) {
-        printk("Cannot unmount root device\n");
-        return -EBUSY;
-    }
-
-    // int ret = ide_umount(parsed.dev);
-    // if (ret < 0) {
-    //     return ret;
-    // }
-
-    d->d_data = NULL;
-    d->d_dev = 0;
-
-    return 0;
+    (void)device;
+    return -ENOSYS;
 }
 
-// FIXME: I am assuming there wont be more than 26 devies of one type
-void root_device_init(char* cmdline)
+void mount_root_device(char* cmdline)
 {
     char* root_param = strnstr(cmdline, "root=", strlen(cmdline));
     if (!root_param) {
@@ -188,7 +200,15 @@ void root_device_init(char* cmdline)
         abort("Invalid root device format. Expected: root=/dev/hdXY");
     }
 
-    parsed_device_t parsed = parse_device_path(device_path);
+    char device[256];
+    int i = 0;
+    while (device_path[i] && device_path[i] != ' ' && i < 255) {
+        device[i] = device_path[i];
+        i++;
+    }
+    device[i] = '\0';
+
+    parsed_device_t parsed = parse_device_path(device);
     if (!parsed.valid) {
         abort("Failed to parse root device path");
     }
@@ -204,6 +224,12 @@ void root_device_init(char* cmdline)
     }
 
     root_device = d;
+
+    printk("Mounting root filesystem...\n");
+    ret = sys_mount(device, "/", "ext2", 0, NULL);
+    if (ret < 0) {
+        abort("Failed to mount root filesystem");
+    }
 
     printk(
         "Root device: /dev/hd%c%d (dev=%x)\n", parsed.drive_letter,

@@ -22,6 +22,6 @@ int vfs_mount(char const*, char const*, char const*, unsigned long);
 
 int vfs_unmount(char const*);
 
-void root_device_init(char*);
+void mount_root_device(char*);
 
 #endif

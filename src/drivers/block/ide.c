@@ -50,6 +50,18 @@ static int device_type(u16 device)
     return -1;
 }
 
+static int ide_detect_controller(u8 controller_num)
+{
+    u16 base = ide_controllers[controller_num].base_port;
+    u8 status = inb(base + 7);
+
+    if (status == 0xFF) {
+        return 0;
+    }
+
+    return 1;
+}
+
 /*
  * Warning: Returned value is dynamicly allocated
  */
@@ -386,35 +398,26 @@ int ide_probe(dev_t bdev)
     int minor = MINOR(bdev);
 
     u8 controller_num = (major == IDE0_MAJOR) ? 0 : 1;
-    u8 drive_num = (minor >> 4) & 0x01;
+    u8 drive_num = (minor >= 64) ? 1 : 0;
+
+    printk(
+        "IDE: Probing controller %d, drive %d (dev=0x%x)\n", controller_num,
+        drive_num, bdev
+    );
 
     ata_drive_t* d = detect_harddrives(controller_num, drive_num);
     if (!d) {
+        printk("%s: Failed to detect drive\n", __func__);
         return -ENODEV;
     }
 
     register_block_device(bdev, BLOCK_DEVICE_IDE, d);
     printk("IDE: Probed and registered device 0x%x\n", bdev);
-
     return 0;
-}
-
-static int ide_detect_controller(u8 controller_num)
-{
-    u16 base = ide_controllers[controller_num].base_port;
-    u8 status = inb(base + 7);
-
-    if (status == 0xFF) {
-        return 0;
-    }
-
-    return 1;
 }
 
 void ide_init(void)
 {
-    printk("IDE: Initializing controllers\n");
-
     ide_controllers[0].present = ide_detect_controller(0);
     ide_controllers[1].present = ide_detect_controller(1);
 
