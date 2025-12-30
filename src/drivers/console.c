@@ -9,7 +9,6 @@
 #include "drivers/printk.h"
 #include "drivers/video/vga.h"
 #include "ferrite/dirent.h"
-#include "ferrite/major.h"
 #include "fs/stat.h"
 #include "memory/buddy_allocator/buddy.h"
 #include "sys/file/fcntl.h"
@@ -118,9 +117,23 @@ static void echo_file(char const* args)
     __asm__ volatile("int $0x80" : : "a"(SYS_CLOSE), "b"(fd) : "memory");
 }
 
-static void mount(char const* device) { mount_device(device); }
+static void mount(char const* device)
+{
+    int ret = 0;
+    __asm__ volatile("int $0x80"
+                     : "=a"(ret)
+                     : "a"(SYS_MOUNT), "b"(device)
+                     : "memory");
+}
 
-static void umount(char const* device) { umount_device(device); }
+static void umount(char const* device)
+{
+    int ret = 0;
+    __asm__ volatile("int $0x80"
+                     : "=a"(ret)
+                     : "a"(SYS_UMOUNT), "b"(device), "c"(0)
+                     : "memory");
+}
 
 static void cat_file(char const* path)
 {
