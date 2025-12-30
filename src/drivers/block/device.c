@@ -2,6 +2,7 @@
 #include "drivers/block/ide.h"
 #include "drivers/printk.h"
 #include "ferrite/types.h"
+#include "memory/kmalloc.h"
 
 #include <ferrite/errno.h>
 #include <ferrite/limits.h>
@@ -10,7 +11,9 @@
 
 extern struct device_operations ide_device_ops;
 
-block_device_t block_devices[MAX_BLOCK_DEVICES];
+static int num_block_devices = 0;
+
+block_device_t* block_devices = NULL;
 
 /* Private */
 
@@ -20,28 +23,47 @@ inline block_device_t* get_devices(void) { return block_devices; }
 
 inline block_device_t* get_device(dev_t bdev)
 {
-    for (int i = 0; i < MAX_BLOCK_DEVICES; i++) {
-        if (block_devices[i].d_dev == bdev) {
-            return &block_devices[i];
+    block_device_t* tmp = block_devices;
+
+    while (tmp) {
+        if (tmp->d_dev == bdev) {
+            return tmp;
         }
+
+        tmp = tmp->next;
     }
+
     return NULL;
 }
 
-inline block_device_t* allocate_device_slot(dev_t bdev)
+block_device_t* allocate_device_slot(dev_t bdev)
 {
     if (get_device(bdev)) {
         return NULL;
     }
 
-    for (int i = 0; i < MAX_BLOCK_DEVICES; i++) {
-        if (!block_devices[i].d_data) {
-            block_devices[i].d_dev = bdev;
-            return &block_devices[i];
-        }
+    if (num_block_devices >= MAX_BLOCK_DEVICES) {
+        printk(
+            "%s: Maximum number of block devices (%d) reached\n", __func__,
+            MAX_BLOCK_DEVICES
+        );
+        return NULL;
     }
 
-    return NULL;
+    block_device_t* b = kmalloc(sizeof(block_device_t));
+    if (!b) {
+        return NULL;
+    }
+
+    memset(b, 0, sizeof(block_device_t));
+    b->d_dev = bdev;
+
+    b->next = block_devices;
+    block_devices = b;
+
+    num_block_devices += 1;
+
+    return b;
 }
 
 void register_block_device(dev_t bdev, block_device_type_e type, void* data)
