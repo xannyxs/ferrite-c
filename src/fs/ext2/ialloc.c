@@ -112,7 +112,9 @@ vfs_inode_t* ext2_new_inode(vfs_inode_t const* dir, int mode, int* err)
 
     time_t now = getepoch();
 
+    inode->i_mount = NULL;
     inode->i_dev = sb->s_dev;
+
     inode->i_ino = node_num;
     inode->i_sb = sb;
     inode->i_mode = mode;
