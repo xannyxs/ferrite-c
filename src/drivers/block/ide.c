@@ -20,6 +20,14 @@ static ide_controller_t ide_controllers[MAX_IDE_CONTR]
 
 u16 ata_data[256];
 
+static void delay(u16 ctrl_port)
+{
+    inb(ctrl_port);
+    inb(ctrl_port);
+    inb(ctrl_port);
+    inb(ctrl_port);
+}
+
 static void parse_vender_name(ata_drive_t* s)
 {
     for (int i = 0; i < 20; i++) {
@@ -144,9 +152,12 @@ static ata_drive_t* detect_harddrives(u8 controller_num, u8 master)
         printk("%s: Failed to allocate memory for drive structure\n", __func__);
         return NULL;
     }
+
+    ata_drive->controller = controller_num;
+    ata_drive->drive = master;
+
     parse_vender_name(ata_drive);
     ata_drive->lba28_sectors = ata_data[60] | ((u32)ata_data[61] << 16);
-    ata_drive->drive = master;
 
     if (ata_data[83] & (1 << 10)) {
         ata_drive->lba48_sectors = (unsigned long long)ata_data[100]
@@ -209,8 +220,6 @@ struct device_operations ide_device_ops = {
     .shutdown = ide_shutdown,
 };
 
-#define ATA_ADDR 0x1F0
-
 s32 ide_read(block_device_t* d, u32 lba, u32 count, void* buf, size_t len)
 {
     ata_drive_t* ata = (ata_drive_t*)d->d_data;
@@ -220,31 +229,28 @@ s32 ide_read(block_device_t* d, u32 lba, u32 count, void* buf, size_t len)
         return -1;
     }
 
-    outb(0x1F6, 0xE0 | (ata->drive << 4) | ((lba >> 24) & 0x0F));
-    outb(0x1F1, 0x00);
+    u16 base_port = ide_controllers[ata->controller].base_port;
+    u16 ctrl_port = ide_controllers[ata->controller].ctrl_port;
 
-    inb(0x3F6);
-    inb(0x3F6);
-    inb(0x3F6);
-    inb(0x3F6);
+    outb(base_port + 6, 0xE0 | (ata->drive << 4) | ((lba >> 24) & 0x0F));
+    outb(base_port + 1, 0x00);
 
-    outb(0x1F2, (u8)count);
-    outb(0x1F3, (u8)lba);
-    outb(0x1F4, (u8)(lba >> 8));
-    outb(0x1F5, (u8)(lba >> 16));
-    outb(0x1F7, 0x20);
+    delay(ctrl_port);
 
-    inb(0x3F6);
-    inb(0x3F6);
-    inb(0x3F6);
-    inb(0x3F6);
+    outb(base_port + 2, (u8)count);
+    outb(base_port + 3, (u8)lba);
+    outb(base_port + 4, (u8)(lba >> 8));
+    outb(base_port + 5, (u8)(lba >> 16));
+    outb(base_port + 7, 0x20);
+
+    delay(ctrl_port);
 
     u16* buffer = (u16*)buf;
 
-    for (u32 sector = 0; sector < count; sector += 1) {
-        u8 status = inb(ATA_ADDR + 7);
+    for (u32 sector = 0; sector < count; sector++) {
+        u8 status = inb(base_port + 7);
         while (status & 0x80) {
-            status = inb(ATA_ADDR + 7);
+            status = inb(base_port + 7);
         }
 
         if (status & 0x01) {
@@ -253,11 +259,11 @@ s32 ide_read(block_device_t* d, u32 lba, u32 count, void* buf, size_t len)
         }
 
         while (!(status & 0x08)) {
-            status = inb(ATA_ADDR + 7);
+            status = inb(base_port + 7);
         }
 
         for (int i = 0; i < 256; i++) {
-            buffer[sector * 256 + i] = inw(ATA_ADDR + 0);
+            buffer[sector * 256 + i] = inw(base_port + 0);
         }
     }
 
@@ -283,24 +289,21 @@ s32 ide_write(
 
     ata_drive_t* ata = (ata_drive_t*)d->d_data;
 
-    outb(0x1F6, 0xE0 | (ata->drive << 4) | ((lba >> 24) & 0x0F));
-    outb(0x1F1, 0x00);
+    u16 base_port = ide_controllers[ata->controller].base_port;
+    u16 ctrl_port = ide_controllers[ata->controller].ctrl_port;
 
-    inb(0x3F6);
-    inb(0x3F6);
-    inb(0x3F6);
-    inb(0x3F6);
+    outb(base_port + 6, 0xE0 | (ata->drive << 4) | ((lba >> 24) & 0x0F));
+    outb(base_port + 1, 0x00);
 
-    outb(0x1F2, (u8)count);
-    outb(0x1F3, (u8)lba);
-    outb(0x1F4, (u8)(lba >> 8));
-    outb(0x1F5, (u8)(lba >> 16));
-    outb(0x1F7, 0x30);
+    delay(ctrl_port);
 
-    inb(0x3F6);
-    inb(0x3F6);
-    inb(0x3F6);
-    inb(0x3F6);
+    outb(base_port + 2, (u8)count);
+    outb(base_port + 3, (u8)lba);
+    outb(base_port + 4, (u8)(lba >> 8));
+    outb(base_port + 5, (u8)(lba >> 16));
+    outb(base_port + 7, 0x30);
+
+    delay(ctrl_port);
 
     u16 const* buffer = (u16 const*)buf;
     for (u32 sector = 0; sector < count; sector += 1) {
@@ -309,7 +312,7 @@ s32 ide_write(
 
         timeout = 1000000;
         do {
-            status = inb(0x1F7);
+            status = inb(base_port + 7);
             if (--timeout == 0) {
                 printk(
                     "ide_write: Timeout waiting for BSY clear (status=0x%x)\n",
@@ -320,14 +323,14 @@ s32 ide_write(
         } while (status & 0x80);
 
         if (status & 0x01) {
-            u8 error = inb(0x1F1);
+            u8 error = inb(base_port + 1);
             printk("%s: Error 0x%x\n", __func__, error);
             return -1;
         }
 
         timeout = 1000000;
         do {
-            status = inb(0x1F7);
+            status = inb(base_port + 7);
             if (--timeout == 0) {
                 printk(
                     "ide_write: Timeout waiting for DRQ (status=0x%x)\n", status
@@ -337,29 +340,26 @@ s32 ide_write(
         } while (!(status & 0x08));
 
         for (int i = 0; i < 256; i += 1) {
-            outw(ATA_ADDR + 0, buffer[sector * 256 + i]);
+            outw(base_port + 0, buffer[sector * 256 + i]);
         }
     }
 
     u32 timeout = 1000000;
     u8 status;
     do {
-        status = inb(0x1F7);
+        status = inb(base_port + 7);
         if (--timeout == 0) {
             printk("ide_write: Timeout waiting for write completion\n");
             return -1;
         }
     } while (status & 0x80);
 
-    outb(0x1F7, 0xE7);
-    inb(0x3F6);
-    inb(0x3F6);
-    inb(0x3F6);
-    inb(0x3F6);
+    outb(base_port + 7, 0xE7);
+    delay(ctrl_port);
 
     timeout = 1000000;
     do {
-        status = inb(0x1F7);
+        status = inb(base_port + 7);
         if (--timeout == 0) {
             printk("ide_write: Timeout waiting for FLUSH\n");
             return -1;

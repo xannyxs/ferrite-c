@@ -6,7 +6,8 @@
 #define MAX_IDE_CONTR 2
 
 typedef struct {
-    u8 drive; // Master (0) / Slave (1)
+    u8 controller; // 0 = IDE0, 1 = IDE1
+    u8 drive;      // 0 = Master, 1 = Slave
 
     u32 lba28_sectors;
     u8 supports_lba48;
