@@ -710,12 +710,12 @@ syscall_dispatcher_c(registers_t* reg)
         reg->eax = sys_getpid();
         break;
 
-        // case SYS_MOUNT:
-        //     reg->eax = sys_mount(
-        //         (char*)reg->ebx, (char*)reg->ecx, (char*)reg->edx,
-        //         (unsigned long)reg->esi, (void*)reg->edi
-        //     );
-        //     break;
+    case SYS_MOUNT:
+        reg->eax = sys_mount(
+            (char*)reg->ebx, (char*)reg->ecx, (char*)reg->edx,
+            (unsigned long)reg->esi, (void*)reg->edi
+        );
+        break;
 
     case SYS_SETUID:
         reg->eax = sys_setuid((s32)reg->ebx);
@@ -757,9 +757,9 @@ syscall_dispatcher_c(registers_t* reg)
         reg->eax = sys_getegid();
         break;
 
-        // case SYS_UMOUNT:
-        //     reg->eax = sys_umount((char*)reg->ebx, reg->ecx);
-        //     break;
+    case SYS_UMOUNT:
+        reg->eax = sys_umount((char*)reg->ebx, reg->ecx);
+        break;
 
     case SYS_SETREUID:
         reg->eax = sys_setreuid(reg->ebx, reg->ecx);
