@@ -9,6 +9,7 @@
 #include "drivers/printk.h"
 #include "drivers/video/vga.h"
 #include "ferrite/dirent.h"
+#include "ferrite/major.h"
 #include "fs/stat.h"
 #include "memory/buddy_allocator/buddy.h"
 #include "sys/file/fcntl.h"
@@ -63,6 +64,8 @@ static void print_help(void)
     printk("  echo    - Display a line of text\n");
     printk("  cd      - Change Directory\n");
     printk("  pwd     - Print Working Directory\n");
+    printk("  mount   - Mount a device\n");
+    printk("  umount  - Unmount a device\n");
     printk("  help    - Show this help message\n");
 }
 
@@ -114,6 +117,10 @@ static void echo_file(char const* args)
 
     __asm__ volatile("int $0x80" : : "a"(SYS_CLOSE), "b"(fd) : "memory");
 }
+
+static void mount(char const* device) { mount_device(device); }
+
+static void umount(char const* device) { umount_device(device); }
 
 static void cat_file(char const* path)
 {
@@ -479,6 +486,14 @@ static void execute_buffer(void)
     } else if (strncmp(buffer, "cd", 2) == 0 && buffer[2] == ' ') {
         if (arg) {
             change_directory(arg);
+        }
+    } else if (strncmp(buffer, "mount", 5) == 0 && buffer[5] == ' ') {
+        if (arg) {
+            mount(arg);
+        }
+    } else if (strncmp(buffer, "umount", 6) == 0 && buffer[6] == ' ') {
+        if (arg) {
+            umount(arg);
         }
     }
 

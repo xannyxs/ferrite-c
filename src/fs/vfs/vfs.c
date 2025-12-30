@@ -7,7 +7,9 @@
 #include <ferrite/string.h>
 #include <ferrite/types.h>
 
+extern block_device_t* root_device;
 extern struct super_operations ext2_sops;
+
 vfs_inode_t* root_inode = NULL;
 
 vfs_superblock_t* vfs_mount_root(block_device_t* root_device)
@@ -35,8 +37,7 @@ vfs_superblock_t* vfs_mount_root(block_device_t* root_device)
 
 void vfs_init(void)
 {
-    block_device_t* d = get_device(0);
-    vfs_superblock_t* sb = vfs_mount_root(d);
+    vfs_superblock_t* sb = vfs_mount_root(root_device);
     root_inode = sb->s_root_node;
 
     if (!root_inode) {

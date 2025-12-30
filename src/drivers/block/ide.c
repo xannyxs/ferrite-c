@@ -318,10 +318,16 @@ s32 ide_write(
 // TODO
 void ide_shutdown(block_device_t* d) { (void)d; }
 
-// FIXME: Minor is for particions. Should we support it?
-s32 ide_mount(s32 major, s32 minor)
+s32 ide_umount(dev_t bdev)
 {
-    (void)minor;
+    (void)bdev;
+    return 0;
+}
+
+// FIXME: Minor is for particions. Should we support it?
+s32 ide_mount(dev_t bdev)
+{
+    int major = MAJOR(bdev);
 
     if (major == IDE0_MAJOR) {
         ata_drive_t* d = detect_harddrives(0);
@@ -329,14 +335,14 @@ s32 ide_mount(s32 major, s32 minor)
             return -1;
         }
 
-        register_block_device(BLOCK_DEVICE_IDE, d);
+        register_block_device(bdev, BLOCK_DEVICE_IDE, d);
     } else if (major == IDE1_MAJOR) {
         ata_drive_t* d = detect_harddrives(1);
         if (!d) {
             return -1;
         }
 
-        register_block_device(BLOCK_DEVICE_IDE, d);
+        register_block_device(bdev, BLOCK_DEVICE_IDE, d);
     }
 
     return 0;
