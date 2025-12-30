@@ -32,6 +32,8 @@ enum syscalls_e {
     SYS_LSEEK = 19,
     SYS_GETPID = 20,
 
+    SYS_MOUNT = 22,
+
     SYS_SETUID = 23,
     SYS_GETUID = 24,
 
@@ -46,6 +48,9 @@ enum syscalls_e {
 
     SYS_GETEUID = 49,
     SYS_GETEGID = 50,
+
+    SYS_UMOUNT = 52,
+
     SYS_SETREUID = 70,
     SYS_SETREGID = 71,
     SYS_GETGROUPS = 80,
@@ -71,6 +76,12 @@ void syscall_dispatcher_c(registers_t*);
 int sys_socketcall(int call, unsigned long* args);
 
 /* sys.c */
+
+/* Mount */
+
+SYSCALL_ATTR int sys_mount(char*, char*, char*, unsigned long, void*);
+
+SYSCALL_ATTR int sys_umount(char const* name, int flags);
 
 /* UID */
 
