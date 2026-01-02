@@ -36,39 +36,46 @@ static parsed_device_t parse_device_path(char const* device)
         return result;
     }
 
-    char* type_device = strnstr(device, "hd", strlen(device));
-    if (!type_device) {
-        printk("Could not find device type (hd)\n");
-        return result;
-    }
-
-    size_t remaining = strlen(type_device);
-    if (remaining < 4) {
-        printk("Device name too short. Expected format: hdXY\n");
+    char const* type_device = device + 5;
+    if (strncmp(type_device, "hd", 2) != 0) {
+        printk("Unsupported device type. Expected 'hd'\n");
         return result;
     }
 
     char drive_letter = type_device[2];
-    char partition_char = type_device[3];
-
     if (drive_letter < 'a' || drive_letter > 'd') {
         printk("Invalid drive letter '%c'. Must be a-d\n", drive_letter);
         return result;
     }
 
-    if (partition_char < '0' || partition_char > '9') {
-        printk("Invalid partition '%c'. Must be 0-9\n", partition_char);
-        return result;
+    s32 partition = 0;
+    if (type_device[3] != '\0') {
+        char partition_char = type_device[3];
+        if (partition_char < '0' || partition_char > '9') {
+            printk("Invalid partition '%c'. Must be 0-9\n", partition_char);
+            return result;
+        }
+
+        if (type_device[4] != '\0') {
+            printk(
+                "Invalid device path. Unexpected characters after partition\n"
+            );
+            return result;
+        }
+
+        partition = partition_char - '0';
     }
 
     s32 index = drive_letter - 'a'; // 0=hda, 1=hdb, 2=hdc, 3=hdd
     s32 major = (index < 2) ? IDE0_MAJOR : IDE1_MAJOR;
-    s32 minor = partition_char - '0';
+
+    s32 base_minor = (index % 2) * 64;
+    s32 minor = base_minor + partition;
 
     result.valid = 1;
     result.dev = MKDEV(major, minor);
     result.drive_letter = drive_letter;
-    result.partition = partition_char - '0';
+    result.partition = partition;
 
     return result;
 }
