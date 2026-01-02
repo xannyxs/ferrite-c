@@ -120,12 +120,14 @@ int vfs_mount(
 
         if (!S_ISDIR(mount_inode->i_mode)) {
             printk("Mount point %s is not a directory\n", dir_name);
+            inode_put(mount_inode);
             return -ENOTDIR;
         }
 
         if (mount_inode->i_mount != NULL) {
             if (!(flags & MS_REMOUNT)) {
                 printk("Device already mounted at %s\n", dir_name);
+                inode_put(mount_inode);
                 return -EBUSY;
             }
 
@@ -136,12 +138,14 @@ int vfs_mount(
 
     parsed_device_t parsed = parse_device_path(device);
     if (!parsed.valid) {
+        inode_put(mount_inode);
         return -EINVAL;
     }
 
     block_device_t* d = get_device(parsed.dev);
     if (!d) {
         printk("Device %x already mounted or no free slots\n", parsed.dev);
+        inode_put(mount_inode);
         return -EBUSY;
     }
 
@@ -150,6 +154,7 @@ int vfs_mount(
         if (strcmp(file_systems[i].name, type) == 0) {
             sb = kmalloc(sizeof(vfs_superblock_t));
             if (!sb) {
+                inode_put(mount_inode);
                 return -ENOMEM;
             }
 
@@ -166,12 +171,16 @@ int vfs_mount(
 
     if (!sb) {
         printk("Failed to read superblock for filesystem type '%s'\n", type);
+
+        inode_put(mount_inode);
         return -EINVAL;
     }
 
     vfs_mount_t* entry = kmalloc(sizeof(vfs_mount_t));
     if (!entry) {
         mount_inode->i_mount = NULL;
+
+        inode_put(mount_inode);
         return -ENOMEM;
     }
 
@@ -187,6 +196,8 @@ int vfs_mount(
     if (mount_inode) {
         mount_inode->i_mount = sb->s_root_node;
     }
+
+    inode_put(mount_inode);
 
     return 0;
 }
