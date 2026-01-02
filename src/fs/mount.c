@@ -134,22 +134,6 @@ int vfs_mount(
         }
     }
 
-    if (mount_inode) {
-        printk("DEBUG: /mnt inode = %p\n", mount_inode);
-        printk("DEBUG: /mnt->i_mount = %p\n", mount_inode->i_mount);
-        printk("DEBUG: /mnt->i_ino = %lu\n", mount_inode->i_ino);
-
-        if (mount_inode->i_mount) {
-            printk("DEBUG: Mounted fs root inode = %p\n", mount_inode->i_mount);
-            printk(
-                "DEBUG: Mounted fs root i_ino = %lu\n",
-                mount_inode->i_mount->i_ino
-            );
-        } else {
-            printk("ERROR: i_mount is NULL! Mount didn't link properly\n");
-        }
-    }
-
     parsed_device_t parsed = parse_device_path(device);
     if (!parsed.valid) {
         return -EINVAL;
@@ -161,26 +145,28 @@ int vfs_mount(
         return -EBUSY;
     }
 
-    vfs_superblock_t* sb = kmalloc(sizeof(vfs_superblock_t));
-    if (!sb) {
-        abort("Memory alloc went wrong");
-    }
-
+    vfs_superblock_t* sb = NULL;
     for (int i = 0; file_systems[i].name; i++) {
         if (strcmp(file_systems[i].name, type) == 0) {
+            sb = kmalloc(sizeof(vfs_superblock_t));
+            if (!sb) {
+                return -ENOMEM;
+            }
+
             sb->s_dev = d->d_dev;
-
             sb = file_systems[i].read_super(sb, NULL, 0);
-
             if (sb) {
                 break;
             }
+
+            kfree(sb);
+            sb = NULL;
         }
     }
 
     if (!sb) {
-        kfree(sb);
-        return -ENOSYS;
+        printk("Failed to read superblock for filesystem type '%s'\n", type);
+        return -EINVAL;
     }
 
     vfs_mount_t* entry = kmalloc(sizeof(vfs_mount_t));
@@ -198,7 +184,7 @@ int vfs_mount(
     entry->next = mount_table;
     mount_table = entry;
 
-    if (strcmp(dir_name, "/") != 0 && mount_inode) {
+    if (mount_inode) {
         mount_inode->i_mount = sb->s_root_node;
     }
 
