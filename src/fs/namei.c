@@ -87,6 +87,10 @@ vfs_inode_t* vfs_lookup(vfs_inode_t* start, char const* path)
 
         current = new;
 
+        if (current->i_mount) {
+            current = current->i_mount;
+        }
+
         if (S_ISDIR(current->i_mode) && components[i + 1]) {
             if (!vfs_permission(current, MAY_EXEC)) {
                 inode_put(current);

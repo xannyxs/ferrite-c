@@ -426,4 +426,16 @@ void ide_init(void)
         ide_controllers[0].present ? "present" : "not found",
         ide_controllers[1].present ? "present" : "not found"
     );
+
+    // IDE0 master and slave
+    if (ide_controllers[0].present) {
+        ide_probe(MKDEV(IDE0_MAJOR, 0));  // hda
+        ide_probe(MKDEV(IDE0_MAJOR, 64)); // hdb
+    }
+
+    // IDE1 master and slave
+    if (ide_controllers[1].present) {
+        ide_probe(MKDEV(IDE1_MAJOR, 0));  // hdc
+        ide_probe(MKDEV(IDE1_MAJOR, 64)); // hdd
+    }
 }

@@ -11,6 +11,7 @@
 #include "ferrite/dirent.h"
 #include "fs/stat.h"
 #include "memory/buddy_allocator/buddy.h"
+#include "memory/kmalloc.h"
 #include "sys/file/fcntl.h"
 #include "sys/process/process.h"
 #include "sys/signal/signal.h"
@@ -117,13 +118,36 @@ static void echo_file(char const* args)
     __asm__ volatile("int $0x80" : : "a"(SYS_CLOSE), "b"(fd) : "memory");
 }
 
-static void mount(char const* device)
+static void mount(char const* arg)
 {
+    char** vars = split(arg, ' ');
+    if (!vars) {
+        return;
+    }
+
+    if (!vars[0] || !vars[1]) {
+        goto cleanup;
+    }
+
     int ret = 0;
     __asm__ volatile("int $0x80"
                      : "=a"(ret)
-                     : "a"(SYS_MOUNT), "b"(device)
+                     : "a"(SYS_MOUNT), "b"(vars[0]), "c"(vars[1]), "d"("ext2"),
+                       "S"(0), "D"(NULL)
                      : "memory");
+
+    if (ret < 0) {
+        printk("mount: failed with error %d\n", ret);
+    } else {
+        printk("mount: successfully mounted %s on %s\n", vars[0], vars[1]);
+    }
+
+cleanup:
+    for (int i = 0; vars[i]; i += 1) {
+        kfree(vars[i]);
+    }
+
+    kfree(vars);
 }
 
 static void umount(char const* device)

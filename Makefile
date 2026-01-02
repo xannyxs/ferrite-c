@@ -23,8 +23,12 @@ ASM_SOURCES = $(shell find $(SDIR) -type f -name '*.asm')
 C_OBJECTS = $(patsubst $(SDIR)/%.c,$(ODIR)/%.o,$(C_SOURCES))
 ASM_OBJECTS = $(patsubst $(SDIR)/%.asm,$(ODIR)/%.o,$(ASM_SOURCES))
 
-DISK_IMG = disk.img
-QEMUFLAGS = -serial stdio -m 4 -cpu 486 -drive file=disk.img,format=raw,if=ide
+ROOT_IMG = root.img
+TEST_IMG = test.img
+
+QEMUFLAGS = -serial stdio -m 4 -cpu 486 \
+    -drive file=$(ROOT_IMG),format=raw,if=ide,index=0 \
+    -drive file=$(TEST_IMG),format=raw,if=ide,index=1
 
 
 all: $(NAME)
@@ -43,9 +47,15 @@ $(ODIR)/%.o: $(SDIR)/%.asm
 	@mkdir -p $(dir $@)
 	@$(AS) $(ASFLAGS) $< -o $@
 
-$(DISK_IMG):
-	qemu-img create -f raw $(DISK_IMG) 10M
-	mkfs.ext2 $(DISK_IMG)
+$(ROOT_IMG):
+	@echo "Creating root disk image..."
+	qemu-img create -f raw $(ROOT_IMG) 10M
+	mkfs.ext2 $(ROOT_IMG)
+
+$(TEST_IMG):
+	@echo "Creating second disk image..."
+	@qemu-img create -f raw $(TEST_IMG) 50M
+	@mkfs.ext2 -F $(TEST_IMG)
 
 iso: all
 	mkdir -p isodir/boot/grub
@@ -53,7 +63,7 @@ iso: all
 	cp grub.cfg isodir/boot/grub/grub.cfg
 	grub-mkrescue -o kernel.iso isodir
 
-run: iso $(DISK_IMG)
+run: iso $(ROOT_IMG) $(TEST_IMG)
 	qemu-system-i386 -cdrom kernel.iso $(QEMUFLAGS)
 
 debug_bochs: QEMUFLAGS += -s -S
@@ -74,7 +84,8 @@ clean:
 
 fclean:
 	@echo "FCLEAN"
-	@rm -rf $(DISK_IMG)
+	@rm -rf $(TEST_IMG)
+	@rm -rf $(ROOT_IMG)
 	@rm -rf $(ODIR) $(NAME) isodir kernel.iso
 
 re:

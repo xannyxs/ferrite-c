@@ -73,7 +73,7 @@ void register_block_device(dev_t bdev, block_device_type_e type, void* data)
         return;
     }
 
-    block_device_t* d = get_device(bdev);
+    block_device_t* d = allocate_device_slot(bdev);
     if (!d) {
         printk("Device %x not allocated in device table\n", bdev);
         return;

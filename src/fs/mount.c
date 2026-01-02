@@ -127,6 +127,22 @@ int vfs_mount(
         }
     }
 
+    if (mount_inode) {
+        printk("DEBUG: /mnt inode = %p\n", mount_inode);
+        printk("DEBUG: /mnt->i_mount = %p\n", mount_inode->i_mount);
+        printk("DEBUG: /mnt->i_ino = %lu\n", mount_inode->i_ino);
+
+        if (mount_inode->i_mount) {
+            printk("DEBUG: Mounted fs root inode = %p\n", mount_inode->i_mount);
+            printk(
+                "DEBUG: Mounted fs root i_ino = %lu\n",
+                mount_inode->i_mount->i_ino
+            );
+        } else {
+            printk("ERROR: i_mount is NULL! Mount didn't link properly\n");
+        }
+    }
+
     parsed_device_t parsed = parse_device_path(device);
     if (!parsed.valid) {
         return -EINVAL;
@@ -213,20 +229,15 @@ void mount_root_device(char* cmdline)
         abort("Failed to parse root device path");
     }
 
-    block_device_t* d = allocate_device_slot(parsed.dev);
+    block_device_t* d = get_device(parsed.dev);
     if (!d) {
         abort("Cannot allocate root device slot");
-    }
-
-    int ret = ide_probe(parsed.dev);
-    if (ret < 0) {
-        abort("Failed to mount root device");
     }
 
     root_device = d;
 
     printk("Mounting root filesystem...\n");
-    ret = sys_mount(device, "/", "ext2", 0, NULL);
+    int ret = sys_mount(device, "/", "ext2", 0, NULL);
     if (ret < 0) {
         abort("Failed to mount root filesystem");
     }
