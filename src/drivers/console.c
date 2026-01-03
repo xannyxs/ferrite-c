@@ -66,9 +66,9 @@ static void print_help(void)
     printk("  pwd     - Print Working Directory\n");
     printk("  mount   - Mount a device\n");
     printk("  umount  - Unmount a device\n");
+    printk("  insmod  - Load a module\n");
     printk("  help    - Show this help message\n");
 }
-
 static void echo_file(char const* args)
 {
     char* redirect = strchr(args, '>');
@@ -157,6 +157,17 @@ static void umount(char const* device)
                      : "=a"(ret)
                      : "a"(SYS_UMOUNT), "b"(device), "c"(0)
                      : "memory");
+}
+
+static void insmod(char const* path)
+{
+    int ret;
+    __asm__ volatile("int $0x80"
+                     : "=a"(ret)
+                     : "a"(SYS_INIT_MODULE), "b"(path), "c"(0), "d"(NULL)
+                     : "memory");
+
+    printk("ret: %d\n", ret);
 }
 
 static void cat_file(char const* path)
@@ -531,6 +542,10 @@ static void execute_buffer(void)
     } else if (strncmp(buffer, "umount", 6) == 0 && buffer[6] == ' ') {
         if (arg) {
             umount(arg);
+        }
+    } else if (strncmp(buffer, "insmod", 6) == 0 && buffer[6] == ' ') {
+        if (arg) {
+            insmod(arg);
         }
     }
 

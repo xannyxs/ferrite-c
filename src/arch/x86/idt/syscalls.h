@@ -60,6 +60,10 @@ enum syscalls_e {
     SYS_TRUNCATE = 92,
     SYS_FTRUNCATE = 93,
     SYS_SOCKETCALL = 102,
+
+    SYS_INIT_MODULE = 128,
+    SYS_DELETE_MODULE = 129,
+
     SYS_FCHDIR = 133,
     SYS_NANOSLEEP = 162,
 
@@ -118,5 +122,13 @@ SYSCALL_ATTR s32 sys_setresgid(gid_t rgid, gid_t egid, gid_t sgid);
 SYSCALL_ATTR gid_t sys_getgroups(gid_t* grouplist, int len);
 
 SYSCALL_ATTR gid_t sys_setgroups(gid_t* grouplist, int len);
+
+/* modules.c */
+
+/* modules */
+
+int sys_delete_module(char const* name_user, unsigned int flags);
+
+int sys_init_module(void* mod, unsigned long len, char* const args);
 
 #endif /* SYSCALLS_H */

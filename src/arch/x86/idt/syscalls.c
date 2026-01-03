@@ -805,6 +805,14 @@ syscall_dispatcher_c(registers_t* reg)
         reg->eax = sys_socketcall((s32)reg->ebx, (unsigned long*)reg->ecx);
         break;
 
+    case SYS_INIT_MODULE:
+        reg->eax = sys_init_module((char*)reg->ebx, reg->ecx, (char*)reg->edx);
+        break;
+
+    case SYS_DELETE_MODULE:
+        reg->eax = sys_delete_module((char*)reg->ebx, reg->ecx);
+        break;
+
     case SYS_FCHDIR:
         reg->eax = sys_fchdir(reg->ebx);
         break;
