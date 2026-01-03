@@ -11,6 +11,7 @@
 #include "ferrite/dirent.h"
 #include "fs/stat.h"
 #include "memory/buddy_allocator/buddy.h"
+#include "memory/kmalloc.h"
 #include "sys/file/fcntl.h"
 #include "sys/process/process.h"
 #include "sys/signal/signal.h"
@@ -63,6 +64,8 @@ static void print_help(void)
     printk("  echo    - Display a line of text\n");
     printk("  cd      - Change Directory\n");
     printk("  pwd     - Print Working Directory\n");
+    printk("  mount   - Mount a device\n");
+    printk("  umount  - Unmount a device\n");
     printk("  help    - Show this help message\n");
 }
 
@@ -113,6 +116,47 @@ static void echo_file(char const* args)
                      : "memory");
 
     __asm__ volatile("int $0x80" : : "a"(SYS_CLOSE), "b"(fd) : "memory");
+}
+
+static void mount(char const* arg)
+{
+    char** vars = split(arg, ' ');
+    if (!vars) {
+        return;
+    }
+
+    if (!vars[0] || !vars[1]) {
+        goto cleanup;
+    }
+
+    int ret = 0;
+    __asm__ volatile("int $0x80"
+                     : "=a"(ret)
+                     : "a"(SYS_MOUNT), "b"(vars[0]), "c"(vars[1]), "d"("ext2"),
+                       "S"(0), "D"(NULL)
+                     : "memory");
+
+    if (ret < 0) {
+        printk("mount: failed with error %d\n", ret);
+    } else {
+        printk("mount: successfully mounted %s on %s\n", vars[0], vars[1]);
+    }
+
+cleanup:
+    for (int i = 0; vars[i]; i += 1) {
+        kfree(vars[i]);
+    }
+
+    kfree(vars);
+}
+
+static void umount(char const* device)
+{
+    int ret = 0;
+    __asm__ volatile("int $0x80"
+                     : "=a"(ret)
+                     : "a"(SYS_UMOUNT), "b"(device), "c"(0)
+                     : "memory");
 }
 
 static void cat_file(char const* path)
@@ -479,6 +523,14 @@ static void execute_buffer(void)
     } else if (strncmp(buffer, "cd", 2) == 0 && buffer[2] == ' ') {
         if (arg) {
             change_directory(arg);
+        }
+    } else if (strncmp(buffer, "mount", 5) == 0 && buffer[5] == ' ') {
+        if (arg) {
+            mount(arg);
+        }
+    } else if (strncmp(buffer, "umount", 6) == 0 && buffer[6] == ' ') {
+        if (arg) {
+            umount(arg);
         }
     }
 

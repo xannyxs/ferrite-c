@@ -1,8 +1,36 @@
 #include "arch/x86/idt/syscalls.h"
+#include "fs/mount.h"
 #include "sys/process/process.h"
 
 #include <ferrite/errno.h>
 #include <ferrite/types.h>
+
+/* Mount */
+
+SYSCALL_ATTR int sys_mount(
+    char* device,
+    char* dir_name,
+    char* type,
+    unsigned long flags,
+    void* data
+)
+{
+    (void)data;
+
+    if (!device || !dir_name || !type) {
+        return -EINVAL;
+    }
+
+    return vfs_mount(device, dir_name, type, flags);
+}
+
+SYSCALL_ATTR int sys_umount(char const* name, int flags)
+{
+    (void)flags;
+    int ret = vfs_unmount(name);
+
+    return ret;
+}
 
 /* UID */
 

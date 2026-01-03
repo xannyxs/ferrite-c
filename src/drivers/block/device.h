@@ -3,6 +3,10 @@
 
 #include <ferrite/types.h>
 
+#define MAJOR(a) (int)((unsigned short)(a) >> 8)
+#define MINOR(a) (int)((unsigned short)(a) & 0xFF)
+#define MKDEV(a, b) ((int)((((a) & 0xff) << 8) | ((b) & 0xff)))
+
 typedef enum {
     BLOCK_DEVICE_NONE = 0,
     BLOCK_DEVICE_IDE,
@@ -11,7 +15,7 @@ typedef enum {
     BLOCK_DEVICE_UNKNOWN,
 } block_device_type_e;
 
-typedef struct {
+typedef struct block_device {
     dev_t d_dev;
     u32 d_sector_size;
 
@@ -19,6 +23,8 @@ typedef struct {
 
     block_device_type_e d_type;
     struct device_operations* d_op;
+
+    struct block_device* next;
 } block_device_t;
 
 struct device_operations {
@@ -29,12 +35,10 @@ struct device_operations {
 
 block_device_t* get_devices(void);
 
-block_device_t* get_device(dev_t dev);
+block_device_t* get_device(dev_t);
 
-block_device_t* get_new_device(void);
+block_device_t* allocate_device_slot(dev_t);
 
-void register_block_device(block_device_type_e type, void* data);
-
-void root_device_init(char* cmdline);
+void register_block_device(dev_t, block_device_type_e, void*);
 
 #endif /* BLOCK_DEVICE_H */

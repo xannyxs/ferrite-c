@@ -5,16 +5,28 @@
 #include "ferrite/major.h"
 #include "memory/kmalloc.h"
 
+#include <ferrite/errno.h>
 #include <ferrite/string.h>
 #include <ferrite/types.h>
 
-#define ATA_ADDR 0x1F0
 #define DEVICE_ATAPI 1
 #define DEVICE_ATA 2
+
+static ide_controller_t ide_controllers[MAX_IDE_CONTR]
+    = { { .base_port = 0x1F0, .ctrl_port = 0x3F6, .irq = 14 },
+        { .base_port = 0x170, .ctrl_port = 0x376, .irq = 15 } };
 
 /* Private */
 
 u16 ata_data[256];
+
+static void delay(u16 ctrl_port)
+{
+    inb(ctrl_port);
+    inb(ctrl_port);
+    inb(ctrl_port);
+    inb(ctrl_port);
+}
 
 static void parse_vender_name(ata_drive_t* s)
 {
@@ -46,76 +58,127 @@ static int device_type(u16 device)
     return -1;
 }
 
-static ata_drive_t* detect_harddrives(u8 master)
+static int ide_detect_controller(u8 controller_num)
 {
+    u16 base = ide_controllers[controller_num].base_port;
+    u8 status = inb(base + 7);
+
+    if (status == 0xFF) {
+        return 0;
+    }
+
+    return 1;
+}
+
+/*
+ * Warning: Returned value is dynamicly allocated
+ */
+static ata_drive_t* detect_harddrives(u8 controller_num, u8 master)
+{
+    if (controller_num >= 2 || !ide_controllers[controller_num].present) {
+        printk("%s: Controller %d not present\n", __func__, controller_num);
+        return NULL;
+    }
+
+    u16 base_port = ide_controllers[controller_num].base_port;
+
     u8 select = (master ? 0xb0 : 0xa0);
-    outb(ATA_ADDR + 6, select);
+    outb(base_port + 6, select);
 
-    outb(ATA_ADDR + 2, 0);
-    outb(ATA_ADDR + 3, 0);
-    outb(ATA_ADDR + 4, 0);
-    outb(ATA_ADDR + 5, 0);
+    outb(base_port + 2, 0);
+    outb(base_port + 3, 0);
+    outb(base_port + 4, 0);
+    outb(base_port + 5, 0);
 
-    outb(ATA_ADDR + 7, 0xEC);
+    outb(base_port + 7, 0xEC);
 
-    u8 status = inb(ATA_ADDR + 7);
+    u8 status = inb(base_port + 7);
     if (status == 0) {
-        printk("No ATA exists on %s!\n", (select ? "slave" : "master"));
+        printk(
+            "%s: No drive on controller %d, drive %d\n", __func__,
+            controller_num, master
+        );
         return NULL;
     }
 
     while (status & 0x80) {
-        status = inb(ATA_ADDR + 7);
+        status = inb(base_port + 7);
     }
 
     if (status & 0x01) {
+        printk(
+            "%s: Error bit set on controller %d, drive %d\n", __func__,
+            controller_num, master
+        );
         return NULL;
     }
 
-    if (inb(ATA_ADDR + 4) != 0 || inb(ATA_ADDR + 5) != 0) {
-        return NULL; // Not a ATA
+    if (inb(base_port + 4) != 0 || inb(base_port + 5) != 0) {
+        printk(
+            "%s: Not an ATA device on controller %d, drive %d\n", __func__,
+            controller_num, master
+        );
+        return NULL;
     }
 
     int timeout = 1000;
     while ((status & 0x08) == 0 && timeout > 0) {
-        status = inb(ATA_ADDR + 7);
+        status = inb(base_port + 7);
         timeout--;
     }
 
     if (timeout == 0) {
-        printk("Timeout waiting for DRQ\n");
+        printk(
+            "%s: Timeout waiting for DRQ on controller %d, drive %d\n",
+            __func__, controller_num, master
+        );
         return NULL;
     }
 
     for (int i = 0; i < 256; i += 1) {
-        ata_data[i] = inw(ATA_ADDR + 0);
+        ata_data[i] = inw(base_port + 0);
     }
 
     if (device_type(ata_data[0]) != DEVICE_ATA) {
+        printk(
+            "%s: Device type check failed on controller %d, drive %d\n",
+            __func__, controller_num, master
+        );
         return NULL;
     }
 
     ata_drive_t* ata_drive = kmalloc(sizeof(ata_drive_t));
     if (!ata_drive) {
+        printk("%s: Failed to allocate memory for drive structure\n", __func__);
         return NULL;
     }
 
-    parse_vender_name(ata_drive);
-    ata_drive->lba28_sectors = ata_data[60] | ((u32)ata_data[61] << 16);
+    ata_drive->controller = controller_num;
     ata_drive->drive = master;
 
-    if (ata_data[83] & (1 << 10)) {
-        printk("supports lba48 mode. Ignore for now...\n");
+    parse_vender_name(ata_drive);
+    ata_drive->lba28_sectors = ata_data[60] | ((u32)ata_data[61] << 16);
 
+    if (ata_data[83] & (1 << 10)) {
         ata_drive->lba48_sectors = (unsigned long long)ata_data[100]
             | ((unsigned long long)ata_data[101] << 16)
             | ((unsigned long long)ata_data[102] << 32)
             | ((unsigned long long)ata_data[103] << 48);
         ata_drive->supports_lba48 = 1;
+
+        printk(
+            "IDE: Drive supports LBA48 (%llu sectors)\n",
+            ata_drive->lba48_sectors
+        );
     } else {
         ata_drive->lba48_sectors = 0;
         ata_drive->supports_lba48 = 0;
     }
+
+    printk(
+        "IDE: Detected %s on controller %d, drive %d (%u sectors)\n",
+        ata_drive->name, controller_num, master, ata_drive->lba28_sectors
+    );
 
     return ata_drive;
 }
@@ -166,31 +229,28 @@ s32 ide_read(block_device_t* d, u32 lba, u32 count, void* buf, size_t len)
         return -1;
     }
 
-    outb(0x1F6, 0xE0 | (ata->drive << 4) | ((lba >> 24) & 0x0F));
-    outb(0x1F1, 0x00);
+    u16 base_port = ide_controllers[ata->controller].base_port;
+    u16 ctrl_port = ide_controllers[ata->controller].ctrl_port;
 
-    inb(0x3F6);
-    inb(0x3F6);
-    inb(0x3F6);
-    inb(0x3F6);
+    outb(base_port + 6, 0xE0 | (ata->drive << 4) | ((lba >> 24) & 0x0F));
+    outb(base_port + 1, 0x00);
 
-    outb(0x1F2, (u8)count);
-    outb(0x1F3, (u8)lba);
-    outb(0x1F4, (u8)(lba >> 8));
-    outb(0x1F5, (u8)(lba >> 16));
-    outb(0x1F7, 0x20);
+    delay(ctrl_port);
 
-    inb(0x3F6);
-    inb(0x3F6);
-    inb(0x3F6);
-    inb(0x3F6);
+    outb(base_port + 2, (u8)count);
+    outb(base_port + 3, (u8)lba);
+    outb(base_port + 4, (u8)(lba >> 8));
+    outb(base_port + 5, (u8)(lba >> 16));
+    outb(base_port + 7, 0x20);
+
+    delay(ctrl_port);
 
     u16* buffer = (u16*)buf;
 
-    for (u32 sector = 0; sector < count; sector += 1) {
-        u8 status = inb(ATA_ADDR + 7);
+    for (u32 sector = 0; sector < count; sector++) {
+        u8 status = inb(base_port + 7);
         while (status & 0x80) {
-            status = inb(ATA_ADDR + 7);
+            status = inb(base_port + 7);
         }
 
         if (status & 0x01) {
@@ -199,11 +259,11 @@ s32 ide_read(block_device_t* d, u32 lba, u32 count, void* buf, size_t len)
         }
 
         while (!(status & 0x08)) {
-            status = inb(ATA_ADDR + 7);
+            status = inb(base_port + 7);
         }
 
         for (int i = 0; i < 256; i++) {
-            buffer[sector * 256 + i] = inw(ATA_ADDR + 0);
+            buffer[sector * 256 + i] = inw(base_port + 0);
         }
     }
 
@@ -229,24 +289,21 @@ s32 ide_write(
 
     ata_drive_t* ata = (ata_drive_t*)d->d_data;
 
-    outb(0x1F6, 0xE0 | (ata->drive << 4) | ((lba >> 24) & 0x0F));
-    outb(0x1F1, 0x00);
+    u16 base_port = ide_controllers[ata->controller].base_port;
+    u16 ctrl_port = ide_controllers[ata->controller].ctrl_port;
 
-    inb(0x3F6);
-    inb(0x3F6);
-    inb(0x3F6);
-    inb(0x3F6);
+    outb(base_port + 6, 0xE0 | (ata->drive << 4) | ((lba >> 24) & 0x0F));
+    outb(base_port + 1, 0x00);
 
-    outb(0x1F2, (u8)count);
-    outb(0x1F3, (u8)lba);
-    outb(0x1F4, (u8)(lba >> 8));
-    outb(0x1F5, (u8)(lba >> 16));
-    outb(0x1F7, 0x30);
+    delay(ctrl_port);
 
-    inb(0x3F6);
-    inb(0x3F6);
-    inb(0x3F6);
-    inb(0x3F6);
+    outb(base_port + 2, (u8)count);
+    outb(base_port + 3, (u8)lba);
+    outb(base_port + 4, (u8)(lba >> 8));
+    outb(base_port + 5, (u8)(lba >> 16));
+    outb(base_port + 7, 0x30);
+
+    delay(ctrl_port);
 
     u16 const* buffer = (u16 const*)buf;
     for (u32 sector = 0; sector < count; sector += 1) {
@@ -255,7 +312,7 @@ s32 ide_write(
 
         timeout = 1000000;
         do {
-            status = inb(0x1F7);
+            status = inb(base_port + 7);
             if (--timeout == 0) {
                 printk(
                     "ide_write: Timeout waiting for BSY clear (status=0x%x)\n",
@@ -266,14 +323,14 @@ s32 ide_write(
         } while (status & 0x80);
 
         if (status & 0x01) {
-            u8 error = inb(0x1F1);
+            u8 error = inb(base_port + 1);
             printk("%s: Error 0x%x\n", __func__, error);
             return -1;
         }
 
         timeout = 1000000;
         do {
-            status = inb(0x1F7);
+            status = inb(base_port + 7);
             if (--timeout == 0) {
                 printk(
                     "ide_write: Timeout waiting for DRQ (status=0x%x)\n", status
@@ -283,29 +340,26 @@ s32 ide_write(
         } while (!(status & 0x08));
 
         for (int i = 0; i < 256; i += 1) {
-            outw(ATA_ADDR + 0, buffer[sector * 256 + i]);
+            outw(base_port + 0, buffer[sector * 256 + i]);
         }
     }
 
     u32 timeout = 1000000;
     u8 status;
     do {
-        status = inb(0x1F7);
+        status = inb(base_port + 7);
         if (--timeout == 0) {
             printk("ide_write: Timeout waiting for write completion\n");
             return -1;
         }
     } while (status & 0x80);
 
-    outb(0x1F7, 0xE7);
-    inb(0x3F6);
-    inb(0x3F6);
-    inb(0x3F6);
-    inb(0x3F6);
+    outb(base_port + 7, 0xE7);
+    delay(ctrl_port);
 
     timeout = 1000000;
     do {
-        status = inb(0x1F7);
+        status = inb(base_port + 7);
         if (--timeout == 0) {
             printk("ide_write: Timeout waiting for FLUSH\n");
             return -1;
@@ -318,26 +372,68 @@ s32 ide_write(
 // TODO
 void ide_shutdown(block_device_t* d) { (void)d; }
 
-// FIXME: Minor is for particions. Should we support it?
-s32 ide_mount(s32 major, s32 minor)
+int ide_detach(dev_t bdev)
 {
-    (void)minor;
-
-    if (major == IDE0_MAJOR) {
-        ata_drive_t* d = detect_harddrives(0);
-        if (!d) {
-            return -1;
-        }
-
-        register_block_device(BLOCK_DEVICE_IDE, d);
-    } else if (major == IDE1_MAJOR) {
-        ata_drive_t* d = detect_harddrives(1);
-        if (!d) {
-            return -1;
-        }
-
-        register_block_device(BLOCK_DEVICE_IDE, d);
+    block_device_t* d = get_device(bdev);
+    if (!d) {
+        return -ENODEV;
     }
 
+    if (d->d_data) {
+        kfree(d->d_data);
+        d->d_data = NULL;
+    }
+
+    d->d_dev = 0;
+    d->d_op = NULL;
+    d->d_type = 0;
+
+    printk("IDE: Detached device 0x%x\n", bdev);
     return 0;
+}
+
+int ide_probe(dev_t bdev)
+{
+    int major = MAJOR(bdev);
+    int minor = MINOR(bdev);
+
+    u8 controller_num = (major == IDE0_MAJOR) ? 0 : 1;
+    u8 drive_num = (minor >= 64) ? 1 : 0;
+
+    printk(
+        "IDE: Probing controller %d, drive %d (dev=0x%x)\n", controller_num,
+        drive_num, bdev
+    );
+
+    ata_drive_t* d = detect_harddrives(controller_num, drive_num);
+    if (!d) {
+        printk("%s: Failed to detect drive\n", __func__);
+        return -ENODEV;
+    }
+
+    register_block_device(bdev, BLOCK_DEVICE_IDE, d);
+    printk("IDE: Probed and registered device 0x%x\n", bdev);
+    return 0;
+}
+
+void ide_init(void)
+{
+    ide_controllers[0].present = ide_detect_controller(0);
+    ide_controllers[1].present = ide_detect_controller(1);
+
+    printk(
+        "IDE: IDE0 %s, IDE1 %s\n",
+        ide_controllers[0].present ? "present" : "not found",
+        ide_controllers[1].present ? "present" : "not found"
+    );
+
+    if (ide_controllers[0].present) {
+        ide_probe(MKDEV(IDE0_MAJOR, 0));  // hda
+        ide_probe(MKDEV(IDE0_MAJOR, 64)); // hdb
+    }
+
+    if (ide_controllers[1].present) {
+        ide_probe(MKDEV(IDE1_MAJOR, 0));  // hdc
+        ide_probe(MKDEV(IDE1_MAJOR, 64)); // hdd
+    }
 }

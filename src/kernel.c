@@ -4,8 +4,9 @@
 #include "arch/x86/pic.h"
 #include "arch/x86/pit.h"
 #include "arch/x86/time/rtc.h"
-#include "drivers/block/device.h"
+#include "drivers/block/ide.h"
 #include "drivers/video/vga.h"
+#include "fs/mount.h"
 #include "fs/vfs.h"
 #include "memory/buddy_allocator/buddy.h"
 #include "memory/memblock.h"
@@ -20,6 +21,7 @@
 
 __attribute__((noreturn)) void kmain(u32 magic, multiboot_info_t* mbd)
 {
+
     if (magic != MULTIBOOT_BOOTLOADER_MAGIC) {
         abort("Invalid magic number!");
     }
@@ -45,7 +47,10 @@ __attribute__((noreturn)) void kmain(u32 magic, multiboot_info_t* mbd)
     vmalloc_init();
 
     inode_cache_init();
-    root_device_init((char*)mbd->cmdline);
+    ide_init();
+    // FUTURE: Will add other type of devices
+
+    mount_root_device((char*)mbd->cmdline);
     vfs_init();
 
     ptables_init();

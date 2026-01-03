@@ -7,6 +7,7 @@
 
 #include <ferrite/types.h>
 
+struct vfs_mount;
 struct ext2_superblock;
 struct ext2_block_group_descriptor;
 
@@ -58,6 +59,7 @@ typedef struct vfs_inode {
     time_t i_mtime;
     time_t i_ctime;
 
+    struct vfs_inode* i_mount;
     vfs_superblock_t* i_sb;
 
     struct inode_operations* i_op;

@@ -116,6 +116,7 @@ s32 ext2_read_inode(vfs_inode_t* dir)
 
     memcpy(node, &buff[offset], sizeof(ext2_inode_t));
 
+    dir->i_dev = sb->s_dev;
     dir->i_atime = (time_t)node->i_atime;
     dir->i_mtime = (time_t)node->i_mtime;
     dir->i_ctime = (time_t)node->i_ctime;

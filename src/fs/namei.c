@@ -49,6 +49,8 @@ int vfs_permission(vfs_inode_t* node, int mask)
     return 0;
 }
 
+#include "drivers/printk.h"
+
 /*
  * @brief Lookup a path starting from the given inode.
  *
@@ -59,11 +61,9 @@ vfs_inode_t* vfs_lookup(vfs_inode_t* start, char const* path)
     if (!start || !path) {
         return NULL;
     }
-
     if (!vfs_permission(start, MAY_EXEC)) {
         return NULL;
     }
-
     if (path[0] == '/' && path[1] == '\0') {
         return inode_get(myproc()->root->i_sb, EXT2_ROOT_INO);
     }
@@ -73,19 +73,32 @@ vfs_inode_t* vfs_lookup(vfs_inode_t* start, char const* path)
         return NULL;
     }
 
-    vfs_inode_t* current = start;
+    vfs_inode_t* current = NULL;
     vfs_inode_t* new = NULL;
+
     for (int i = 0; components[i]; i += 1) {
         if (components[i][0] == '\0') {
             continue;
         }
 
         s32 name_len = (s32)strlen(components[i]);
-        if (current->i_op->lookup(current, components[i], name_len, &new) < 0) {
+        vfs_inode_t* parent = (current == NULL) ? start : current;
+
+        if (parent->i_op->lookup(parent, components[i], name_len, &new) < 0) {
+            inode_put(current);
             goto error;
         }
 
+        inode_put(current);
         current = new;
+
+        if (current->i_mount) {
+            vfs_inode_t* mounted_root
+                = inode_get(current->i_mount->i_sb, current->i_mount->i_ino);
+
+            inode_put(current);
+            current = mounted_root;
+        }
 
         if (S_ISDIR(current->i_mode) && components[i + 1]) {
             if (!vfs_permission(current, MAY_EXEC)) {
@@ -99,7 +112,6 @@ vfs_inode_t* vfs_lookup(vfs_inode_t* start, char const* path)
         kfree(components[i]);
     }
     kfree(components);
-
     return current;
 
 error:
@@ -107,6 +119,5 @@ error:
         kfree(components[i]);
     }
     kfree(components);
-
     return NULL;
 }
