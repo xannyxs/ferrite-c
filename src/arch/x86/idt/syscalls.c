@@ -5,6 +5,7 @@
 #include "ferrite/dirent.h"
 #include "fs/exec.h"
 #include "fs/ext2/ext2.h"
+#include "fs/mount.h"
 #include "fs/stat.h"
 #include "fs/vfs.h"
 #include "memory/kmalloc.h"
@@ -571,6 +572,7 @@ SYSCALL_ATTR static s32 sys_getcwd(char* buf, unsigned long size)
 
     vfs_inode_t* root = myproc()->root;
     vfs_inode_t* pwd = myproc()->pwd;
+
     if (!pwd) {
         pwd = root;
         pwd->i_count += 1;
@@ -580,7 +582,6 @@ SYSCALL_ATTR static s32 sys_getcwd(char* buf, unsigned long size)
         if (size < 2) {
             return -ERANGE;
         }
-
         buf[0] = '/';
         buf[1] = '\0';
         return 2;
@@ -602,12 +603,25 @@ SYSCALL_ATTR static s32 sys_getcwd(char* buf, unsigned long size)
             return -EIO;
         }
 
+        if (parent->i_sb == current->i_sb && parent->i_ino == current->i_ino) {
+            inode_put(parent);
+
+            vfs_mount_t* mountpoint = find_mount(current);
+            if (!mountpoint) {
+                inode_put(current);
+                return -EIO;
+            }
+
+            inode_put(current);
+            current = mountpoint->m_root_inode;
+            continue;
+        }
+
         ext2_entry_t* entry = NULL;
         int retval = ext2_find_entry_by_ino(parent, current->i_ino, &entry);
         if (retval) {
             inode_put(current);
             inode_put(parent);
-
             return retval;
         }
 
@@ -615,7 +629,6 @@ SYSCALL_ATTR static s32 sys_getcwd(char* buf, unsigned long size)
             kfree(entry);
             inode_put(current);
             inode_put(parent);
-
             return -ENAMETOOLONG;
         }
 
@@ -633,7 +646,6 @@ SYSCALL_ATTR static s32 sys_getcwd(char* buf, unsigned long size)
     inode_put(current);
 
     unsigned long path_len = 256 - pos;
-
     if (path_len > size) {
         return -ERANGE;
     }

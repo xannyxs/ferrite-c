@@ -5,6 +5,11 @@
 
 #include <ferrite/limits.h>
 
+#define find_mount(x)                                                                                             \
+    _Generic((x), char*: find_mount_by_path, const char*: find_mount_by_path, vfs_inode_t*: find_mount_by_inode)( \
+        x                                                                                                         \
+    )
+
 typedef struct vfs_mount {
     char m_name[NAME_MAX];
     vfs_inode_t* m_mount_point_inode;
@@ -14,7 +19,9 @@ typedef struct vfs_mount {
     struct vfs_mount* next;
 } vfs_mount_t;
 
-struct vfs_mount* find_mount(char const*);
+vfs_mount_t* find_mount_by_inode(vfs_inode_t* mounted_root);
+
+vfs_mount_t* find_mount_by_path(char const* path);
 
 void list_mounts(void);
 

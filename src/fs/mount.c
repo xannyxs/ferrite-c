@@ -1,6 +1,5 @@
 #include "fs/mount.h"
 #include "drivers/block/device.h"
-#include "drivers/block/ide.h"
 #include "drivers/printk.h"
 #include "ferrite/limits.h"
 #include "ferrite/major.h"
@@ -80,9 +79,26 @@ static parsed_device_t parse_device_path(char const* device)
     return result;
 }
 
-/* Public */
+vfs_mount_t* find_mount_by_inode(vfs_inode_t* mounted_root)
+{
+    vfs_mount_t* tmp = mount_table;
+    while (tmp) {
+        vfs_inode_t* mountpoint = vfs_lookup(myproc()->root, tmp->m_name);
+        if (mountpoint) {
+            if (mountpoint->i_mount
+                && mountpoint->i_mount->i_sb == mounted_root->i_sb
+                && mountpoint->i_mount->i_ino == mounted_root->i_ino) {
+                inode_put(mountpoint);
+                return tmp;
+            }
+            inode_put(mountpoint);
+        }
+        tmp = tmp->next;
+    }
+    return NULL;
+}
 
-vfs_mount_t* find_mount(char const* path)
+vfs_mount_t* find_mount_by_path(char const* path)
 {
     vfs_mount_t* tmp = mount_table;
 
@@ -96,6 +112,8 @@ vfs_mount_t* find_mount(char const* path)
 
     return NULL;
 }
+
+/* Public */
 
 int vfs_mount(
     char const* device,
