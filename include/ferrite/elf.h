@@ -207,7 +207,7 @@ typedef struct {
     Elf32_Word sh_info;
     Elf32_Word sh_addralign;
     Elf32_Word sh_entsize;
-} Elf32_Shdr;
+} elf32_shdr_t;
 
 #define EI_MAG0 0 /* e_ident[] indexes */
 #define EI_MAG1 1
