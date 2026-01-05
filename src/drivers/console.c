@@ -9,6 +9,7 @@
 #include "drivers/printk.h"
 #include "drivers/video/vga.h"
 #include "ferrite/dirent.h"
+#include "ferrite/module.h"
 #include "fs/stat.h"
 #include "memory/buddy_allocator/buddy.h"
 #include "memory/kmalloc.h"
@@ -67,6 +68,7 @@ static void print_help(void)
     printk("  mount   - Mount a device\n");
     printk("  umount  - Unmount a device\n");
     printk("  insmod  - Load a module\n");
+    printk("  lsmod   - List all active modules\n");
     printk("  help    - Show this help message\n");
 }
 static void echo_file(char const* args)
@@ -169,6 +171,8 @@ static void insmod(char const* path)
 
     printk("ret: %d\n", ret);
 }
+
+static void lsmod(void) { module_list(); }
 
 static void cat_file(char const* path)
 {
@@ -476,77 +480,92 @@ static char* get_arg(void)
     return arg ? arg + 1 : NULL;
 }
 
+typedef enum {
+    CMD_NO_ARG,
+    CMD_REQUIRED_ARG,
+    CMD_OPTIONAL_ARG,
+} cmd_arg_type_e;
+
+typedef struct {
+    char const* name;
+    cmd_arg_type_e arg_type;
+    union {
+        void (*no_arg)(void);
+        void (*with_arg)(char const*);
+    } func;
+} command_t;
+
 static void execute_buffer(void)
 {
-    static exec_t const command_table[] = { { "reboot", reboot },
-                                            { "gdt", print_gdt },
-                                            { "memory", print_buddy },
-                                            { "clear", vga_init },
-                                            { "help", print_help },
-                                            { "panic", exec_abort },
-                                            { "idt", print_idt },
-                                            { "time", print_time },
-                                            { "epoch", print_epoch },
-                                            { "top", process_list },
-                                            { "devices", print_devices },
-                                            { "sleep", exec_sleep },
-                                            { "pwd", print_working_directory },
-                                            { NULL, NULL } };
+    static command_t const commands[]
+        = { { "reboot", CMD_NO_ARG, { .no_arg = reboot } },
+            { "gdt", CMD_NO_ARG, { .no_arg = print_gdt } },
+            { "memory", CMD_NO_ARG, { .no_arg = print_buddy } },
+            { "clear", CMD_NO_ARG, { .no_arg = vga_init } },
+            { "help", CMD_NO_ARG, { .no_arg = print_help } },
+            { "panic", CMD_NO_ARG, { .no_arg = exec_abort } },
+            { "idt", CMD_NO_ARG, { .no_arg = print_idt } },
+            { "time", CMD_NO_ARG, { .no_arg = print_time } },
+            { "epoch", CMD_NO_ARG, { .no_arg = print_epoch } },
+            { "top", CMD_NO_ARG, { .no_arg = process_list } },
+            { "devices", CMD_NO_ARG, { .no_arg = print_devices } },
+            { "pwd", CMD_NO_ARG, { .no_arg = print_working_directory } },
+            { "lsmod", CMD_NO_ARG, { .no_arg = lsmod } },
+            { "sleep", CMD_OPTIONAL_ARG, { .no_arg = exec_sleep } },
+
+            { "ls", CMD_OPTIONAL_ARG, { .with_arg = list_directory_contents } },
+
+            { "mkdir", CMD_REQUIRED_ARG, { .with_arg = make_directory } },
+            { "touch", CMD_REQUIRED_ARG, { .with_arg = touch_file } },
+            { "rmdir", CMD_REQUIRED_ARG, { .with_arg = remove_directory } },
+            { "rm", CMD_REQUIRED_ARG, { .with_arg = remove_file } },
+            { "cat", CMD_REQUIRED_ARG, { .with_arg = cat_file } },
+            { "echo", CMD_REQUIRED_ARG, { .with_arg = echo_file } },
+            { "cd", CMD_REQUIRED_ARG, { .with_arg = change_directory } },
+            { "mount", CMD_REQUIRED_ARG, { .with_arg = mount } },
+            { "umount", CMD_REQUIRED_ARG, { .with_arg = umount } },
+            { "insmod", CMD_REQUIRED_ARG, { .with_arg = insmod } },
+            // { "rmmod", CMD_REQUIRED_ARG, { .with_arg = rmmod } },
+
+            { NULL, CMD_NO_ARG, { .no_arg = NULL } } };
 
     printk("\n");
 
-    for (s32 cmd = 0; command_table[cmd].cmd; cmd++) {
-        if (strcmp(buffer, command_table[cmd].cmd) == 0) {
-            command_table[cmd].f();
-            goto cleanup;
+    char* arg = get_arg();
+
+    for (int i = 0; commands[i].name != NULL; i++) {
+        size_t cmd_len = strlen(commands[i].name);
+
+        if (strncmp(buffer, commands[i].name, cmd_len) == 0) {
+            char next_char = buffer[cmd_len];
+
+            if (next_char != ' ' && next_char != '\0') {
+                continue;
+            }
+
+            switch (commands[i].arg_type) {
+            case CMD_NO_ARG:
+                commands[i].func.no_arg();
+                goto cleanup;
+
+            case CMD_OPTIONAL_ARG:
+                commands[i].func.with_arg(arg);
+                goto cleanup;
+
+            case CMD_REQUIRED_ARG:
+                if (arg) {
+                    commands[i].func.with_arg(arg);
+                } else {
+                    printk("%s: missing argument\n", commands[i].name);
+                }
+                goto cleanup;
+            }
         }
     }
 
-    char* arg = get_arg();
-
-    if (strncmp(buffer, "ls", 2) == 0
-        && (buffer[2] == ' ' || buffer[2] == '\0')) {
-        list_directory_contents(arg);
-    } else if (strncmp(buffer, "mkdir", 5) == 0 && buffer[5] == ' ') {
-        if (arg) {
-            make_directory(arg);
-        }
-    } else if (strncmp(buffer, "touch", 5) == 0 && buffer[5] == ' ') {
-        if (arg) {
-            touch_file(arg);
-        }
-    } else if (strncmp(buffer, "rmdir", 5) == 0 && buffer[5] == ' ') {
-        if (arg) {
-            remove_directory(arg);
-        }
-    } else if (strncmp(buffer, "rm", 2) == 0 && buffer[2] == ' ') {
-        if (arg) {
-            remove_file(arg);
-        }
-    } else if (strncmp(buffer, "cat", 3) == 0 && buffer[3] == ' ') {
-        if (arg) {
-            cat_file(arg);
-        }
-    } else if (strncmp(buffer, "echo", 4) == 0 && buffer[4] == ' ') {
-        if (arg) {
-            echo_file(arg);
-        }
-    } else if (strncmp(buffer, "cd", 2) == 0 && buffer[2] == ' ') {
-        if (arg) {
-            change_directory(arg);
-        }
-    } else if (strncmp(buffer, "mount", 5) == 0 && buffer[5] == ' ') {
-        if (arg) {
-            mount(arg);
-        }
-    } else if (strncmp(buffer, "umount", 6) == 0 && buffer[6] == ' ') {
-        if (arg) {
-            umount(arg);
-        }
-    } else if (strncmp(buffer, "insmod", 6) == 0 && buffer[6] == ' ') {
-        if (arg) {
-            insmod(arg);
-        }
+    if (buffer[0] != '\0') {
+        printk("Unknown command: %s\n", buffer);
+        printk("Type 'help' for a list of commands\n");
     }
 
 cleanup:
@@ -554,7 +573,6 @@ cleanup:
     i = 0;
     printk("%s", prompt);
 }
-
 /* Public */
 
 void console_init(void)
