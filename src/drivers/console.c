@@ -209,6 +209,17 @@ static void insmod(char const* path)
 
 static void lsmod(void) { module_list(); }
 
+static void rmmod(char const* path)
+{
+    int ret;
+    __asm__ volatile("int $0x80"
+                     : "=a"(ret)
+                     : "a"(SYS_DELETE_MODULE), "b"(path), "c"(0)
+                     : "memory");
+
+    printk("ret: %d\n", ret);
+}
+
 static void cat_file(char const* path)
 {
     int fd;
@@ -549,7 +560,7 @@ static void execute_buffer(void)
             { "mount", CMD_REQUIRED_ARG, { .with_arg = mount } },
             { "umount", CMD_REQUIRED_ARG, { .with_arg = umount } },
             { "insmod", CMD_REQUIRED_ARG, { .with_arg = insmod } },
-            // { "rmmod", CMD_REQUIRED_ARG, { .with_arg = rmmod } },
+            { "rmmod", CMD_REQUIRED_ARG, { .with_arg = rmmod } },
 
             { NULL, CMD_NO_ARG, { .no_arg = NULL } } };
 

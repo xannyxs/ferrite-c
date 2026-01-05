@@ -6,6 +6,7 @@
 
 #include "drivers/printk.h"
 #include "memory/kmalloc.h"
+#include "sys/file/fcntl.h"
 
 // tmp
 unsigned char module_o[] = {
@@ -125,8 +126,6 @@ static int verify_elf_header(elf32_hdr_t* hdr)
     return 0;
 }
 
-/* Public */
-
 static module_t* module_find(char const* name)
 {
     if (!modules) {
@@ -145,41 +144,6 @@ static module_t* module_find(char const* name)
     }
 
     return NULL;
-}
-
-void module_list(void)
-{
-    if (!modules) {
-        printk("No modules loaded\n");
-        return;
-    }
-
-    printk("Loaded modules:\n");
-    printk("%s  %s  %s  %s\n", "Name", "Address", "Size", "State");
-    printk("------------------------------------------------------------\n");
-
-    module_t* tmp = modules;
-    while (tmp) {
-        char const* state_str = "unknown";
-        switch (tmp->state) {
-        case MODULE_STATE_LOADING:
-            state_str = "loading";
-            break;
-        case MODULE_STATE_LOADED:
-            state_str = "loaded";
-            break;
-        case MODULE_STATE_UNLOADING:
-            state_str = "unloading";
-            break;
-        }
-
-        printk(
-            "%s  0x%x  %u  %s\n", tmp->name, tmp->code_addr, tmp->code_size,
-            state_str
-        );
-
-        tmp = tmp->next;
-    }
 }
 
 static module_t* module_create(char const* name, void* code, size_t size)
@@ -216,7 +180,7 @@ static module_t* module_create(char const* name, void* code, size_t size)
     return mod;
 }
 
-int module_remove(char const* name)
+static int module_remove(char const* name)
 {
     module_t** prev = &modules;
     module_t* mod = modules;
@@ -255,12 +219,73 @@ int module_remove(char const* name)
     return -ENOENT;
 }
 
-int sys_delete_module(char const* name_user, unsigned int flags)
-{
-    (void)flags;
-    (void)name_user;
+/* Public */
 
-    return -ENOSYS;
+void module_list(void)
+{
+    if (!modules) {
+        printk("No modules loaded\n");
+        return;
+    }
+
+    printk("Loaded modules:\n");
+    printk("%s  %s  %s  %s\n", "Name", "Address", "Size", "State");
+    printk("------------------------------------------------------------\n");
+
+    module_t* tmp = modules;
+    while (tmp) {
+        char const* state_str = "unknown";
+        switch (tmp->state) {
+        case MODULE_STATE_LOADING:
+            state_str = "loading";
+            break;
+        case MODULE_STATE_LOADED:
+            state_str = "loaded";
+            break;
+        case MODULE_STATE_UNLOADING:
+            state_str = "unloading";
+            break;
+        }
+
+        printk(
+            "%s  0x%x  %u  %s\n", tmp->name, tmp->code_addr, tmp->code_size,
+            state_str
+        );
+
+        tmp = tmp->next;
+    }
+}
+
+int sys_delete_module(char const* name, unsigned int flags)
+{
+    if (!name) {
+        printk("sys_delete_module: NULL module name\n");
+        return -EINVAL;
+    }
+
+    if (strlen(name) >= MOD_MAX_NAME) {
+        printk("sys_delete_module: module name too long\n");
+        return -ENAMETOOLONG;
+    }
+
+    int force = (flags & O_TRUNC) != 0;
+    if (force) {
+        module_t* mod = module_find(name);
+        if (!mod) {
+            return -ENOENT;
+        }
+
+        if (mod->ref_count > 0) {
+            printk(
+                "WARNING: Force unloading module '%s' with refcount %d\n", name,
+                mod->ref_count
+            );
+        }
+
+        mod->ref_count = 0;
+    }
+
+    return module_remove(name);
 }
 
 int sys_init_module(void* mod, unsigned long len, char* const args)
@@ -269,6 +294,8 @@ int sys_init_module(void* mod, unsigned long len, char* const args)
     (void)len;
 
     int error = 0;
+
+    // Hardcoded for now
     mod = module_o;
     len = module_o_len;
 
