@@ -94,6 +94,8 @@ unsigned char module_o[] = {
 };
 unsigned int module_o_len = 984;
 
+module_t* modules = NULL;
+
 /* Private */
 
 static int verify_elf_header(elf32_hdr_t* hdr)
@@ -123,58 +125,135 @@ static int verify_elf_header(elf32_hdr_t* hdr)
     return 0;
 }
 
-// static int apply_relocation(
-//     Elf32_Rel* rel,
-//     Elf32_Sym* symtab,
-//     char* strtab,
-//     char* section_data,
-//     unsigned long section_addr
-// )
-// {
-//     unsigned long* location = (unsigned long*)(section_data + rel->r_offset);
-//     int sym_idx = ELF32_R_SYM(rel->r_info);
-//     int rel_type = ELF32_R_TYPE(rel->r_info);
-//
-//     Elf32_Sym* sym = &symtab[sym_idx];
-//     char* sym_name = strtab + sym->st_name;
-//
-//     unsigned long sym_addr = 0;
-//
-//     // Check if symbol is defined in the module itself
-//     if (sym->st_shndx != 0) { // SHN_UNDEF = 0
-//         // Symbol is in the module - use its offset from module base
-//         sym_addr = (unsigned long)section_data + sym->st_value;
-//     } else {
-//         // External symbol - look it up in kernel
-//         sym_addr = ksym_lookup(sym_name);
-//         if (sym_addr == 0) {
-//             printk("Undefined symbol: %s\n", sym_name);
-//             return -EINVAL;
-//         }
-//     }
-//
-//     switch (rel_type) {
-//     case R_386_32:
-//         // S + A (Symbol + Addend)
-//         *location += sym_addr;
-//         break;
-//
-//     case R_386_PC32: {
-//         // S + A - P (Symbol + Addend - Position)
-//         unsigned long P = section_addr + rel->r_offset;
-//         *location += sym_addr - P;
-//         break;
-//     }
-//
-//     default:
-//         printk("Unknown relocation type: %d\n", rel_type);
-//         return -EINVAL;
-//     }
-//
-//     return 0;
-// }
-
 /* Public */
+
+static module_t* module_find(char const* name)
+{
+    if (!modules) {
+        printk("No modules loaded\n");
+        return NULL;
+    }
+
+    module_t* tmp = modules;
+
+    while (tmp) {
+        if (strcmp(tmp->name, name) == 0) {
+            return tmp;
+        }
+
+        tmp = tmp->next;
+    }
+
+    return NULL;
+}
+
+void module_list(void)
+{
+    if (!modules) {
+        printk("No modules loaded\n");
+        return;
+    }
+
+    printk("Loaded modules:\n");
+    printk("%s  %s  %s  %s\n", "Name", "Address", "Size", "State");
+    printk("------------------------------------------------------------\n");
+
+    module_t* tmp = modules;
+    while (tmp) {
+        char const* state_str = "unknown";
+        switch (tmp->state) {
+        case MODULE_STATE_LOADING:
+            state_str = "loading";
+            break;
+        case MODULE_STATE_LOADED:
+            state_str = "loaded";
+            break;
+        case MODULE_STATE_UNLOADING:
+            state_str = "unloading";
+            break;
+        }
+
+        printk(
+            "%s  0x%x  %u  %s\n", tmp->name, tmp->code_addr, tmp->code_size,
+            state_str
+        );
+
+        tmp = tmp->next;
+    }
+}
+
+static module_t* module_create(char const* name, void* code, size_t size)
+{
+    if (module_find(name)) {
+        printk("Module '%s' already loaded\n", name);
+        return NULL;
+    }
+
+    module_t* mod = kmalloc(sizeof(module_t));
+    if (!mod) {
+        return NULL;
+    }
+
+    memset(mod, 0, sizeof(module_t));
+
+    memcpy(mod->name, name, MOD_MAX_NAME);
+    mod->name[MOD_MAX_NAME - 1] = '\0';
+
+    mod->code_addr = code;
+    mod->code_size = size;
+
+    mod->state = MODULE_STATE_LOADED;
+    mod->ref_count = 0;
+
+    mod->next = modules;
+    modules = mod;
+
+    printk(
+        "Registered module '%s' at 0x%x (%u bytes)\n", mod->name,
+        mod->code_addr, mod->code_size
+    );
+
+    return mod;
+}
+
+int module_remove(char const* name)
+{
+    module_t** prev = &modules;
+    module_t* mod = modules;
+
+    while (mod) {
+        if (strcmp(mod->name, name) == 0) {
+
+            if (mod->ref_count > 0) {
+                printk(
+                    "Module '%s' is in use (refcount=%d)\n", name,
+                    mod->ref_count
+                );
+                return -EBUSY;
+            }
+
+            if (mod->cleanup) {
+                mod->cleanup();
+            }
+
+            *prev = mod->next;
+
+            if (mod->code_addr) {
+                kfree(mod->code_addr);
+            }
+
+            kfree(mod);
+
+            printk("Module '%s' removed\n", name);
+            return 0;
+        }
+
+        prev = &mod->next;
+        mod = mod->next;
+    }
+
+    return -ENOENT;
+}
 
 int sys_delete_module(char const* name_user, unsigned int flags)
 {
@@ -355,12 +434,29 @@ int sys_init_module(void* mod, unsigned long len, char* const args)
     }
 
     printk("Calling init_module at 0x%x...\n", init_fn);
-
     int ret = init_fn();
+
     if (ret < 0) {
         printk("init_module failed with error %d\n", ret);
         kfree(mod_mem);
         return ret;
+    }
+
+    module_t* module = module_create("test_module", mod_mem, total_size);
+    if (!module) {
+        printk("Failed to register module\n");
+        kfree(mod_mem);
+        return -ENOMEM;
+    }
+
+    module->init = init_fn;
+    for (int i = 0; i < num_syms; i++) {
+        char* name = strtab + symtab[i].st_name;
+        if (strcmp(name, "cleanup_module") == 0) {
+            void* addr = (char*)mod_mem + text_offset + symtab[i].st_value;
+            memcpy(&module->cleanup, &addr, sizeof(module->cleanup));
+            break;
+        }
     }
 
     printk("Module loaded successfully!\n");
