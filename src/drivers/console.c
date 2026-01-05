@@ -30,6 +30,21 @@ static s32 i = 0;
 
 tty_t tty;
 
+typedef enum {
+    CMD_NO_ARG,
+    CMD_REQUIRED_ARG,
+    CMD_OPTIONAL_ARG,
+} cmd_arg_type_e;
+
+typedef struct {
+    char const* name;
+    cmd_arg_type_e arg_type;
+    union {
+        void (*no_arg)(void);
+        void (*with_arg)(char const*);
+    } func;
+} command_t;
+
 /* Private */
 
 static void delete_character(void)
@@ -45,32 +60,52 @@ static void delete_character(void)
 
 static void print_help(void)
 {
-    printk("Available commands:\n");
-    printk("  reboot  - Restart the system\n");
-    printk("  gdt     - Print Global Descriptor Table\n");
-    printk("  idt     - Print Interrupt Descriptor Table\n");
-    printk("  clear   - Clear the screen\n");
-    printk("  time    - See the current time\n");
-    printk("  epoch   - See the current time since Epoch\n");
-    printk("  memory  - Show the current memory allocation of the buddy "
-           "allocator\n");
-    printk("  top     - Show all active processes\n");
-    printk("  devices - Show all found devices\n");
-    printk("  ls      - List information about the FILEs\n");
-    printk("  mkdir   - Create a new directory\n");
-    printk("  rmdir   - Remove a existing directory\n");
-    printk("  touch   - Create a new file\n");
-    printk("  rm      - Remove a file\n");
-    printk("  cat     - Concatenate files and print\n");
-    printk("  echo    - Display a line of text\n");
-    printk("  cd      - Change Directory\n");
-    printk("  pwd     - Print Working Directory\n");
-    printk("  mount   - Mount a device\n");
-    printk("  umount  - Unmount a device\n");
-    printk("  insmod  - Load a module\n");
-    printk("  lsmod   - List all active modules\n");
-    printk("  help    - Show this help message\n");
+    printk("\n");
+    printk("╔════════════════════════════════════════════════════════╗\n");
+    printk("║            Ferrite Kernel Shell - Help                ║\n");
+    printk("╚════════════════════════════════════════════════════════╝\n\n");
+
+    printk("SYSTEM\n");
+    printk("  reboot                      Restart the system\n");
+    printk("  clear                       Clear the terminal screen\n");
+    printk("  time                        Show current date and time\n");
+    printk("  epoch                       Show Unix timestamp\n");
+    printk("  sleep <milliseconds>        Pause for specified duration\n");
+    printk("\n");
+
+    printk("DIAGNOSTICS\n");
+    printk("  gdt                         Dump Global Descriptor Table\n");
+    printk("  idt                         Dump Interrupt Descriptor Table\n");
+    printk("  memory                      Show memory allocator status\n");
+    printk("  top                         List running processes\n");
+    printk("  devices                     List block devices\n");
+    printk("\n");
+
+    printk("FILE OPERATIONS\n");
+    printk("  ls [path]                   List directory (default: current)\n");
+    printk("  cd <directory>              Change working directory\n");
+    printk("  pwd                         Print working directory\n");
+    printk("  cat <file>                  Display file contents\n");
+    printk("  echo <text>                 Write text to file\n");
+    printk("  touch <file>                Create empty file\n");
+    printk("  rm <file>                   Delete file\n");
+    printk("  mkdir <directory>           Create directory\n");
+    printk("  rmdir <directory>           Remove empty directory\n");
+    printk("\n");
+
+    printk("FILESYSTEMS\n");
+    printk("  mount <device> <path>       Mount filesystem\n");
+    printk("                              Example: mount /dev/hdb /mnt\n");
+    printk("  umount <device>             Unmount filesystem\n");
+    printk("\n");
+
+    printk("MODULES\n");
+    printk("  insmod <module.o>           Load kernel module\n");
+    printk("  rmmod <module_name>         Unload kernel module\n");
+    printk("  lsmod                       List loaded modules\n");
+    printk("\n");
 }
+
 static void echo_file(char const* args)
 {
     char* redirect = strchr(args, '>');
@@ -470,7 +505,11 @@ static void print_gdt(void)
 
 static void print_buddy(void) { buddy_visualize(); }
 
-static void exec_sleep(void) { ksleep(3); }
+static void exec_sleep(char const* arg)
+{
+    int sleep_time = atol(arg);
+    ksleep(sleep_time);
+}
 
 static void exec_abort(void) { abort("Test abort"); }
 
@@ -479,21 +518,6 @@ static char* get_arg(void)
     char* arg = strchr(buffer, ' ');
     return arg ? arg + 1 : NULL;
 }
-
-typedef enum {
-    CMD_NO_ARG,
-    CMD_REQUIRED_ARG,
-    CMD_OPTIONAL_ARG,
-} cmd_arg_type_e;
-
-typedef struct {
-    char const* name;
-    cmd_arg_type_e arg_type;
-    union {
-        void (*no_arg)(void);
-        void (*with_arg)(char const*);
-    } func;
-} command_t;
 
 static void execute_buffer(void)
 {
@@ -511,8 +535,8 @@ static void execute_buffer(void)
             { "devices", CMD_NO_ARG, { .no_arg = print_devices } },
             { "pwd", CMD_NO_ARG, { .no_arg = print_working_directory } },
             { "lsmod", CMD_NO_ARG, { .no_arg = lsmod } },
-            { "sleep", CMD_OPTIONAL_ARG, { .no_arg = exec_sleep } },
 
+            { "sleep", CMD_OPTIONAL_ARG, { .with_arg = exec_sleep } },
             { "ls", CMD_OPTIONAL_ARG, { .with_arg = list_directory_contents } },
 
             { "mkdir", CMD_REQUIRED_ARG, { .with_arg = make_directory } },
