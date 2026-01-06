@@ -24,7 +24,7 @@ jobs:
       - name: Install clang-format
         run: |
           sudo apt-get update
-          sudo apt-get install -y clang-format
+          sudo apt-get install -y clang-format-18
       
       - name: Check C/H files formatting
         run: |
