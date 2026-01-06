@@ -9,7 +9,9 @@
 #include <ferrite/module.h>
 #include <ferrite/string.h>
 
+// clang-format off
 #define EXPORT_SYM(sym) { #sym, (unsigned long)sym }
+// clang-format on
 
 struct symbol_table {
     char const* name;
