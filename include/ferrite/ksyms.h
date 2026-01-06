@@ -11,7 +11,7 @@
 
 #define EXPORT_SYM(sym) { #sym, (unsigned long)sym }
 
-struct symbol_table {
+static struct symbol_table {
     char const* name;
     unsigned long addr;
 } symbols[] = { EXPORT_SYM(printk),
@@ -20,7 +20,10 @@ struct symbol_table {
                 EXPORT_SYM(register_keyboard_callback),
                 EXPORT_SYM(unregister_keyboard_callback),
                 EXPORT_SYM(register_timer_callback),
-                EXPORT_SYM(unregister_timer_callback) };
+                EXPORT_SYM(unregister_timer_callback),
+                { NULL, 0 } };
+
+#undef EXPORT_SYM
 
 unsigned long ksym_lookup(char const* name)
 {
@@ -32,7 +35,5 @@ unsigned long ksym_lookup(char const* name)
 
     return 0;
 }
-
-#undef EXPORT_SYM
 
 #endif /* KSYMS_H */
