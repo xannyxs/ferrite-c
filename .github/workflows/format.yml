@@ -28,7 +28,7 @@ jobs:
       
       - name: Check C/H files formatting
         run: |
-          UNFORMATTED=$(find src include -name '*.c' -o -name '*.h' | xargs clang-format --dry-run --Werror 2>&1 || true)
+          UNFORMATTED=$(find src include -name '*.c' -o -name '*.h' | xargs clang-format-18 --dry-run --Werror 2>&1 || true)
           if [ ! -z "$UNFORMATTED" ]; then
             echo "❌ The following files are not formatted:"
             echo "$UNFORMATTED"
