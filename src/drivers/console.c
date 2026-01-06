@@ -198,13 +198,60 @@ static void umount(char const* device)
 
 static void insmod(char const* path)
 {
+    int fd;
+    __asm__ volatile("int $0x80"
+                     : "=a"(fd)
+                     : "a"(SYS_OPEN), "b"(path), "c"(O_RDONLY), "d"(0)
+                     : "memory");
+
+    if (fd < 0) {
+        printk("insmod: cannot open '%s'\n", path);
+        return;
+    }
+
+    struct stat st;
     int ret;
     __asm__ volatile("int $0x80"
                      : "=a"(ret)
-                     : "a"(SYS_INIT_MODULE), "b"(path), "c"(0), "d"(NULL)
+                     : "a"(SYS_FSTAT), "b"(fd), "c"(&st)
                      : "memory");
 
-    printk("ret: %d\n", ret);
+    if (ret < 0) {
+        goto close_fd;
+    }
+
+    void* buf = kmalloc(st.st_size);
+    if (!buf) {
+        goto close_fd;
+    }
+
+    unsigned long bytes_read;
+    __asm__ volatile("int $0x80"
+                     : "=a"(bytes_read)
+                     : "a"(SYS_READ), "b"(fd), "c"(buf), "d"(st.st_size)
+                     : "memory");
+
+    if (bytes_read != st.st_size) {
+        kfree(buf);
+        goto close_fd;
+    }
+
+    __asm__ volatile("int $0x80"
+                     : "=a"(ret)
+                     : "a"(SYS_INIT_MODULE), "b"(buf), "c"(st.st_size),
+                       "d"(path)
+                     : "memory");
+
+    if (ret < 0) {
+        printk("insmod: failed to load module (error %d)\n", ret);
+    } else {
+        printk("insmod: module loaded successfully\n");
+    }
+
+    kfree(buf);
+
+close_fd:
+    __asm__ volatile("int $0x80" : : "a"(SYS_CLOSE), "b"(fd) : "memory");
 }
 
 static void lsmod(void) { module_list(); }
