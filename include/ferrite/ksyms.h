@@ -4,6 +4,7 @@
 #include "drivers/printk.h"
 #include "memory/kmalloc.h"
 #include "module/keyboard.h"
+#include "module/timer.h"
 
 #include <ferrite/module.h>
 #include <ferrite/string.h>
@@ -13,9 +14,13 @@
 struct symbol_table {
     char const* name;
     unsigned long addr;
-} symbols[] = { EXPORT_SYM(printk), EXPORT_SYM(kmalloc), EXPORT_SYM(kfree),
+} symbols[] = { EXPORT_SYM(printk),
+                EXPORT_SYM(kmalloc),
+                EXPORT_SYM(kfree),
                 EXPORT_SYM(register_keyboard_callback),
-                EXPORT_SYM(unregister_keyboard_callback) };
+                EXPORT_SYM(unregister_keyboard_callback),
+                EXPORT_SYM(register_timer_callback),
+                EXPORT_SYM(unregister_timer_callback) };
 
 unsigned long ksym_lookup(char const* name)
 {
