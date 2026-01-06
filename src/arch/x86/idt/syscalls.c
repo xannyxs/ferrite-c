@@ -766,7 +766,7 @@ syscall_dispatcher_c(registers_t* reg)
         break;
 
     case SYS_FSTAT:
-        reg->eax = sys_fstat(reg->ebx);
+        reg->eax = sys_fstat(reg->ebx, (struct stat*)reg->ecx);
         break;
 
     case SYS_KILL:
