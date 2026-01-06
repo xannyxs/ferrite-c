@@ -14,17 +14,13 @@
 struct symbol_table {
     char const* name;
     unsigned long addr;
-};
-
-static struct symbol_table symbols[]
-    = { EXPORT_SYM(printk),
-        EXPORT_SYM(kmalloc),
-        EXPORT_SYM(kfree),
-        EXPORT_SYM(register_keyboard_callback),
-        EXPORT_SYM(unregister_keyboard_callback),
-        EXPORT_SYM(register_timer_callback),
-        EXPORT_SYM(unregister_timer_callback),
-        { NULL, 0 } };
+} symbols[] = { EXPORT_SYM(printk),
+                EXPORT_SYM(kmalloc),
+                EXPORT_SYM(kfree),
+                EXPORT_SYM(register_keyboard_callback),
+                EXPORT_SYM(unregister_keyboard_callback),
+                EXPORT_SYM(register_timer_callback),
+                EXPORT_SYM(unregister_timer_callback) };
 
 #undef EXPORT_SYM
 
