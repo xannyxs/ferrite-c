@@ -9,6 +9,7 @@
 #include "drivers/printk.h"
 #include "drivers/video/vga.h"
 #include "ferrite/dirent.h"
+#include "ferrite/module.h"
 #include "fs/stat.h"
 #include "memory/buddy_allocator/buddy.h"
 #include "memory/kmalloc.h"
@@ -29,6 +30,21 @@ static s32 i = 0;
 
 tty_t tty;
 
+typedef enum {
+    CMD_NO_ARG,
+    CMD_REQUIRED_ARG,
+    CMD_OPTIONAL_ARG,
+} cmd_arg_type_e;
+
+typedef struct {
+    char const* name;
+    cmd_arg_type_e arg_type;
+    union {
+        void (*no_arg)(void);
+        void (*with_arg)(char const*);
+    } func;
+} command_t;
+
 /* Private */
 
 static void delete_character(void)
@@ -44,29 +60,50 @@ static void delete_character(void)
 
 static void print_help(void)
 {
-    printk("Available commands:\n");
-    printk("  reboot  - Restart the system\n");
-    printk("  gdt     - Print Global Descriptor Table\n");
-    printk("  idt     - Print Interrupt Descriptor Table\n");
-    printk("  clear   - Clear the screen\n");
-    printk("  time    - See the current time\n");
-    printk("  epoch   - See the current time since Epoch\n");
-    printk("  memory  - Show the current memory allocation of the buddy "
-           "allocator\n");
-    printk("  top     - Show all active processes\n");
-    printk("  devices - Show all found devices\n");
-    printk("  ls      - List information about the FILEs\n");
-    printk("  mkdir   - Create a new directory\n");
-    printk("  rmdir   - Remove a existing directory\n");
-    printk("  touch   - Create a new file\n");
-    printk("  rm      - Remove a file\n");
-    printk("  cat     - Concatenate files and print\n");
-    printk("  echo    - Display a line of text\n");
-    printk("  cd      - Change Directory\n");
-    printk("  pwd     - Print Working Directory\n");
-    printk("  mount   - Mount a device\n");
-    printk("  umount  - Unmount a device\n");
-    printk("  help    - Show this help message\n");
+    printk("\n");
+    printk("╔════════════════════════════════════════════════════════╗\n");
+    printk("║            Ferrite Kernel Shell - Help                ║\n");
+    printk("╚════════════════════════════════════════════════════════╝\n\n");
+
+    printk("SYSTEM\n");
+    printk("  reboot                      Restart the system\n");
+    printk("  clear                       Clear the terminal screen\n");
+    printk("  time                        Show current date and time\n");
+    printk("  epoch                       Show Unix timestamp\n");
+    printk("  sleep <milliseconds>        Pause for specified duration\n");
+    printk("\n");
+
+    printk("DIAGNOSTICS\n");
+    printk("  gdt                         Dump Global Descriptor Table\n");
+    printk("  idt                         Dump Interrupt Descriptor Table\n");
+    printk("  memory                      Show memory allocator status\n");
+    printk("  top                         List running processes\n");
+    printk("  devices                     List block devices\n");
+    printk("\n");
+
+    printk("FILE OPERATIONS\n");
+    printk("  ls [path]                   List directory (default: current)\n");
+    printk("  cd <directory>              Change working directory\n");
+    printk("  pwd                         Print working directory\n");
+    printk("  cat <file>                  Display file contents\n");
+    printk("  echo <text>                 Write text to file\n");
+    printk("  touch <file>                Create empty file\n");
+    printk("  rm <file>                   Delete file\n");
+    printk("  mkdir <directory>           Create directory\n");
+    printk("  rmdir <directory>           Remove empty directory\n");
+    printk("\n");
+
+    printk("FILESYSTEMS\n");
+    printk("  mount <device> <path>       Mount filesystem\n");
+    printk("                              Example: mount /dev/hdb /mnt\n");
+    printk("  umount <device>             Unmount filesystem\n");
+    printk("\n");
+
+    printk("MODULES\n");
+    printk("  insmod <module.o>           Load kernel module\n");
+    printk("  rmmod <module_name>         Unload kernel module\n");
+    printk("  lsmod                       List loaded modules\n");
+    printk("\n");
 }
 
 static void echo_file(char const* args)
@@ -157,6 +194,77 @@ static void umount(char const* device)
                      : "=a"(ret)
                      : "a"(SYS_UMOUNT), "b"(device), "c"(0)
                      : "memory");
+}
+
+static void insmod(char const* path)
+{
+    int fd;
+    __asm__ volatile("int $0x80"
+                     : "=a"(fd)
+                     : "a"(SYS_OPEN), "b"(path), "c"(O_RDONLY), "d"(0)
+                     : "memory");
+
+    if (fd < 0) {
+        printk("insmod: cannot open '%s'\n", path);
+        return;
+    }
+
+    struct stat st;
+    int ret;
+    __asm__ volatile("int $0x80"
+                     : "=a"(ret)
+                     : "a"(SYS_FSTAT), "b"(fd), "c"(&st)
+                     : "memory");
+
+    if (ret < 0) {
+        goto close_fd;
+    }
+
+    void* buf = kmalloc(st.st_size);
+    if (!buf) {
+        goto close_fd;
+    }
+
+    unsigned long bytes_read;
+    __asm__ volatile("int $0x80"
+                     : "=a"(bytes_read)
+                     : "a"(SYS_READ), "b"(fd), "c"(buf), "d"(st.st_size)
+                     : "memory");
+
+    if (bytes_read != st.st_size) {
+        kfree(buf);
+        goto close_fd;
+    }
+
+    __asm__ volatile("int $0x80"
+                     : "=a"(ret)
+                     : "a"(SYS_INIT_MODULE), "b"(buf), "c"(st.st_size),
+                       "d"(path)
+                     : "memory");
+
+    if (ret < 0) {
+        printk("insmod: failed to load module (error %d)\n", ret);
+    } else {
+        printk("insmod: module loaded successfully\n");
+    }
+
+    kfree(buf);
+
+close_fd:
+    __asm__ volatile("int $0x80" : : "a"(SYS_CLOSE), "b"(fd) : "memory");
+}
+
+static void lsmod(void) { module_list(); }
+
+static void rmmod(char const* path)
+{
+    int ret;
+    __asm__ volatile("int $0x80"
+                     : "=a"(ret)
+                     : "a"(SYS_DELETE_MODULE), "b"(path), "c"(0)
+                     : "memory");
+
+    printk("ret: %d\n", ret);
 }
 
 static void cat_file(char const* path)
@@ -455,7 +563,11 @@ static void print_gdt(void)
 
 static void print_buddy(void) { buddy_visualize(); }
 
-static void exec_sleep(void) { ksleep(3); }
+static void exec_sleep(char const* arg)
+{
+    int sleep_time = atol(arg);
+    ksleep(sleep_time);
+}
 
 static void exec_abort(void) { abort("Test abort"); }
 
@@ -467,71 +579,75 @@ static char* get_arg(void)
 
 static void execute_buffer(void)
 {
-    static exec_t const command_table[] = { { "reboot", reboot },
-                                            { "gdt", print_gdt },
-                                            { "memory", print_buddy },
-                                            { "clear", vga_init },
-                                            { "help", print_help },
-                                            { "panic", exec_abort },
-                                            { "idt", print_idt },
-                                            { "time", print_time },
-                                            { "epoch", print_epoch },
-                                            { "top", process_list },
-                                            { "devices", print_devices },
-                                            { "sleep", exec_sleep },
-                                            { "pwd", print_working_directory },
-                                            { NULL, NULL } };
+    static command_t const commands[]
+        = { { "reboot", CMD_NO_ARG, { .no_arg = reboot } },
+            { "gdt", CMD_NO_ARG, { .no_arg = print_gdt } },
+            { "memory", CMD_NO_ARG, { .no_arg = print_buddy } },
+            { "clear", CMD_NO_ARG, { .no_arg = vga_init } },
+            { "help", CMD_NO_ARG, { .no_arg = print_help } },
+            { "panic", CMD_NO_ARG, { .no_arg = exec_abort } },
+            { "idt", CMD_NO_ARG, { .no_arg = print_idt } },
+            { "time", CMD_NO_ARG, { .no_arg = print_time } },
+            { "epoch", CMD_NO_ARG, { .no_arg = print_epoch } },
+            { "top", CMD_NO_ARG, { .no_arg = process_list } },
+            { "devices", CMD_NO_ARG, { .no_arg = print_devices } },
+            { "pwd", CMD_NO_ARG, { .no_arg = print_working_directory } },
+            { "lsmod", CMD_NO_ARG, { .no_arg = lsmod } },
+
+            { "sleep", CMD_OPTIONAL_ARG, { .with_arg = exec_sleep } },
+            { "ls", CMD_OPTIONAL_ARG, { .with_arg = list_directory_contents } },
+
+            { "mkdir", CMD_REQUIRED_ARG, { .with_arg = make_directory } },
+            { "touch", CMD_REQUIRED_ARG, { .with_arg = touch_file } },
+            { "rmdir", CMD_REQUIRED_ARG, { .with_arg = remove_directory } },
+            { "rm", CMD_REQUIRED_ARG, { .with_arg = remove_file } },
+            { "cat", CMD_REQUIRED_ARG, { .with_arg = cat_file } },
+            { "echo", CMD_REQUIRED_ARG, { .with_arg = echo_file } },
+            { "cd", CMD_REQUIRED_ARG, { .with_arg = change_directory } },
+            { "mount", CMD_REQUIRED_ARG, { .with_arg = mount } },
+            { "umount", CMD_REQUIRED_ARG, { .with_arg = umount } },
+            { "insmod", CMD_REQUIRED_ARG, { .with_arg = insmod } },
+            { "rmmod", CMD_REQUIRED_ARG, { .with_arg = rmmod } },
+
+            { NULL, CMD_NO_ARG, { .no_arg = NULL } } };
 
     printk("\n");
 
-    for (s32 cmd = 0; command_table[cmd].cmd; cmd++) {
-        if (strcmp(buffer, command_table[cmd].cmd) == 0) {
-            command_table[cmd].f();
-            goto cleanup;
+    char* arg = get_arg();
+
+    for (int i = 0; commands[i].name != NULL; i++) {
+        size_t cmd_len = strlen(commands[i].name);
+
+        if (strncmp(buffer, commands[i].name, cmd_len) == 0) {
+            char next_char = buffer[cmd_len];
+
+            if (next_char != ' ' && next_char != '\0') {
+                continue;
+            }
+
+            switch (commands[i].arg_type) {
+            case CMD_NO_ARG:
+                commands[i].func.no_arg();
+                goto cleanup;
+
+            case CMD_OPTIONAL_ARG:
+                commands[i].func.with_arg(arg);
+                goto cleanup;
+
+            case CMD_REQUIRED_ARG:
+                if (arg) {
+                    commands[i].func.with_arg(arg);
+                } else {
+                    printk("%s: missing argument\n", commands[i].name);
+                }
+                goto cleanup;
+            }
         }
     }
 
-    char* arg = get_arg();
-
-    if (strncmp(buffer, "ls", 2) == 0
-        && (buffer[2] == ' ' || buffer[2] == '\0')) {
-        list_directory_contents(arg);
-    } else if (strncmp(buffer, "mkdir", 5) == 0 && buffer[5] == ' ') {
-        if (arg) {
-            make_directory(arg);
-        }
-    } else if (strncmp(buffer, "touch", 5) == 0 && buffer[5] == ' ') {
-        if (arg) {
-            touch_file(arg);
-        }
-    } else if (strncmp(buffer, "rmdir", 5) == 0 && buffer[5] == ' ') {
-        if (arg) {
-            remove_directory(arg);
-        }
-    } else if (strncmp(buffer, "rm", 2) == 0 && buffer[2] == ' ') {
-        if (arg) {
-            remove_file(arg);
-        }
-    } else if (strncmp(buffer, "cat", 3) == 0 && buffer[3] == ' ') {
-        if (arg) {
-            cat_file(arg);
-        }
-    } else if (strncmp(buffer, "echo", 4) == 0 && buffer[4] == ' ') {
-        if (arg) {
-            echo_file(arg);
-        }
-    } else if (strncmp(buffer, "cd", 2) == 0 && buffer[2] == ' ') {
-        if (arg) {
-            change_directory(arg);
-        }
-    } else if (strncmp(buffer, "mount", 5) == 0 && buffer[5] == ' ') {
-        if (arg) {
-            mount(arg);
-        }
-    } else if (strncmp(buffer, "umount", 6) == 0 && buffer[6] == ' ') {
-        if (arg) {
-            umount(arg);
-        }
+    if (buffer[0] != '\0') {
+        printk("Unknown command: %s\n", buffer);
+        printk("Type 'help' for a list of commands\n");
     }
 
 cleanup:
@@ -539,7 +655,6 @@ cleanup:
     i = 0;
     printk("%s", prompt);
 }
-
 /* Public */
 
 void console_init(void)

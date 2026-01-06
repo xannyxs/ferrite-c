@@ -61,21 +61,22 @@ char scancode_to_ascii(u8 scan_code)
 
 void keyboard_put(u8 scancode)
 {
-    switch (scancode) {
+    int pressed = !(scancode & 0x80);
+    u8 key = scancode & 0x7F;
+
+    switch (key) {
     case 29:
-        CTRL_PRESSED = true;
+        CTRL_PRESSED = pressed;
         return;
     case 42:
-        SHIFT_PRESSED = true;
-        return;
-    case 156:
-        CTRL_PRESSED = false;
-        return;
-    case 170:
-        SHIFT_PRESSED = false;
+        SHIFT_PRESSED = pressed;
         return;
     default:
         break;
+    }
+
+    if (!pressed) {
+        return;
     }
 
     char c = scancode_to_ascii(scancode);

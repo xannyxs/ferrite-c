@@ -4,11 +4,6 @@
 #include "sys/process/process.h"
 #include <ferrite/types.h>
 
-typedef struct exec {
-    char const* cmd;
-    void (*f)(void);
-} exec_t;
-
 typedef struct {
     u8 buf[256];
     s32 head; // Read position

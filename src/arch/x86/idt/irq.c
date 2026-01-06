@@ -5,16 +5,17 @@
 #include "drivers/console.h"
 #include "drivers/keyboard.h"
 #include "drivers/printk.h"
+#include "module/keyboard.h"
+#include "module/timer.h"
 #include "sys/process/process.h"
 #include "sys/timer/timer.h"
-#include <ferrite/types.h>
 
-#include <stdbool.h>
+#include <ferrite/types.h>
 
 extern tty_t tty;
 extern s32 ticks_remaining;
 extern context_t* scheduler_context;
-extern bool volatile need_resched;
+extern int volatile need_resched;
 
 unsigned long long volatile ticks = 0;
 
@@ -30,11 +31,13 @@ timer_handler(registers_t* regs)
         time_t new_epoch = getepoch() + 1;
         setepoch(new_epoch);
 
+        trigger_timer_callbacks(ticks);
+
         proc_t* proc = myproc();
         if (proc && proc->state == RUNNING) {
             ticks_remaining -= 1;
             if (ticks_remaining <= 0) {
-                need_resched = true;
+                need_resched = 1;
                 printk("Timer: scheduling needed for PID %d\n", proc->pid);
             }
         }
@@ -52,6 +55,11 @@ keyboard_handler(registers_t* regs)
         tty.buf[tty.tail] = scancode;
         tty.tail = (tty.tail + 1) % 256;
     }
+
+    int pressed = !(scancode & 0x80);
+    u8 key = scancode & 0x7F;
+    trigger_keyboard_callbacks(key, pressed);
+
     pic_send_eoi(1);
 }
 

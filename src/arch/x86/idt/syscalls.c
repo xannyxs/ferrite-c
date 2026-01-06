@@ -308,6 +308,34 @@ SYSCALL_ATTR int sys_stat(char const* filename, struct stat* statbuf)
     return 0;
 }
 
+SYSCALL_ATTR int sys_fstat(int fd, struct stat* statbuf)
+{
+    file_t* file = fd_get(fd);
+    if (!file) {
+        return -ENOENT;
+    }
+
+    struct stat tmp;
+    vfs_inode_t* node = file->f_inode;
+
+    tmp.st_dev = node->i_dev;
+    tmp.st_ino = node->i_ino;
+    tmp.st_mode = node->i_mode;
+    tmp.st_nlink = node->i_links_count;
+    tmp.st_uid = node->i_uid;
+    tmp.st_gid = node->i_gid;
+    tmp.st_rdev = node->i_dev;
+    tmp.st_size = node->i_size;
+    tmp.st_atime = node->i_atime;
+    tmp.st_mtime = node->i_mtime;
+    tmp.st_ctime = node->i_ctime;
+    tmp.st_blksize = node->i_sb->s_blocksize;
+    tmp.st_blocks = node->u.i_ext2->i_blocks;
+    memcpy(statbuf, &tmp, sizeof(tmp));
+
+    return 0;
+}
+
 // https://man7.org/linux/man-pages/man2/lseek.2.html
 SYSCALL_ATTR int sys_lseek(u32 fd, off_t offset, u32 whence)
 {
@@ -737,6 +765,10 @@ syscall_dispatcher_c(registers_t* reg)
         reg->eax = sys_getuid();
         break;
 
+    case SYS_FSTAT:
+        reg->eax = sys_fstat(reg->ebx, (struct stat*)reg->ecx);
+        break;
+
     case SYS_KILL:
         reg->eax = sys_kill((s32)reg->ebx, (s32)reg->ecx);
         break;
@@ -803,6 +835,14 @@ syscall_dispatcher_c(registers_t* reg)
 
     case SYS_SOCKETCALL:
         reg->eax = sys_socketcall((s32)reg->ebx, (unsigned long*)reg->ecx);
+        break;
+
+    case SYS_INIT_MODULE:
+        reg->eax = sys_init_module((char*)reg->ebx, reg->ecx, (char*)reg->edx);
+        break;
+
+    case SYS_DELETE_MODULE:
+        reg->eax = sys_delete_module((char*)reg->ebx, reg->ecx);
         break;
 
     case SYS_FCHDIR:

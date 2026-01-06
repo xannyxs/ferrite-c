@@ -54,6 +54,7 @@ pinnedPkgs.mkShell {
     bear
     tree
     cloc
+    xxd
 
     customBochs
   ];
