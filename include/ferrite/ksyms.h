@@ -11,17 +11,20 @@
 
 #define EXPORT_SYM(sym) { #sym, (unsigned long)sym }
 
-static struct symbol_table {
+struct symbol_table {
     char const* name;
     unsigned long addr;
-} symbols[] = { EXPORT_SYM(printk),
-                EXPORT_SYM(kmalloc),
-                EXPORT_SYM(kfree),
-                EXPORT_SYM(register_keyboard_callback),
-                EXPORT_SYM(unregister_keyboard_callback),
-                EXPORT_SYM(register_timer_callback),
-                EXPORT_SYM(unregister_timer_callback),
-                { NULL, 0 } };
+};
+
+static struct symbol_table symbols[]
+    = { EXPORT_SYM(printk),
+        EXPORT_SYM(kmalloc),
+        EXPORT_SYM(kfree),
+        EXPORT_SYM(register_keyboard_callback),
+        EXPORT_SYM(unregister_keyboard_callback),
+        EXPORT_SYM(register_timer_callback),
+        EXPORT_SYM(unregister_timer_callback),
+        { NULL, 0 } };
 
 #undef EXPORT_SYM
 
