@@ -1,4 +1,3 @@
-#include "module/keyboard.h"
 #include "drivers/console.h"
 #include "sys/process/process.h"
 
@@ -64,7 +63,6 @@ void keyboard_put(u8 scancode)
 {
     int pressed = !(scancode & 0x80);
     u8 key = scancode & 0x7F;
-    trigger_keyboard_callbacks(key, pressed);
 
     switch (key) {
     case 29:
