@@ -1,8 +1,9 @@
 #include "fs/exec.h"
-#include "arch/x86/idt/idt.h"
+#include "drivers/printk.h"
 #include "ferrite/types.h"
 #include "fs/stat.h"
 #include "fs/vfs.h"
+#include "idt/idt.h"
 #include "memory/page.h"
 #include "sys/file/file.h"
 #include "sys/process/process.h"
@@ -15,12 +16,9 @@
 
 /* Formats */
 
-/* NOTE: Should only implement ELF, not a.out, since it is obsolete */
+/* NOTE: Kernel only supports ELF (for now), not a.out, since it is obsolete */
 
-// extern int load_aout_binary(binpgm_t*, registers_t*);
-// extern int load_aout_library(int);
-
-binfmt_t supported_formats[] = { { NULL, NULL } };
+binfmt_t supported_formats[] = { { load_elf_binary, NULL }, { NULL, NULL } };
 
 /* Private */
 
@@ -45,7 +43,8 @@ static unsigned long copy_strings(
     unsigned long p
 )
 {
-    for (int i = argc - 1; i >= 0; i += 1) {
+
+    for (int i = argc - 1; i >= 0; i -= 1) {
         char const* str = (char*)argv[i];
         size_t len = strlen(str) + 1;
 
@@ -73,9 +72,9 @@ static unsigned long copy_strings(
     return p;
 }
 
-static int read_exec(vfs_inode_t* node, int offset, char* addr, int count)
+int read_exec(vfs_inode_t* node, int offset, char* addr, int count)
 {
-    if (count > 128 || (u32)offset > node->i_size) {
+    if (count > PAGE_SIZE * 16 || (u32)offset > node->i_size) {
         return -EINVAL;
     }
 
@@ -126,7 +125,8 @@ end_readexec:
 int do_execve(
     char const* filename,
     char const* const* argv,
-    char const* const* envp
+    char const* const* envp,
+    registers_t* regs
 )
 {
     int retval = 0;
@@ -180,12 +180,12 @@ int do_execve(
             break;
         }
 
-        // retval = fmt->load_binary(&bin, regs);
-        // if (retval == 0) {
-        //     inode_put(bin.b_node);
-        //
-        //     return 0;
-        // }
+        retval = fmt->load_binary(&bin, regs);
+        if (retval == 0) {
+            inode_put(bin.b_node);
+
+            return 0;
+        }
 
         fmt++;
     } while (retval == -ENOEXEC);

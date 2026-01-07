@@ -10,6 +10,8 @@
 #define ALIGN(x, a) (((x) + ((a) - 1)) & ~((a) - 1))
 #define CEIL_DIV(a, b) (((a + b - 1) / b))
 
+#define PAGE_MASK (~(PAGE_SIZE - 1))
+
 #define min(a, b) ((a) < (b) ? (a) : (b))
 
 /**

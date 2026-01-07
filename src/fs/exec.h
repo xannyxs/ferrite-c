@@ -30,7 +30,7 @@ typedef struct binpgm {
     int argc, envc;
 
     int b_sh_bang;
-    char* b_filename; /* Name of binary */
+    char* b_filename;
 } binpgm_t;
 
 typedef struct binfmt {
@@ -39,6 +39,11 @@ typedef struct binfmt {
 } binfmt_t;
 
 /* exec.c */
-int do_execve(char const*, char const* const*, char const* const*);
+int read_exec(vfs_inode_t*, int, char*, int);
+
+int do_execve(char const*, char const* const*, char const* const*, registers_t*);
+
+/* binfmt_elf.c */
+int load_elf_binary(binpgm_t*, registers_t*);
 
 #endif

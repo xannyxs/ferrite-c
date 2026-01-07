@@ -12,6 +12,8 @@ int strncmp(char const*, char const*, size_t);
 
 void* memmove(void*, void const*, size_t);
 
+int memcmp(void const*, void const*, size_t);
+
 /* Normal functions */
 
 void* memset(void*, int, size_t);

@@ -160,7 +160,7 @@ typedef struct elf_phdr {
     Elf32_Word p_memsz;
     Elf32_Word p_flags;
     Elf32_Word p_align;
-} Elf32_Phdr;
+} elf32_phdr_t;
 
 /* sh_type */
 #define SHT_NULL 0

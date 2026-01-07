@@ -224,12 +224,11 @@ SYSCALL_ATTR static int sys_unlink(char const* path)
 SYSCALL_ATTR static int sys_execve(
     char const* filename,
     char const* const* argv,
-    char const* const* envp
+    char const* const* envp,
+    registers_t* regs
 )
 {
-    return -ENOSYS;
-
-    return do_execve(filename, argv, envp);
+    return do_execve(filename, argv, envp, regs);
 }
 
 SYSCALL_ATTR static int sys_chdir(char const* path)
@@ -726,7 +725,7 @@ syscall_dispatcher_c(registers_t* reg)
 
         reg->eax = sys_execve(
             (char*)reg->ebx, (char const* const*)reg->ecx,
-            (char const* const*)reg->edx
+            (char const* const*)reg->edx, reg
         );
         break;
 
