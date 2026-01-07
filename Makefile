@@ -26,7 +26,7 @@ ASM_OBJECTS = $(patsubst $(SDIR)/%.asm,$(ODIR)/%.o,$(ASM_SOURCES))
 ROOT_IMG = root.img
 TEST_IMG = test.img
 
-QEMUFLAGS = -serial stdio -m 4 -cpu 486 \
+QEMUFLAGS = -serial stdio -m 16 -cpu 486 \
     -drive file=$(ROOT_IMG),format=raw,if=ide,index=0 \
     -drive file=$(TEST_IMG),format=raw,if=ide,index=1
 

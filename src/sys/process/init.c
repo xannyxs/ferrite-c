@@ -2,20 +2,20 @@
 #include "arch/x86/idt/syscalls.h"
 #include "arch/x86/memlayout.h"
 #include "drivers/printk.h"
-#include "ferrite/string.h"
+#include "fs/exec.h"
 #include "lib/stdlib.h"
 #include "memory/consts.h"
 #include "memory/page.h"
 #include "memory/vmm.h"
 #include "sys/file/fcntl.h"
 #include "sys/process/process.h"
+
+#include <ferrite/string.h>
 #include <ferrite/types.h>
 
 #ifdef __TEST
 #    include "tests/tests.h"
 #endif
-
-#include <stdbool.h>
 
 proc_t* initial_proc;
 
@@ -26,20 +26,38 @@ extern void jump_to_usermode(void* entry, void* user_stack);
 
 __attribute__((naked)) void user_init(void)
 {
-    __asm__ volatile("xchg %bx, %bx;"
+    __asm__ volatile(
+        // Get current position (PIC trick for 32-bit)
+        "call 1f\n"
+        "1: pop %%ebx\n" // EBX = current address
 
-                     "mov $20, %eax;" // SYS_GETPID in EAX
-                     "int $0x80;"
+        // Set up argv on stack
+        "sub $16, %%esp\n"     // Make room
+        "movl $0, 12(%%esp)\n" // argv[1] = NULL
+        "lea (.test_str-1b)(%%ebx), %%eax\n"
+        "movl %%eax, 8(%%esp)\n" // argv[0] = "test"
+        "lea 8(%%esp), %%ecx\n"  // ecx = argv
 
-                     "mov %eax, %ebx;" // Save the PID in EBX for the next call
-                     "mov $1, %eax;"   // SYS_EXIT in EAX
-                     "int $0x80;"
+        // Set up envp
+        "movl $0, 4(%%esp)\n"   // envp[0] = NULL
+        "lea 4(%%esp), %%edx\n" // edx = envp
 
-                     ".hang:"
-                     "jmp .hang");
+        // Call execve
+        "movl $11, %%eax\n"                   // SYS_EXECVE
+        "lea (.test_path-1b)(%%ebx), %%ebx\n" // filename
+        "int $0x80\n"
+
+        "mov %%eax, %%ebx\n"
+        "mov $1, %%eax\n" // SYS_EXIT
+        "int $0x80\n"
+
+        ".test_path: .asciz \"/test\"\n"
+        ".test_str:  .asciz \"test\"\n" ::
+            : "memory"
+    );
 }
 
-static void prepare_for_jmp(void)
+void prepare_for_jmp(void)
 {
     void* page_kaddr = get_free_page();
     if (!page_kaddr) {
@@ -125,9 +143,9 @@ void init_process(void)
     create_initial_directories();
     printk("Initial process started...!\n");
 
-    pid_t pid = do_exec("user space", prepare_for_jmp);
+    pid_t pid = do_exec("execve test", prepare_for_jmp);
     if (pid < 0) {
-        abort("Init: could not create a new process");
+        abort("Init: could not create execve test process");
     }
 
     pid = do_exec("shell", shell_process);
@@ -144,7 +162,7 @@ void init_process(void)
 
     printk("Init: Created child PID %d with PID %d\n", pid, current->pid);
 
-    while (true) {
+    while (1) {
         for (s32 i = 0; i < NUM_PROC; i++) {
             proc_t* p = &ptables[i];
             if (p->state == ZOMBIE && p->parent == current) {
@@ -155,7 +173,10 @@ void init_process(void)
                 p->pgdir = NULL;
                 p->kstack = NULL;
 
-                printk("Init: reaped zombie PID %d\n", p->pid);
+                printk(
+                    "Init: reaped zombie PID %d with error code: %d\n", p->pid,
+                    p->status
+                );
             }
         }
 

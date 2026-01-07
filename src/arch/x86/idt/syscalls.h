@@ -3,7 +3,8 @@
 
 #include "arch/x86/idt/idt.h"
 
-#define USER_CS 0x23
+#define USER_CS 0x1B
+#define USER_DS 0x23
 
 #define SYSCALL_ATTR \
     __attribute__((target("general-regs-only"), warn_unused_result))
