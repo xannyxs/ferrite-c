@@ -56,19 +56,11 @@ pinnedPkgs.mkShell {
     cloc
     xxd
 
+    rustup
+    clippy
+
     customBochs
   ];
-  /*
-    packages = with pinnedPkgs; [
-      vscode
-      (vscode-with-extensions.override {
-        vscodeExtensions = with vscode-extensions; [
-          vscodevim.vim
-          llvm-vs-code-extensions.vscode-clangd
-        ];
-      })
-    ];
-  */
 
   shellHook = ''
     echo "✅ Development environment is ready!"
