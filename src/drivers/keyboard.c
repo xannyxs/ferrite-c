@@ -1,4 +1,4 @@
-#include "drivers/console.h"
+#include "drivers/vga.h"
 #include "sys/process/process.h"
 
 #include <ferrite/types.h>
@@ -83,5 +83,5 @@ void keyboard_put(u8 scancode)
     if (!c)
         return;
 
-    console_add_buffer(c);
+    vga_putchar(c);
 }

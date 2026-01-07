@@ -1,7 +1,7 @@
 #include "debug/debug.h"
-#include "ferrite/string.h"
-#include "video/vga.h"
+#include "drivers/vga.h"
 
+#include <ferrite/string.h>
 #include <stdarg.h>
 #include <stdbool.h>
 
@@ -166,7 +166,7 @@ __attribute__((target("general-regs-only"))) s32 printk(char const* fmt, ...)
     va_start(args, fmt);
     s32 len = kfmt(buf, fmt, args);
     va_end(args);
-    vga_writestring(buf);
+    vga_puts(buf);
 
 #if defined(__print_serial)
     serial_write_string(buf);
