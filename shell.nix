@@ -5,6 +5,10 @@ let
     import (builtins.fetchTarball "https://github.com/NixOS/nixpkgs/archive/nixos-24.11.tar.gz")
       { };
 
+  unstable =
+    import (fetchTarball "https://github.com/NixOS/nixpkgs/archive/nixpkgs-unstable.tar.gz")
+      { };
+
   bochs-src = pinnedPkgs.fetchurl {
     url = "https://downloads.sourceforge.net/project/bochs/bochs/2.8/bochs-2.8.tar.gz";
     sha256 = "sha256-qFsTr/fYQR96nzVrpsM7X13B+7EH61AYzCOmJjnaAFk=";
@@ -55,6 +59,9 @@ pinnedPkgs.mkShell {
     tree
     cloc
     xxd
+
+    unstable.zig
+    unstable.zls
 
     customBochs
   ];
