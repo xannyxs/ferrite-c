@@ -7,7 +7,7 @@
 #include "drivers/block/device.h"
 #include "drivers/block/ide.h"
 #include "drivers/printk.h"
-#include "drivers/video/vga.h"
+#include "drivers/vga.h"
 #include "ferrite/dirent.h"
 #include "ferrite/module.h"
 #include "fs/stat.h"
@@ -55,7 +55,7 @@ static void delete_character(void)
 
     buffer[i] = 0;
     i -= 1;
-    vga_clear_char();
+    vga_delete();
 }
 
 static void print_help(void)
@@ -583,7 +583,7 @@ static void execute_buffer(void)
         = { { "reboot", CMD_NO_ARG, { .no_arg = reboot } },
             { "gdt", CMD_NO_ARG, { .no_arg = print_gdt } },
             { "memory", CMD_NO_ARG, { .no_arg = print_buddy } },
-            { "clear", CMD_NO_ARG, { .no_arg = vga_init } },
+            { "clear", CMD_NO_ARG, { .no_arg = vga_clear } },
             { "help", CMD_NO_ARG, { .no_arg = print_help } },
             { "panic", CMD_NO_ARG, { .no_arg = exec_abort } },
             { "idt", CMD_NO_ARG, { .no_arg = print_idt } },
