@@ -53,8 +53,11 @@ $(ODIR)/zig/%.o: $(ZIG_DIR)/src/%.zig
 	@mkdir -p $(dir $@)
 	@$(ZIG) build-obj \
 		-target x86-freestanding \
+		-mcpu=i686 \
 		-fno-stack-protector \
 		-O ReleaseSmall \
+		-I./include \
+		-I./src \
 		$< --name $(basename $(notdir $@))
 	@mv $(basename $(notdir $@)).o $@
 

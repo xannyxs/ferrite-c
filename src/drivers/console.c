@@ -1,4 +1,3 @@
-#include "drivers/console.h"
 #include "arch/x86/cpu.h"
 #include "arch/x86/entry.h"
 #include "arch/x86/idt/syscalls.h"
@@ -15,20 +14,15 @@
 #include "memory/kmalloc.h"
 #include "sys/file/fcntl.h"
 #include "sys/process/process.h"
-#include "sys/signal/signal.h"
 #include "sys/timer/timer.h"
 
 #include <ferrite/string.h>
 #include <ferrite/types.h>
 #include <lib/stdlib.h>
 
-extern proc_t* current_proc;
-
 static char const* prompt = "[42]$ ";
 static char buffer[VGA_WIDTH];
 static s32 i = 0;
-
-tty_t tty;
 
 typedef enum {
     CMD_NO_ARG,
@@ -46,17 +40,6 @@ typedef struct {
 } command_t;
 
 /* Private */
-
-static void delete_character(void)
-{
-    if (i == 0) {
-        return;
-    }
-
-    buffer[i] = 0;
-    i -= 1;
-    vga_delete();
-}
 
 static void print_help(void)
 {
@@ -577,7 +560,7 @@ static char* get_arg(void)
     return arg ? arg + 1 : NULL;
 }
 
-static void execute_buffer(void)
+void execute_buffer(void)
 {
     static command_t const commands[]
         = { { "reboot", CMD_NO_ARG, { .no_arg = reboot } },
@@ -654,37 +637,4 @@ cleanup:
     memset(buffer, 0, VGA_WIDTH);
     i = 0;
     printk("%s", prompt);
-}
-/* Public */
-
-void console_init(void)
-{
-    tty.head = 0;
-    tty.tail = 0;
-    tty.shell_pid = myproc()->pid;
-    memset(tty.buf, 0, 256);
-
-    printk("%s", prompt);
-}
-
-void console_add_buffer(char c)
-{
-    switch (c) {
-    case '\x03':
-        printk("^C\n");
-        do_kill(current_proc->pid, SIGINT);
-        break;
-    case '\n':
-        execute_buffer();
-        break;
-    case '\x08':
-        delete_character();
-        break;
-    default:
-        if (i < VGA_WIDTH - 1) {
-            buffer[i] = c;
-            printk("%c", c);
-            i++;
-        }
-    }
 }

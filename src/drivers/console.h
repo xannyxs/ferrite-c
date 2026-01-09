@@ -1,18 +1,17 @@
 #ifndef CONSOLE_H
 #define CONSOLE_H
 
-#include "sys/process/process.h"
 #include <ferrite/types.h>
+#include <stdbool.h>
 
-typedef struct {
-    u8 buf[256];
-    s32 head; // Read position
-    s32 tail; // Write position
-    pid_t shell_pid;
-} tty_t;
+extern void console_add_buffer(char c);
 
-void console_add_buffer(char c);
+extern void console_init(void);
 
-void console_init(void);
+extern unsigned char tty_read(void);
+
+extern void tty_write(u8 scancode);
+
+extern bool tty_is_empty(void);
 
 #endif /* CONSOLE_H */

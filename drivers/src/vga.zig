@@ -1,5 +1,10 @@
-const VGA_WIDTH = 80;
-const VGA_HEIGHT = 25;
+const c = @cImport({
+    @cInclude("drivers/vga.h");
+});
+
+const VGA_WIDTH: usize = c.VGA_WIDTH;
+const VGA_HEIGHT: usize = c.VGA_HEIGHT;
+
 const VGA_MEMORY = 0xC00B8000;
 
 const VgaColour = enum(u8) {
@@ -25,8 +30,8 @@ fn vgaEntryColour(fg: VgaColour, bg: VgaColour) u8 {
     return @intFromEnum(fg) | (@intFromEnum(bg) << 4);
 }
 
-fn vgaEntry(c: u8, colour: u8) u16 {
-    return @as(u16, c) | (@as(u16, colour) << 8);
+fn vgaEntry(ch: u8, colour: u8) u16 {
+    return @as(u16, ch) | (@as(u16, colour) << 8);
 }
 
 pub const Writer = struct {
@@ -56,14 +61,14 @@ pub const Writer = struct {
         }
     }
 
-    pub fn writeChar(self: *Writer, c: u8) void {
-        if (c == '\n') {
+    pub fn writeChar(self: *Writer, ch: u8) void {
+        if (ch == '\n') {
             self.newLine();
             return;
         }
 
         const index = self.row * VGA_WIDTH + self.column;
-        self.buffer[index] = vgaEntry(c, self.colour);
+        self.buffer[index] = vgaEntry(ch, self.colour);
 
         self.column += 1;
         if (self.column >= VGA_WIDTH) {
@@ -125,8 +130,8 @@ pub export fn vga_init() void {
     WRITER.init();
 }
 
-pub export fn vga_putchar(c: u8) void {
-    WRITER.writeChar(c);
+pub export fn vga_putchar(ch: u8) void {
+    WRITER.writeChar(ch);
 }
 
 pub export fn vga_puts(str: [*:0]const u8) void {

@@ -5,7 +5,6 @@
 #include "arch/x86/pit.h"
 #include "arch/x86/time/rtc.h"
 #include "drivers/block/ide.h"
-#include "drivers/printk.h"
 #include "drivers/vga.h"
 #include "fs/mount.h"
 #include "fs/vfs.h"
@@ -18,7 +17,6 @@
 
 #include <ferrite/types.h>
 #include <lib/stdlib.h>
-#include <stdbool.h>
 
 __attribute__((noreturn)) void kmain(u32 magic, multiboot_info_t* mbd)
 {
