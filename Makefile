@@ -1,27 +1,28 @@
 CC = i686-elf-gcc
 LD = i686-elf-gcc # Change to "ld -m elf_i386"?
 AS = nasm 
+ZIG = zig
 
 NAME = ferrite-c.elf
 ARCH = x86
 
+ZIG_DIR = ./drivers
 INCDIR = ./include
 SDIR = ./src
 ODIR = ./build
 
+ASFLAGS = -felf32
+LDFLAGS = -T $(SDIR)/arch/x86/x86.ld -ffreestanding -nostdlib -lgcc -march=i386 
 CFLAGS = -I$(SDIR) -I$(INCDIR) -I$(SDIR)/arch/$(ARCH) -m32 -ffreestanding -ggdb3 -O2 -Wall -Wextra -Werror \
          -fno-stack-protector -D__DEBUG -D__is_libk -D__print_serial -D__bochs -pedantic -std=c17 -march=i386 -nostdlib
 
-# CFLAGS += -save-temps=obj
-
-ASFLAGS = -felf32
-LDFLAGS = -T $(SDIR)/arch/x86/x86.ld -ffreestanding -nostdlib -lgcc -march=i386 
-
 C_SOURCES = $(shell find $(SDIR) -type f -name '*.c')
 ASM_SOURCES = $(shell find $(SDIR) -type f -name '*.asm')
+ZIG_SOURCES = $(shell find $(ZIG_DIR)/src -type f -name '*.zig')
 
 C_OBJECTS = $(patsubst $(SDIR)/%.c,$(ODIR)/%.o,$(C_SOURCES))
 ASM_OBJECTS = $(patsubst $(SDIR)/%.asm,$(ODIR)/%.o,$(ASM_SOURCES))
+ZIG_OBJECTS = $(patsubst $(ZIG_DIR)/src/%.zig,$(ODIR)/zig/%.o,$(ZIG_SOURCES))
 
 ROOT_IMG = root.img
 TEST_IMG = test.img
@@ -33,7 +34,7 @@ QEMUFLAGS = -serial stdio -m 16 -cpu 486 \
 
 all: $(NAME)
 
-$(NAME): $(ASM_OBJECTS) $(C_OBJECTS)
+$(NAME): $(ASM_OBJECTS) $(C_OBJECTS) $(ZIG_OBJECTS)
 	@echo "LD   => $@"
 	@$(LD) -o $@ $^ $(LDFLAGS)
 
@@ -46,6 +47,16 @@ $(ODIR)/%.o: $(SDIR)/%.asm
 	@echo "AS   => $<"
 	@mkdir -p $(dir $@)
 	@$(AS) $(ASFLAGS) $< -o $@
+
+$(ODIR)/zig/%.o: $(ZIG_DIR)/src/%.zig
+	@echo "ZIG  => $<"
+	@mkdir -p $(dir $@)
+	@$(ZIG) build-obj \
+		-target x86-freestanding \
+		-fno-stack-protector \
+		-O ReleaseSmall \
+		$< --name $(basename $(notdir $@))
+	@mv $(basename $(notdir $@)).o $@
 
 $(ROOT_IMG):
 	@echo "Creating root disk image..."
