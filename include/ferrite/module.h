@@ -1,5 +1,5 @@
-#ifndef MODULE_MODULE_H
-#define MODULE_MODULE_H
+#ifndef MODULE_H
+#define MODULE_H
 
 #include <ferrite/types.h>
 

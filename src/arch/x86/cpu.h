@@ -1,18 +1,13 @@
-#pragma once
+#ifndef CPU_H
+#define CPU_H
 
 #include "arch/x86/io.h"
+
 #include <ferrite/types.h>
 
-inline void halt(void) { __asm__ __volatile__("hlt"); }
+static inline void halt(void) { __asm__ __volatile__("hlt"); }
 
-inline void halt_loop(void)
-{
-    while (1) {
-        halt();
-    }
-}
-
-__attribute__((noreturn)) void reboot(void)
+static inline __attribute__((noreturn)) void reboot(void)
 {
     u8 good = 0x02;
 
@@ -22,6 +17,8 @@ __attribute__((noreturn)) void reboot(void)
 
     outb(0x64, 0xfe);
 
-    halt_loop();
+    halt();
     __builtin_unreachable();
 }
+
+#endif /* CPU_H */
