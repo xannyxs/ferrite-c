@@ -1,18 +1,11 @@
 #include "drivers/console.h"
-#include "sys/process/process.h"
+#include "drivers/printk.h"
 
 #include <ferrite/types.h>
 #include <stdbool.h>
 
 static bool SHIFT_PRESSED = false;
 static bool CTRL_PRESSED = false;
-
-extern struct {
-    u8 buf[256];
-    s32 head; // Read position
-    s32 tail; // Write position
-    pid_t shell_pid;
-} tty;
 
 /* Private */
 

@@ -2,11 +2,9 @@
 #include "drivers/keyboard.h"
 #include "drivers/printk.h"
 #include "sys/process/process.h"
+
 #include <ferrite/types.h>
 
-#include <stdbool.h>
-
-extern tty_t tty;
 extern proc_t ptables[NUM_PROC];
 
 void process_list(void)
@@ -31,11 +29,9 @@ void shell_process(void)
 {
     console_init();
 
-    while (true) {
-        while (tty.tail != tty.head) {
-            u8 scancode = tty.buf[tty.head];
-            tty.head = (tty.head + 1) % 256;
-
+    while (1) {
+        while (!tty_is_empty()) {
+            u8 scancode = tty_read();
             keyboard_put(scancode);
         }
 

@@ -12,7 +12,6 @@
 
 #include <ferrite/types.h>
 
-extern tty_t tty;
 extern s32 ticks_remaining;
 extern context_t* scheduler_context;
 extern int volatile need_resched;
@@ -51,10 +50,7 @@ keyboard_handler(registers_t* regs)
     (void)regs;
 
     s32 scancode = inb(KEYBOARD_DATA_PORT);
-    if ((tty.tail + 1) % 256 != tty.head) {
-        tty.buf[tty.tail] = scancode;
-        tty.tail = (tty.tail + 1) % 256;
-    }
+    tty_write(scancode);
 
     int pressed = !(scancode & 0x80);
     u8 key = scancode & 0x7F;
