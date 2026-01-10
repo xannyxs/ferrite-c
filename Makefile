@@ -1,117 +1,73 @@
-CC = i686-elf-gcc
-LD = i686-elf-gcc # Change to "ld -m elf_i386"?
-AS = nasm 
-ZIG = zig
-
-NAME = ferrite-c.elf
-ARCH = x86
-
-ZIG_DIR = ./drivers
-INCDIR = ./include
-SDIR = ./src
-ODIR = ./build
-
-ASFLAGS = -felf32
-LDFLAGS = -T $(SDIR)/arch/x86/x86.ld -ffreestanding -nostdlib -lgcc -march=i386 
-CFLAGS = -I$(SDIR) -I$(INCDIR) -I$(SDIR)/arch/$(ARCH) -m32 -ffreestanding -ggdb3 -O2 -Wall -Wextra -Werror \
-         -fno-stack-protector -D__DEBUG -D__is_libk -D__print_serial -D__bochs -pedantic -std=c17 -march=i386 -nostdlib
-
-C_SOURCES = $(shell find $(SDIR) -type f -name '*.c')
-ASM_SOURCES = $(shell find $(SDIR) -type f -name '*.asm')
-ZIG_SOURCES = $(shell find $(ZIG_DIR)/src -type f -name '*.zig')
-
-C_OBJECTS = $(patsubst $(SDIR)/%.c,$(ODIR)/%.o,$(C_SOURCES))
-ASM_OBJECTS = $(patsubst $(SDIR)/%.asm,$(ODIR)/%.o,$(ASM_SOURCES))
-ZIG_OBJECTS = $(patsubst $(ZIG_DIR)/src/%.zig,$(ODIR)/zig/%.o,$(ZIG_SOURCES))
+KERNEL_DIR = kernel
+KERNEL_ELF = $(KERNEL_DIR)/kernel.elf
 
 ROOT_IMG = root.img
 TEST_IMG = test.img
+
+ISO_NAME = ferrite.iso
+ISO_DIR = isodir
 
 QEMUFLAGS = -serial stdio -m 16 -cpu 486 \
     -drive file=$(ROOT_IMG),format=raw,if=ide,index=0 \
     -drive file=$(TEST_IMG),format=raw,if=ide,index=1
 
+all: kernel
 
-all: $(NAME)
+kernel:
+	@echo "=== Building Kernel ==="
+	@$(MAKE) -C $(KERNEL_DIR)
 
-$(NAME): $(ASM_OBJECTS) $(C_OBJECTS) $(ZIG_OBJECTS)
-	@echo "LD   => $@"
-	@$(LD) -o $@ $^ $(LDFLAGS)
-
-$(ODIR)/%.o: $(SDIR)/%.c
-	@echo "CC   => $<"
-	@mkdir -p $(dir $@)
-	@$(CC) -c $< -o $@ $(CFLAGS)
-
-$(ODIR)/%.o: $(SDIR)/%.asm
-	@echo "AS   => $<"
-	@mkdir -p $(dir $@)
-	@$(AS) $(ASFLAGS) $< -o $@
-
-$(ODIR)/zig/%.o: $(ZIG_DIR)/src/%.zig
-	@echo "ZIG  => $<"
-	@mkdir -p $(dir $@)
-	@$(ZIG) build-obj \
-		-target x86-freestanding \
-		-mcpu=i686 \
-		-fno-stack-protector \
-		-O ReleaseSmall \
-		-I./include \
-		-I./src \
-		$< --name $(basename $(notdir $@))
-	@mv $(basename $(notdir $@)).o $@
+images: $(ROOT_IMG) $(TEST_IMG)
 
 $(ROOT_IMG):
-	@echo "Creating root disk image..."
-	qemu-img create -f raw $(ROOT_IMG) 10M
-	mkfs.ext2 $(ROOT_IMG)
+	@echo "Creating root disk image (10MB)..."
+	@qemu-img create -f raw $(ROOT_IMG) 10M
+	@mkfs.ext2 -F $(ROOT_IMG)
 
 $(TEST_IMG):
-	@echo "Creating second disk image..."
+	@echo "Creating test disk image (50MB)..."
 	@qemu-img create -f raw $(TEST_IMG) 50M
 	@mkfs.ext2 -F $(TEST_IMG)
 
-iso: all
-	mkdir -p isodir/boot/grub
-	cp $(NAME) isodir/boot/$(NAME)
-	cp grub.cfg isodir/boot/grub/grub.cfg
-	grub-mkrescue -o kernel.iso isodir
-
-run: iso $(ROOT_IMG) $(TEST_IMG)
-	qemu-system-i386 -cdrom kernel.iso $(QEMUFLAGS)
-
-debug_bochs: QEMUFLAGS += -s -S
-debug_bochs: CFLAGS += -D__bochs
-debug_bochs: iso 
-	bochs -f .bochsrc -q
+iso: kernel
+	@echo "=== Creating ISO ==="
+	@mkdir -p $(ISO_DIR)/boot/grub
+	@cp $(KERNEL_ELF) $(ISO_DIR)/boot/kernel.elf
+	@cp grub.cfg $(ISO_DIR)/boot/grub/grub.cfg
+	@grub-mkrescue -o $(ISO_NAME) $(ISO_DIR) 2>/dev/null
+	@echo "ISO created: $(ISO_NAME)"
+	
+run: iso images
+	@echo "=== Running in QEMU ==="
+	qemu-system-i386 -cdrom $(ISO_NAME) $(QEMUFLAGS)
 
 debug: QEMUFLAGS += -s -S
-debug: run 
+debug: iso images
+	@echo "=== Debug Mode (waiting for GDB on :1234) ==="
+	qemu-system-i386 -cdrom $(ISO_NAME) $(QEMUFLAGS)
+
+debug_bochs: iso
+	@echo "=== Running in Bochs ==="
+	bochs -f .bochsrc -q
 
 test: QEMUFLAGS += -device isa-debug-exit,iobase=0xf4,iosize=0x04 -display none
-test: CFLAGS += -D__TEST
-test: run
+test: iso images
+	@echo "=== Test Mode ==="
+	qemu-system-i386 -cdrom $(ISO_NAME) $(QEMUFLAGS)
 
 clean:
-	@echo "CLEAN"
-	@rm -rf $(ODIR) $(NAME)
+	@echo "=== Cleaning Build Artifacts ==="
+	@$(MAKE) -C $(KERNEL_DIR) clean
+	@rm -rf $(ISO_DIR) $(ISO_NAME)
 
-fclean:
-	@echo "FCLEAN"
-	@rm -rf $(TEST_IMG)
-	@rm -rf $(ROOT_IMG)
-	@rm -rf $(ODIR) $(NAME) isodir kernel.iso
+fclean: clean
+	@echo "=== Full Clean ==="
+	@rm -f $(ROOT_IMG) $(TEST_IMG)
 
-re:
-	@$(MAKE) fclean
-	@$(MAKE) all
+re: fclean all
 
 lint:
-	@echo "Running clang-tidy..."
-	@find $(SDIR) -name '*.c' | while read file; do \
-		echo "Checking $$file..."; \
-		clang-tidy "$$file"; \
-	done
-	@echo "Lint complete!"
+	@echo "=== Running Linters ==="
+	@$(MAKE) -C $(KERNEL_DIR) lint
 
-.PHONY: all run test clean fclean re debug iso lint
+.PHONY: all kernel iso images run debug debug_bochs test clean fclean re
