@@ -4,7 +4,7 @@ const c = @cImport({
     @cInclude("drivers/vga.h");
 });
 
-const shell = @import("shell.zig");
+// const shell = @import("shell.zig");
 
 extern fn vga_puts(s: [*:0]const u8) void;
 extern fn vga_putchar(c: u8) void;
@@ -63,8 +63,8 @@ pub const Tty = struct {
                         }
                     }
 
-                    const cmd: [*:0]const u8 = @ptrCast(&self.cmd_buffer[0]);
-                    shell.executeCommand(cmd, arg_ptr);
+                    // const cmd: [*:0]const u8 = @ptrCast(&self.cmd_buffer[0]);
+                    // shell.executeCommand(cmd, arg_ptr);
                 }
                 self.clearLine();
             },
