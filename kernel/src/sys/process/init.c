@@ -34,8 +34,8 @@ __attribute__((naked)) void user_init(void)
         // Set up argv on stack
         "sub $16, %%esp\n"     // Make room
         "movl $0, 12(%%esp)\n" // argv[1] = NULL
-        "lea (.test_str-1b)(%%ebx), %%eax\n"
-        "movl %%eax, 8(%%esp)\n" // argv[0] = "test"
+        "lea (.sh_str-1b)(%%ebx), %%eax\n"
+        "movl %%eax, 8(%%esp)\n" // argv[0] = "sh"
         "lea 8(%%esp), %%ecx\n"  // ecx = argv
 
         // Set up envp
@@ -43,17 +43,20 @@ __attribute__((naked)) void user_init(void)
         "lea 4(%%esp), %%edx\n" // edx = envp
 
         // Call execve
-        "movl $11, %%eax\n"                   // SYS_EXECVE
-        "lea (.test_path-1b)(%%ebx), %%ebx\n" // filename
+        "movl $11, %%eax\n"                 // SYS_EXECVE
+        "lea (.sh_path-1b)(%%ebx), %%ebx\n" // filename = "/bin/sh"
         "int $0x80\n"
 
+        // If execve fails, exit
         "mov %%eax, %%ebx\n"
         "mov $1, %%eax\n" // SYS_EXIT
         "int $0x80\n"
 
-        ".test_path: .asciz \"/test\"\n"
-        ".test_str:  .asciz \"test\"\n" ::
-            : "memory"
+        ".sh_path: .asciz \"/bin/hello\"\n"
+        ".sh_str:  .asciz \"hello\"\n"
+        :
+        :
+        : "memory"
     );
 }
 
