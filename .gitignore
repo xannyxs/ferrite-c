@@ -1,11 +1,25 @@
-# Project
+# Kernel build artifacts
 docs/book
-*.img
-*.ini
-isodir
-*.iso
-*.bin
+build/
 .cache/
+*.elf
+*.o
+*.iso
+isodir/
+*.ini
+
+# Disk images
+*.img
+
+# Userspace binaries and objects
+userspace/**/*.o
+userspace/**/*.a
+userspace/bin/sh/sh
+userspace/bin/hello/hello
+userspace/bin/*/build/
+
+# Sysroot (generated install directory)
+sysroot/
 
 # Prerequisites
 *.d
