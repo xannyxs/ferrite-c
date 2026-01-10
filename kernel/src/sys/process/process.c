@@ -4,7 +4,6 @@
 #include "arch/x86/memlayout.h"
 #include "debug/debug.h"
 #include "drivers/printk.h"
-#include "ferrite/string.h"
 #include "fs/vfs.h"
 #include "lib/stdlib.h"
 #include "memory/consts.h"
@@ -13,8 +12,9 @@
 #include "sys/file/file.h"
 #include "sys/signal/signal.h"
 #include "sys/timer/timer.h"
-#include <ferrite/types.h>
 
+#include <ferrite/string.h>
+#include <ferrite/types.h>
 #include <stdbool.h>
 
 extern vfs_inode_t* root_inode;
@@ -78,6 +78,15 @@ proc_t* __alloc_proc(void)
 
             p->pwd = current_proc ? current_proc->pwd : root_inode;
             p->pwd->i_count += 1;
+
+            for (int fd = 0; fd < MAX_OPEN_FILES; fd += 1) {
+                p->open_files[fd] = NULL;
+
+                if (current_proc && current_proc->open_files[fd]) {
+                    p->open_files[fd] = current_proc->open_files[fd];
+                    p->open_files[fd]->f_count += 1;
+                }
+            }
 
             return p;
         }
