@@ -314,14 +314,11 @@ inline void yield(void)
 
 void schedule(void)
 {
-    static char* scheduler_stack = NULL;
+    char* scheduler_stack = get_free_page();
     if (!scheduler_stack) {
-        scheduler_stack = get_free_page();
-        if (!scheduler_stack) {
-            abort("Cannot allocate scheduler stack");
-        }
-        scheduler_context = (context_t*)(scheduler_stack + PAGE_SIZE);
+        abort("Cannot allocate scheduler stack");
     }
+    scheduler_context = (context_t*)(scheduler_stack + PAGE_SIZE);
 
     // FIFO - Round Robin
     while (true) {
