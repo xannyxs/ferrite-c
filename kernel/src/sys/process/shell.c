@@ -27,8 +27,6 @@ void process_list(void)
 
 void shell_process(void)
 {
-    console_init();
-
     while (1) {
         while (!tty_is_empty()) {
             u8 scancode = tty_read();

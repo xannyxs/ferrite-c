@@ -6,8 +6,6 @@
 
 extern void console_add_buffer(char c);
 
-extern void console_init(void);
-
 extern unsigned char tty_read(void);
 
 extern void tty_write(u8 scancode);
