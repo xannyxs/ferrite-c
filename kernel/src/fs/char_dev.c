@@ -1,4 +1,3 @@
-#include "ferrite/major.h"
 #include <drivers/block/device.h>
 #include <drivers/chrdev.h>
 #include <ferrite/errno.h>
@@ -6,27 +5,21 @@
 #include <fs/vfs.h>
 #include <sys/file/file.h>
 
-struct device_struct {
-    char const* name;
-    struct file_operations* fops;
-};
-
-static struct device_struct chrdevs[MAX_CHRDEV] = {
-    { NULL, NULL },
-};
+#include <drivers/printk.h>
 
 static int chrdev_open(vfs_inode_t* node, file_t* file)
 {
-    int i = MAJOR(node->i_dev);
-
-    if (i >= MAX_CHRDEV || !chrdevs[i].fops) {
+    int i = MAJOR(node->i_rdev);
+    const struct file_operations* ops = get_chrdev(i);
+    if (!ops) {
         return -ENODEV;
     }
 
-    file->f_op = chrdevs[i].fops;
+    file->f_op = (struct file_operations*)ops;
     if (file->f_op->open) {
         return file->f_op->open(node, file);
     }
+    printk("0x%x\n", &file);
 
     return 0;
 }

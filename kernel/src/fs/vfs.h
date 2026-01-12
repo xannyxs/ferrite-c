@@ -44,7 +44,10 @@ typedef struct {
 } vfs_superblock_t;
 
 typedef struct vfs_inode {
-    dev_t i_dev;
+    dev_t i_dev; // Block device this filesystem is mounted on (e.g., /dev/hda0)
+    dev_t i_rdev; // Device number this special file represents (for
+                  // S_IFCHR/S_IFBLK only)
+
     unsigned long i_ino;
 
     uid_t i_uid;

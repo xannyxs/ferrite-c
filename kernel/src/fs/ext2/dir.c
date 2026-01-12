@@ -476,10 +476,10 @@ int ext2_mknod(vfs_inode_t* dir, char const* name, int len, int mode, int rdev)
         return -ENOSYS;
     } else if (S_ISCHR(node->i_mode)) {
         node->i_op = &chrdev_inode_ops;
-        node->i_dev = rdev;
+        node->i_rdev = rdev;
     } else if (S_ISBLK(node->i_mode)) {
         // TODO
-        node->i_dev = rdev;
+        node->i_rdev = rdev;
         inode_put(node);
         inode_put(dir);
         return -ENOSYS;
