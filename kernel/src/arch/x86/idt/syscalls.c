@@ -1,6 +1,7 @@
 #include "arch/x86/idt/syscalls.h"
 #include "arch/x86/idt/idt.h"
 #include "arch/x86/time/time.h"
+#include "drivers/block/device.h"
 #include "drivers/printk.h"
 #include "ferrite/dirent.h"
 #include "fs/exec.h"
@@ -8,6 +9,7 @@
 #include "fs/mount.h"
 #include "fs/stat.h"
 #include "fs/vfs.h"
+#include "fs/vfs/mode_t.h"
 #include "memory/kmalloc.h"
 #include "sys/file/fcntl.h"
 #include "sys/file/file.h"
@@ -25,7 +27,7 @@ __attribute__((target("general-regs-only"))) static void sys_exit(s32 status)
     do_exit(status);
 }
 
-SYSCALL_ATTR static s32 sys_read(s32 fd, void* buf, int count)
+SYSCALL_ATTR static int sys_read(s32 fd, void* buf, int count)
 {
     file_t* f = fd_get(fd);
     if (!f || !f->f_inode) {
@@ -39,7 +41,7 @@ SYSCALL_ATTR static s32 sys_read(s32 fd, void* buf, int count)
     return -1;
 }
 
-SYSCALL_ATTR static s32 sys_write(s32 fd, void* buf, int count)
+SYSCALL_ATTR static int sys_write(s32 fd, void* buf, int count)
 {
     file_t* f = fd_get(fd);
     if (!f || !f->f_inode) {
@@ -55,13 +57,10 @@ SYSCALL_ATTR static s32 sys_write(s32 fd, void* buf, int count)
 
 // TODO: Support flags:
 // https://man7.org/linux/man-pages/man2/open.2.html
-SYSCALL_ATTR static s32 sys_open(char const* path, int flags, int mode)
+SYSCALL_ATTR int sys_open(char const* path, int flags, int mode)
 {
-    vfs_inode_t* new = vfs_lookup(myproc()->root, path);
-    if (!new) {
-        // FIXME: We do not know if there is an error, or it actually does not
-        // exist
-
+    vfs_inode_t* node = vfs_lookup(myproc()->root, path);
+    if (!node) {
         if (!(flags & O_CREAT)) {
             return -ENOENT;
         }
@@ -88,20 +87,26 @@ SYSCALL_ATTR static s32 sys_open(char const* path, int flags, int mode)
             return -ENOENT;
         }
 
-        if (!vfs_permission(parent, MAY_EXEC)) {
+        if (!vfs_permission(parent, MAY_WRITE | MAY_EXEC)) {
             inode_put(parent);
             return -EPERM;
         }
 
-        if (parent->i_op->create(
-                parent, name, (s32)name_len, S_IFREG | (mode & 0777), &new
-            )
-            < 0) {
-            inode_put(new);
-            inode_put(parent);
-            return -1;
+        int ret = parent->i_op->create(
+            parent, name, (s32)name_len, S_IFREG | (mode & 0777), &node
+        );
+
+        inode_put(parent);
+
+        if (ret < 0) {
+            return ret;
         }
     } else {
+        if ((flags & O_CREAT) && (flags & O_EXCL)) {
+            inode_put(node);
+            return -EEXIST;
+        }
+
         int mask = 0;
         if ((flags & O_ACCMODE) == O_RDONLY || (flags & O_ACCMODE) == O_RDWR) {
             mask |= MAY_READ;
@@ -110,41 +115,57 @@ SYSCALL_ATTR static s32 sys_open(char const* path, int flags, int mode)
             mask |= MAY_WRITE;
         }
 
-        if (!vfs_permission(new, mask)) {
-            inode_put(new);
+        if (!vfs_permission(node, mask)) {
+            inode_put(node);
             return -EPERM;
+        }
+
+        if ((flags & O_TRUNC) && (flags & (O_WRONLY | O_RDWR))) {
+            if (node->i_op->truncate) {
+                int ret = node->i_op->truncate(node, 0);
+                if (ret < 0) {
+                    inode_put(node);
+                    return ret;
+                }
+            }
         }
     }
 
     int fd = fd_alloc();
     if (fd < 0) {
-        inode_put(new);
-        return -1;
+        inode_put(node);
+        return -EMFILE;
     }
 
     file_t* file = fd_get(fd);
     if (!file) {
-        inode_put(new);
-        return -1;
+        inode_put(node);
+        return -EBADF;
     }
 
-    if (fd_install(new, file) < 0) {
-        file_put(file);
-        inode_put(new);
-        return -1;
-    }
-
-    file->f_op = new->i_op->default_file_ops;
-    file->f_inode = new;
+    file->f_inode = node;
+    file->f_op = node->i_op->default_file_ops;
     file->f_pos = 0;
     file->f_flags = flags;
-
     file->f_mode = 0;
+    file->f_inode = node;
+    file->f_count = 1;
+
     if ((flags & O_ACCMODE) == O_RDONLY || (flags & O_ACCMODE) == O_RDWR) {
         file->f_mode |= FMODE_READ;
     }
+
     if ((flags & O_ACCMODE) == O_WRONLY || (flags & O_ACCMODE) == O_RDWR) {
         file->f_mode |= FMODE_WRITE;
+    }
+
+    if (file->f_op && file->f_op->open) {
+        int ret = file->f_op->open(node, file);
+        if (ret < 0) {
+            file_put(file);
+            inode_put(node);
+            return ret;
+        }
     }
 
     return fd;
@@ -280,6 +301,29 @@ SYSCALL_ATTR static time_t sys_time(time_t* tloc)
     return current_time;
 }
 
+SYSCALL_ATTR int sys_mknod(char const* path, mode_t mode, dev_t dev)
+{
+    if (S_ISDIR(mode) || (!S_ISFIFO(mode) && myproc()->euid != ROOT_UID)) {
+        return -EPERM;
+    }
+
+    switch (mode & S_IFMT) {
+    case 0:
+        mode |= S_IFREG;
+        break;
+
+    case S_IFREG:
+    case S_IFCHR:
+    case S_IFBLK:
+        break;
+
+    default:
+        return -EINVAL;
+    }
+
+    return vfs_mknod(path, mode, dev);
+}
+
 SYSCALL_ATTR int sys_stat(char const* filename, struct stat* statbuf)
 {
     vfs_inode_t* node = vfs_lookup(myproc()->root, filename);
@@ -396,7 +440,7 @@ SYSCALL_ATTR static s32 sys_kill(pid_t pid, s32 sig)
     return -1;
 }
 
-SYSCALL_ATTR static s32 sys_mkdir(char const* pathname, int mode)
+SYSCALL_ATTR int sys_mkdir(char const* pathname, int mode)
 {
     if (!pathname) {
         return -EINVAL;
@@ -735,6 +779,10 @@ syscall_dispatcher_c(registers_t* reg)
 
     case SYS_TIME:
         reg->eax = sys_time((time_t*)reg->ebx);
+        break;
+
+    case SYS_MKNOD:
+        reg->eax = sys_mknod((char*)reg->ebx, reg->ecx, reg->edx);
         break;
 
     case SYS_STAT:

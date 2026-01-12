@@ -1,10 +1,11 @@
 #include "arch/x86/gdt/gdt.h"
-#include "arch/x86/idt/syscalls.h"
 #include "arch/x86/memlayout.h"
 #include "drivers/printk.h"
-#include "fs/exec.h"
+#include "fs/vfs.h"
+#include "idt/syscalls.h"
 #include "lib/stdlib.h"
 #include "memory/consts.h"
+#include "memory/kmalloc.h"
 #include "memory/page.h"
 #include "memory/vmm.h"
 #include "sys/file/fcntl.h"
@@ -19,6 +20,7 @@
 
 proc_t* initial_proc;
 
+extern vfs_inode_t* root_inode;
 extern proc_t ptables[NUM_PROC];
 extern u32 pid_counter;
 extern u32 page_directory[1024];
@@ -86,52 +88,6 @@ void prepare_for_jmp(void)
     jump_to_usermode(user_code_vaddr, (void*)0xBFFFFFFC);
 }
 
-/**
- * Creates initial directory structure: /sys, /var, /dev, /proc
- *
- * These directories persist on disk as mount points.
- * /var contains persistent files. /proc, /sys, and /dev will hold
- * RAM-based contents when virtual filesystems are mounted.
- *
- * NOTE:
- * /sys, /dev & /proc do not function yet, and need to be implemented
- */
-static void create_initial_directories(void)
-{
-    int ret;
-    // NOTE: /proc is a different file name, and should be mounted instead of
-    // being created.
-    // __asm__ volatile("int $0x80"
-    //                  : "=a"(ret)
-    //                  : "a"(SYS_MKDIR), "b"("/proc"), "c"(O_CREAT | O_WRONLY),
-    //                    "d"(0644)
-    //                  : "memory");
-
-    __asm__ volatile("int $0x80"
-                     : "=a"(ret)
-                     : "a"(SYS_MKDIR), "b"("/var"), "c"(O_CREAT | O_WRONLY),
-                       "d"(0644)
-                     : "memory");
-
-    __asm__ volatile("int $0x80"
-                     : "=a"(ret)
-                     : "a"(SYS_MKDIR), "b"("/dev"), "c"(O_CREAT | O_WRONLY),
-                       "d"(0644)
-                     : "memory");
-
-    __asm__ volatile("int $0x80"
-                     : "=a"(ret)
-                     : "a"(SYS_MKDIR), "b"("/sys"), "c"(O_CREAT | O_WRONLY),
-                       "d"(0644)
-                     : "memory");
-
-    __asm__ volatile("int $0x80"
-                     : "=a"(ret)
-                     : "a"(SYS_MKDIR), "b"("/tmp"), "c"(O_CREAT | O_RDWR),
-                       "d"(0777)
-                     : "memory");
-}
-
 /* Public */
 
 inline proc_t* initproc(void) { return initial_proc; }
@@ -143,17 +99,20 @@ void init_process(void)
         abort("Init process should be PID 1!");
     }
 
-    create_initial_directories();
+    devfs_init();
     printk("Initial process started...!\n");
+
+    int stdin_fd = sys_open("/dev/console", O_RDONLY, 0);
+    int stdout_fd = sys_open("/dev/console", O_WRONLY, 0);
+    int stderr_fd = sys_open("/dev/console", O_WRONLY, 0);
+
+    if (stdin_fd != 0 || stdout_fd != 1 || stderr_fd != 2) {
+        abort("Failed to open stdio!");
+    }
 
     pid_t pid = do_exec("execve test", prepare_for_jmp);
     if (pid < 0) {
         abort("Init: could not create execve test process");
-    }
-
-    pid = do_exec("shell", shell_process);
-    if (pid < 0) {
-        abort("Init: could not create a new process");
     }
 
 #ifdef __TEST
@@ -210,8 +169,4 @@ void create_initial_process(void)
 
     u32 kernel_stack_top = (u32)init->kstack + PAGE_SIZE;
     tss_set_stack(kernel_stack_top);
-
-    for (int i = 0; i < MAX_OPEN_FILES; i += 1) {
-        init->open_files[i] = NULL;
-    }
 }

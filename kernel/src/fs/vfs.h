@@ -44,7 +44,10 @@ typedef struct {
 } vfs_superblock_t;
 
 typedef struct vfs_inode {
-    dev_t i_dev;
+    dev_t i_dev; // Block device this filesystem is mounted on (e.g., /dev/hda0)
+    dev_t i_rdev; // Device number this special file represents (for
+                  // S_IFCHR/S_IFBLK only)
+
     unsigned long i_ino;
 
     uid_t i_uid;
@@ -94,6 +97,7 @@ struct inode_operations {
     int (*create)(vfs_inode_t*, char const*, int, int, vfs_inode_t**);
     int (*mkdir)(vfs_inode_t*, char const*, int, int);
     int (*rmdir)(vfs_inode_t*, char const*, int);
+    int (*mknod)(vfs_inode_t*, char const*, int, int, int);
 
     int (*unlink)(vfs_inode_t*, char const*, int);
     int (*truncate)(vfs_inode_t*, off_t);
@@ -108,8 +112,6 @@ void inode_put(vfs_inode_t*);
 
 void inode_cache_init(void);
 
-s32 vfs_mkdir(char const* path, mode_t mode);
-
 void vfs_init(void);
 
 /* namei.c */
@@ -119,5 +121,11 @@ int in_group_p(gid_t grp);
 int vfs_permission(vfs_inode_t* node, int mask);
 
 vfs_inode_t* vfs_lookup(vfs_inode_t*, char const*);
+
+int vfs_mknod(char const*, int, dev_t);
+
+/* devfs */
+
+void devfs_init(void);
 
 #endif /* FS_VFS_H */

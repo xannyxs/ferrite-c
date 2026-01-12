@@ -1,14 +1,19 @@
 const c = @cImport({
+    @cInclude("ferrite/types.h");
     @cInclude("drivers/printk.h");
     @cInclude("sys/signal/signal.h");
     @cInclude("drivers/vga.h");
+    @cInclude("drivers/chrdev.h");
+    @cInclude("sys/file/file.h");
 });
-
-// const shell = @import("shell.zig");
 
 extern fn vga_puts(s: [*:0]const u8) void;
 extern fn vga_putchar(c: u8) void;
 extern fn vga_delete() void;
+
+extern fn register_chrdev(major: c_uint, ops: *const c.struct_file_operations) c_int;
+extern fn get_chrdev(major: c_uint) ?*const c.struct_file_operations;
+extern fn unregister_chrdev(major: c_uint) c_int;
 
 const PROMPT = "[42]$ ";
 const VGA_WIDTH = c.VGA_WIDTH;
@@ -26,6 +31,28 @@ const ScanBuffer = struct {
         };
     }
 };
+
+var SCAN_BUFFER = ScanBuffer.init();
+
+pub export fn tty_write(scancode: u8) void {
+    if ((SCAN_BUFFER.tail + 1) % 256 != SCAN_BUFFER.head) {
+        SCAN_BUFFER.buffer[SCAN_BUFFER.tail] = scancode;
+        SCAN_BUFFER.tail = (SCAN_BUFFER.tail + 1) % 256;
+    }
+}
+
+pub export fn tty_read() u8 {
+    if (SCAN_BUFFER.head == SCAN_BUFFER.tail) {
+        return 0;
+    }
+    const byte = SCAN_BUFFER.buffer[SCAN_BUFFER.head];
+    SCAN_BUFFER.head = (SCAN_BUFFER.head + 1) % 256;
+    return byte;
+}
+
+pub export fn tty_is_empty() bool {
+    return SCAN_BUFFER.head == SCAN_BUFFER.tail;
+}
 
 pub const Tty = struct {
     cmd_buffer: [256]u8,
@@ -49,24 +76,6 @@ pub const Tty = struct {
             },
             '\n' => {
                 vga_putchar('\n');
-                if (self.cmd_len > 0) {
-                    self.cmd_buffer[self.cmd_len] = 0;
-
-                    var arg_ptr: ?[*:0]const u8 = null;
-                    for (0..self.cmd_len) |i| {
-                        if (self.cmd_buffer[i] == ' ') {
-                            self.cmd_buffer[i] = 0;
-                            if (i + 1 < self.cmd_len) {
-                                arg_ptr = @ptrCast(&self.cmd_buffer[i + 1]);
-                            }
-                            break;
-                        }
-                    }
-
-                    // const cmd: [*:0]const u8 = @ptrCast(&self.cmd_buffer[0]);
-                    // shell.executeCommand(cmd, arg_ptr);
-                }
-                self.clearLine();
             },
             '\x08' => {
                 if (self.cmd_len > 0) {
@@ -92,33 +101,55 @@ pub const Tty = struct {
     }
 };
 
-var SCAN_BUFFER = ScanBuffer.init();
 var TTY = Tty.new();
-
-pub export fn tty_write(scancode: u8) void {
-    if ((SCAN_BUFFER.tail + 1) % 256 != SCAN_BUFFER.head) {
-        SCAN_BUFFER.buffer[SCAN_BUFFER.tail] = scancode;
-        SCAN_BUFFER.tail = (SCAN_BUFFER.tail + 1) % 256;
-    }
-}
-
-pub export fn tty_read() u8 {
-    if (SCAN_BUFFER.head == SCAN_BUFFER.tail) {
-        return 0;
-    }
-    const byte = SCAN_BUFFER.buffer[SCAN_BUFFER.head];
-    SCAN_BUFFER.head = (SCAN_BUFFER.head + 1) % 256;
-    return byte;
-}
-
-pub export fn tty_is_empty() bool {
-    return SCAN_BUFFER.head == SCAN_BUFFER.tail;
-}
 
 pub export fn console_add_buffer(ch: u8) void {
     TTY.addBuffer(ch);
 }
 
-pub export fn console_init() void {
-    vga_puts(PROMPT);
+fn console_dev_read(inode: [*c]c.vfs_inode_t, file: [*c]c.file_t, buf_ptr: ?*anyopaque, count: c_int) callconv(.c) c_int {
+    _ = inode;
+    _ = file;
+
+    const buf: [*]u8 = @ptrCast(@alignCast(buf_ptr.?));
+    var read_count: usize = 0;
+
+    while (read_count < @as(usize, @intCast(count))) {
+        while (tty_is_empty()) {
+            asm volatile ("hlt");
+        }
+        const ch = tty_read();
+        if (ch == 0) break;
+        buf[read_count] = ch;
+        read_count += 1;
+        if (ch == '\n') break;
+    }
+
+    return @intCast(read_count);
+}
+
+fn console_dev_write(inode: [*c]c.vfs_inode_t, file: [*c]c.file_t, buf_ptr: ?*const anyopaque, count: c_int) callconv(.c) c_int {
+    _ = inode;
+    _ = file;
+
+    const buf: [*]const u8 = @ptrCast(@alignCast(buf_ptr.?));
+    for (0..@as(usize, @intCast(count))) |i| {
+        vga_putchar(buf[i]);
+    }
+
+    return count;
+}
+
+const console_ops = c.struct_file_operations{
+    .readdir = null,
+    .read = console_dev_read,
+    .write = console_dev_write,
+    .open = null,
+    .release = null,
+    .lseek = null,
+};
+
+pub export fn console_chrdev_init() void {
+    const CONSOLE_MAJOR: c_uint = 5;
+    _ = register_chrdev(CONSOLE_MAJOR, &console_ops);
 }

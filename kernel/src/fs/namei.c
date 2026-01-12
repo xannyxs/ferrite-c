@@ -1,3 +1,4 @@
+#include "ferrite/types.h"
 #include "fs/ext2/ext2.h"
 #include "fs/stat.h"
 #include "fs/vfs.h"
@@ -6,6 +7,60 @@
 
 #include <ferrite/errno.h>
 #include <ferrite/string.h>
+
+int dir_namei(
+    char const* pathname,
+    int* namelen,
+    char const** basename,
+    vfs_inode_t* base,
+    vfs_inode_t** res_inode
+)
+{
+    char* tmp;
+    char const* thisname;
+    int len;
+    vfs_inode_t* inode;
+
+    if (!base) {
+        base = myproc()->root;
+        base->i_count++;
+    }
+
+    tmp = strrchr(pathname, '/');
+    if (!tmp) {
+        thisname = pathname;
+        len = strlen(thisname);
+        inode = base;
+    } else if (tmp[1] == '\0') {
+        inode_put(base);
+        return -EISDIR;
+    } else {
+        len = strlen(tmp + 1);
+        thisname = tmp + 1;
+        *tmp = '\0';
+
+        inode = vfs_lookup(base, pathname);
+
+        *tmp = '/';
+
+        inode_put(base);
+
+        if (!inode) {
+            return -ENOENT;
+        }
+
+        if (!S_ISDIR(inode->i_mode)) {
+            inode_put(inode);
+            return -ENOTDIR;
+        }
+    }
+
+    *namelen = len;
+    *basename = thisname;
+    *res_inode = inode;
+
+    return 0;
+}
 
 int in_group_p(gid_t grp)
 {
@@ -48,8 +103,6 @@ int vfs_permission(vfs_inode_t* node, int mask)
 
     return 0;
 }
-
-#include "drivers/printk.h"
 
 /*
  * @brief Lookup a path starting from the given inode.
@@ -120,4 +173,34 @@ error:
     }
     kfree(components);
     return NULL;
+}
+
+int vfs_mknod(char const* path, int mode, dev_t dev)
+{
+    char const* basename;
+    int namelen, error;
+    vfs_inode_t* dir;
+
+    error = dir_namei(path, &namelen, &basename, NULL, &dir);
+    if (error) {
+        return error;
+    }
+
+    if (!namelen) {
+        inode_put(dir);
+        return -ENOENT;
+    }
+
+    if (!vfs_permission(dir, MAY_WRITE | MAY_EXEC)) {
+        inode_put(dir);
+        return -EACCES;
+    }
+    if (!dir->i_op || !dir->i_op->mknod) {
+        inode_put(dir);
+        return -EPERM;
+    }
+
+    error = dir->i_op->mknod(dir, basename, namelen, mode, dev);
+
+    return error;
 }

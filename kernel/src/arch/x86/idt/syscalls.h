@@ -29,6 +29,7 @@ enum syscalls_e {
     SYS_EXECVE = 11,
     SYS_CHDIR = 12,
     SYS_TIME = 13,
+    SYS_MKNOD = 14,
     SYS_STAT = 18,
     SYS_LSEEK = 19,
     SYS_GETPID = 20,
@@ -82,13 +83,19 @@ void syscall_dispatcher_c(registers_t*);
 
 int sys_socketcall(int call, unsigned long* args);
 
+/* fscalls.c */
+
+SYSCALL_ATTR int sys_open(char const*, int, int);
+
+SYSCALL_ATTR int sys_mkdir(char const*, int);
+
 /* sys.c */
 
 /* Mount */
 
 SYSCALL_ATTR int sys_mount(char*, char*, char*, unsigned long, void*);
 
-SYSCALL_ATTR int sys_umount(char const* name, int flags);
+SYSCALL_ATTR int sys_umount(char const*, int);
 
 /* UID */
 
@@ -96,13 +103,13 @@ SYSCALL_ATTR uid_t sys_getuid(void);
 
 SYSCALL_ATTR uid_t sys_geteuid(void);
 
-SYSCALL_ATTR s32 sys_setuid(uid_t uid);
+SYSCALL_ATTR s32 sys_setuid(uid_t);
 
-SYSCALL_ATTR s32 sys_seteuid(uid_t uid);
+SYSCALL_ATTR s32 sys_seteuid(uid_t);
 
-SYSCALL_ATTR s32 sys_setreuid(uid_t ruid, uid_t euid);
+SYSCALL_ATTR s32 sys_setreuid(uid_t, uid_t);
 
-SYSCALL_ATTR s32 sys_setresuid(uid_t ruid, uid_t euid, uid_t suid);
+SYSCALL_ATTR s32 sys_setresuid(uid_t, uid_t, uid_t);
 
 /* GID */
 

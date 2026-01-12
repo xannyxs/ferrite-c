@@ -7,6 +7,8 @@
 #include <ferrite/string.h>
 #include <ferrite/types.h>
 
+#include <drivers/printk.h>
+
 int fd_alloc(void)
 {
     proc_t* p = myproc();
@@ -40,20 +42,6 @@ file_t* fd_get(s32 fd)
     }
 
     return p->open_files[fd];
-}
-
-/* Install inode in fd slot (sets f_inode, f_count=1, zeros rest) */
-int fd_install(vfs_inode_t* node, file_t* file)
-{
-    if (!file) {
-        return -1;
-    }
-
-    memset(file, 0, sizeof(file_t));
-    file->f_inode = node;
-    file->f_count = 1;
-
-    return 0;
 }
 
 void file_put(file_t* f)

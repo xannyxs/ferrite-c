@@ -25,7 +25,7 @@ typedef struct file {
 } file_t;
 
 struct file_operations {
-    s32 (*readdir)(struct vfs_inode*, struct file*, dirent_t*, s32);
+    int (*readdir)(struct vfs_inode*, struct file*, dirent_t*, s32);
 
     int (*read)(struct vfs_inode*, struct file*, void*, int);
     int (*write)(struct vfs_inode*, struct file*, void const*, int);
@@ -37,8 +37,6 @@ struct file_operations {
 };
 
 int fd_alloc(void);
-
-int fd_install(struct vfs_inode*, file_t*);
 
 void file_put(file_t*);
 
