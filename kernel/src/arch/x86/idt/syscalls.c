@@ -440,7 +440,7 @@ SYSCALL_ATTR static s32 sys_kill(pid_t pid, s32 sig)
     return -1;
 }
 
-SYSCALL_ATTR static s32 sys_mkdir(char const* pathname, int mode)
+SYSCALL_ATTR int sys_mkdir(char const* pathname, int mode)
 {
     if (!pathname) {
         return -EINVAL;

@@ -87,6 +87,8 @@ int sys_socketcall(int call, unsigned long* args);
 
 SYSCALL_ATTR int sys_open(char const*, int, int);
 
+SYSCALL_ATTR int sys_mkdir(char const*, int);
+
 /* sys.c */
 
 /* Mount */
