@@ -2,17 +2,11 @@
 #define CHRDEV_H
 
 #include <ferrite/types.h>
+#include <sys/file/file.h>
 
-typedef struct {
-    int (*read)(dev_t dev, void* buf, size_t count, off_t* offset);
-    int (*write)(dev_t dev, void const* buf, size_t count, off_t* offset);
-    int (*open)(dev_t dev);
-    int (*close)(dev_t dev);
-} chrdev_ops_t;
+struct file_operations const* get_chrdev(unsigned int major);
 
-int register_chrdev(unsigned int major, chrdev_ops_t const* ops);
-
-chrdev_ops_t const* get_chrdev(unsigned int major);
+int register_chrdev(unsigned int major, struct file_operations const* ops);
 
 int unregister_chrdev(unsigned int major);
 
