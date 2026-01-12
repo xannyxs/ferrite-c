@@ -4,16 +4,15 @@ const c = @cImport({
     @cInclude("sys/signal/signal.h");
     @cInclude("drivers/vga.h");
     @cInclude("drivers/chrdev.h");
+    @cInclude("sys/file/file.h");
 });
-
-const ChrdevOps = c.chrdev_ops_t;
 
 extern fn vga_puts(s: [*:0]const u8) void;
 extern fn vga_putchar(c: u8) void;
 extern fn vga_delete() void;
 
-extern fn register_chrdev(major: c_uint, ops: *const ChrdevOps) c_int;
-extern fn get_chrdev(major: c_uint) ?*const ChrdevOps;
+extern fn register_chrdev(major: c_uint, ops: *const c.struct_file_operations) c_int;
+extern fn get_chrdev(major: c_uint) ?*const c.struct_file_operations;
 extern fn unregister_chrdev(major: c_uint) c_int;
 
 const PROMPT = "[42]$ ";
@@ -108,48 +107,46 @@ pub export fn console_add_buffer(ch: u8) void {
     TTY.addBuffer(ch);
 }
 
-fn console_dev_read(dev: c.dev_t, buf_ptr: ?*anyopaque, count: usize, offset: [*c]c_long) callconv(.c) c_int {
-    _ = offset;
-    _ = dev;
+fn console_dev_read(inode: [*c]c.vfs_inode_t, file: [*c]c.file_t, buf_ptr: ?*anyopaque, count: c_int) callconv(.c) c_int {
+    _ = inode;
+    _ = file;
 
     const buf: [*]u8 = @ptrCast(@alignCast(buf_ptr.?));
     var read_count: usize = 0;
 
-    while (read_count < count) {
+    while (read_count < @as(usize, @intCast(count))) {
         while (tty_is_empty()) {
             asm volatile ("hlt");
         }
-
         const ch = tty_read();
         if (ch == 0) break;
-
         buf[read_count] = ch;
         read_count += 1;
-
         if (ch == '\n') break;
     }
 
     return @intCast(read_count);
 }
 
-fn console_dev_write(dev: c.dev_t, buf_ptr: ?*const anyopaque, count: usize, offset: [*c]c_long) callconv(.c) c_int {
-    _ = offset;
-    _ = dev;
+fn console_dev_write(inode: [*c]c.vfs_inode_t, file: [*c]c.file_t, buf_ptr: ?*const anyopaque, count: c_int) callconv(.c) c_int {
+    _ = inode;
+    _ = file;
 
     const buf: [*]const u8 = @ptrCast(@alignCast(buf_ptr.?));
-
-    for (0..count) |i| {
+    for (0..@as(usize, @intCast(count))) |i| {
         vga_putchar(buf[i]);
     }
 
-    return @intCast(count);
+    return count;
 }
 
-const console_ops = ChrdevOps{
+const console_ops = c.struct_file_operations{
+    .readdir = null,
     .read = console_dev_read,
     .write = console_dev_write,
     .open = null,
-    .close = null,
+    .release = null,
+    .lseek = null,
 };
 
 pub export fn console_chrdev_init() void {

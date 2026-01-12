@@ -2,14 +2,14 @@ const c = @cImport({
     @cInclude("ferrite/errno.h");
     @cInclude("ferrite/types.h");
     @cInclude("drivers/chrdev.h");
+    @cInclude("sys/file/file.h");
+    @cInclude("drivers/printk.h");
 });
 
-const ChrdevOps = c.chrdev_ops_t;
+const MAX_CHRDEV = 32;
+var chrdev_table: [MAX_CHRDEV]?*const c.struct_file_operations = [_]?*const c.struct_file_operations{null} ** MAX_CHRDEV;
 
-const MAX_CHRDEV = 256;
-var chrdev_table: [MAX_CHRDEV]?*const ChrdevOps = [_]?*const ChrdevOps{null} ** MAX_CHRDEV;
-
-pub export fn register_chrdev(major: c_uint, ops: *const ChrdevOps) c_int {
+pub export fn register_chrdev(major: c_uint, ops: *const c.struct_file_operations) c_int {
     if (major >= MAX_CHRDEV) {
         return -c.EINVAL;
     }
@@ -22,7 +22,7 @@ pub export fn register_chrdev(major: c_uint, ops: *const ChrdevOps) c_int {
     return 0;
 }
 
-pub export fn get_chrdev(major: c_uint) ?*const ChrdevOps {
+pub export fn get_chrdev(major: c_uint) ?*const c.struct_file_operations {
     if (major >= MAX_CHRDEV) {
         return null;
     }
