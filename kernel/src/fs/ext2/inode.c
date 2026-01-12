@@ -9,6 +9,8 @@
 #include <ferrite/string.h>
 #include <ferrite/types.h>
 
+extern struct inode_operations chrdev_inode_ops;
+
 static s32 ext2_read_inode(vfs_inode_t*);
 static s32 ext2_write_inode(vfs_inode_t*);
 // static void ext2_put_inode(vfs_inode_t*);
@@ -58,6 +60,10 @@ s32 ext2_write_inode(vfs_inode_t* dir)
 
     ext2_inode_t* disk_inode = (ext2_inode_t*)(buff + offset_in_sector);
 
+    if (S_ISCHR(dir->i_mode) || S_ISBLK(dir->i_mode)) {
+        ext2_inode->i_block[0] = dir->i_rdev;
+    }
+
     ext2_inode->i_mode = dir->i_mode;
     ext2_inode->i_size = dir->i_size;
     ext2_inode->i_uid = dir->i_uid;
@@ -77,7 +83,7 @@ s32 ext2_write_inode(vfs_inode_t* dir)
     return 0;
 }
 
-s32 ext2_read_inode(vfs_inode_t* dir)
+int ext2_read_inode(vfs_inode_t* dir)
 {
     block_device_t* d = get_device(dir->i_sb->s_dev);
     if (!d || !d->d_op || !d->d_op->read) {
@@ -116,6 +122,10 @@ s32 ext2_read_inode(vfs_inode_t* dir)
 
     memcpy(node, &buff[offset], sizeof(ext2_inode_t));
 
+    if (S_ISCHR(node->i_mode) || S_ISBLK(node->i_mode)) {
+        dir->i_rdev = node->i_block[0];
+    }
+
     dir->i_dev = sb->s_dev;
     dir->i_atime = (time_t)node->i_atime;
     dir->i_mtime = (time_t)node->i_mtime;
@@ -131,6 +141,8 @@ s32 ext2_read_inode(vfs_inode_t* dir)
         dir->i_op = &ext2_dir_inode_operations;
     } else if (S_ISREG(dir->i_mode)) {
         dir->i_op = &ext2_file_inode_operations;
+    } else if (S_ISCHR(dir->i_mode)) {
+        dir->i_op = &chrdev_inode_ops;
     } else {
         printk("Warning: no operation for inode %d\n", dir->i_ino);
     }
