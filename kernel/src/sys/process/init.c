@@ -2,6 +2,7 @@
 #include "arch/x86/memlayout.h"
 #include "drivers/printk.h"
 #include "fs/vfs.h"
+#include "idt/syscalls.h"
 #include "lib/stdlib.h"
 #include "memory/consts.h"
 #include "memory/kmalloc.h"
@@ -101,14 +102,17 @@ void init_process(void)
     devfs_init();
     printk("Initial process started...!\n");
 
+    int stdin_fd = sys_open("/dev/console", O_RDONLY, 0);
+    int stdout_fd = sys_open("/dev/console", O_WRONLY, 0);
+    int stderr_fd = sys_open("/dev/console", O_WRONLY, 0);
+
+    if (stdin_fd != 0 || stdout_fd != 1 || stderr_fd != 2) {
+        abort("Failed to open stdio!");
+    }
+
     pid_t pid = do_exec("execve test", prepare_for_jmp);
     if (pid < 0) {
         abort("Init: could not create execve test process");
-    }
-
-    pid = do_exec("shell", shell_process);
-    if (pid < 0) {
-        abort("Init: could not create a new process");
     }
 
 #ifdef __TEST
@@ -117,35 +121,6 @@ void init_process(void)
         abort("Init: could not create a new process");
     }
 #endif
-
-    vfs_inode_t* console = vfs_lookup(myproc()->root, "/dev/console");
-    if (!console) {
-        abort("Cannot find /dev/console");
-    }
-
-    // stdin (fd 0)
-    file_t* stdin = kmalloc(sizeof(file_t));
-    stdin->f_inode = console;
-    stdin->f_pos = 0;
-    stdin->f_flags = O_RDONLY;
-    myproc()->open_files[0] = stdin;
-    console->i_count++;
-
-    // stdout (fd 1)
-    file_t* stdout = kmalloc(sizeof(file_t));
-    stdout->f_inode = console;
-    stdout->f_pos = 0;
-    stdout->f_flags = O_WRONLY;
-    myproc()->open_files[1] = stdout;
-    console->i_count++;
-
-    // stderr (fd 2)
-    file_t* stderr = kmalloc(sizeof(file_t));
-    stderr->f_inode = console;
-    stderr->f_pos = 0;
-    stderr->f_flags = O_WRONLY;
-    myproc()->open_files[2] = stderr;
-    console->i_count++;
 
     printk("Init: Created child PID %d with PID %d\n", pid, current->pid);
 
