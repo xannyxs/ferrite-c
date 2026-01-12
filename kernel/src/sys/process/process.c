@@ -82,7 +82,7 @@ proc_t* __alloc_proc(void)
             for (int fd = 0; fd < MAX_OPEN_FILES; fd += 1) {
                 p->open_files[fd] = NULL;
 
-                if (current_proc && current_proc->open_files[fd]) {
+                if (myproc() && myproc()->open_files[fd]) {
                     p->open_files[fd] = current_proc->open_files[fd];
                     p->open_files[fd]->f_count += 1;
                 }
