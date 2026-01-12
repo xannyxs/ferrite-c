@@ -14,6 +14,8 @@
 #include <ferrite/string.h>
 #include <ferrite/types.h>
 
+extern struct inode_operations chrdev_inode_ops;
+
 static s32
 ext2_dir_read(vfs_inode_t* inode, file_t* file, void* buff, int count)
 {
@@ -25,15 +27,11 @@ ext2_dir_read(vfs_inode_t* inode, file_t* file, void* buff, int count)
     return -EISDIR;
 }
 
-static s32
-ext2_readdir(vfs_inode_t* inode, file_t* file, dirent_t* dirent, s32 count);
-
-static int
-ext2_mkdir(struct vfs_inode* dir, char const* name, int len, int mode);
-
-static int ext2_rmdir(vfs_inode_t* dir, char const* name, int len);
-
-static int ext2_unlink(vfs_inode_t* dir, char const* name, int len);
+static s32 ext2_readdir(vfs_inode_t*, file_t*, dirent_t*, s32);
+static int ext2_mkdir(struct vfs_inode*, char const*, int, int);
+static int ext2_mknod(vfs_inode_t*, char const*, int, int, int);
+static int ext2_rmdir(vfs_inode_t*, char const*, int);
+static int ext2_unlink(vfs_inode_t*, char const*, int);
 
 static struct file_operations ext2_dir_operations = {
     .write = NULL,
@@ -53,8 +51,9 @@ struct inode_operations ext2_dir_inode_operations = {
     .unlink = ext2_unlink,
     .truncate = ext2_truncate,
     .permission = ext2_permission,
+    .mknod = ext2_mknod,
+
     //     ext2_symlink,         /* symlink */
-    //     ext2_mknod,           /* mknod */
     //     ext2_rename,          /* rename */
     //     NULL,                 /* readlink */
     //     NULL,                 /* follow_link */
@@ -434,4 +433,85 @@ end_unlink:
     kfree(entry);
     inode_put(current);
     return retval;
+}
+
+int ext2_mknod(vfs_inode_t* dir, char const* name, int len, int mode, int rdev)
+{
+    int err;
+    vfs_inode_t* node;
+    ext2_entry_t* entry;
+
+    if (!dir) {
+        return -ENOENT;
+    }
+
+    err = ext2_find_entry(dir, name, len, &entry);
+    if (err == 0) {
+        inode_put(dir);
+        return -EEXIST;
+    }
+
+    node = ext2_new_inode(dir, mode, &err);
+    if (!node) {
+        inode_put(dir);
+        return err ? err : -ENOSPC;
+    }
+
+    node->i_uid = myproc()->euid;
+    node->i_gid = myproc()->egid;
+    node->i_mode = mode;
+    node->i_op = NULL;
+
+    if (S_ISREG(node->i_mode)) {
+        node->i_op = &ext2_file_inode_operations;
+    } else if (S_ISDIR(node->i_mode)) {
+        node->i_op = &ext2_dir_inode_operations;
+        if (dir->i_mode & S_ISGID) {
+            node->i_mode |= S_ISGID;
+        }
+    } else if (S_ISLNK(node->i_mode)) {
+        // TODO
+        inode_put(node);
+        inode_put(dir);
+        return -ENOSYS;
+    } else if (S_ISCHR(node->i_mode)) {
+        node->i_op = &chrdev_inode_ops;
+        node->i_dev = rdev;
+    } else if (S_ISBLK(node->i_mode)) {
+        // TODO
+        node->i_dev = rdev;
+        inode_put(node);
+        inode_put(dir);
+        return -ENOSYS;
+    } else if (S_ISFIFO(node->i_mode)) {
+        // TODO
+        inode_put(node);
+        inode_put(dir);
+        return -ENOSYS;
+    }
+
+    dir->i_sb->s_op->write_inode(node);
+
+    ext2_entry_t* new_entry = kmalloc(sizeof(ext2_entry_t) + len);
+    new_entry->inode = node->i_ino;
+    new_entry->name_len = len;
+    new_entry->file_type = 0;
+    memcpy(new_entry->name, name, len);
+
+    err = ext2_write_entry(dir, new_entry);
+
+    kfree(new_entry);
+
+    if (err) {
+        node->i_links_count = 0;
+
+        node->i_sb->s_op->write_inode(node);
+        inode_put(node);
+        inode_put(dir);
+        return err;
+    }
+
+    inode_put(dir);
+    inode_put(node);
+    return 0;
 }

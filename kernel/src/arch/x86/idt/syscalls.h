@@ -29,6 +29,7 @@ enum syscalls_e {
     SYS_EXECVE = 11,
     SYS_CHDIR = 12,
     SYS_TIME = 13,
+    SYS_MKNOD = 14,
     SYS_STAT = 18,
     SYS_LSEEK = 19,
     SYS_GETPID = 20,

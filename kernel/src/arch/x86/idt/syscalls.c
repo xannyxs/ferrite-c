@@ -8,6 +8,7 @@
 #include "fs/mount.h"
 #include "fs/stat.h"
 #include "fs/vfs.h"
+#include "fs/vfs/mode_t.h"
 #include "memory/kmalloc.h"
 #include "sys/file/fcntl.h"
 #include "sys/file/file.h"
@@ -278,6 +279,29 @@ SYSCALL_ATTR static time_t sys_time(time_t* tloc)
     }
 
     return current_time;
+}
+
+SYSCALL_ATTR int sys_mknod(char const* path, mode_t mode, dev_t dev)
+{
+    if (S_ISDIR(mode) || (!S_ISFIFO(mode) && myproc()->euid != ROOT_UID)) {
+        return -EPERM;
+    }
+
+    switch (mode & S_IFMT) {
+    case 0:
+        mode |= S_IFREG;
+        break;
+
+    case S_IFREG:
+    case S_IFCHR:
+    case S_IFBLK:
+        break;
+
+    default:
+        return -EINVAL;
+    }
+
+    return vfs_mknod(path, mode, dev);
 }
 
 SYSCALL_ATTR int sys_stat(char const* filename, struct stat* statbuf)
@@ -735,6 +759,10 @@ syscall_dispatcher_c(registers_t* reg)
 
     case SYS_TIME:
         reg->eax = sys_time((time_t*)reg->ebx);
+        break;
+
+    case SYS_MKNOD:
+        reg->eax = sys_mknod((char*)reg->ebx, reg->ecx, reg->edx);
         break;
 
     case SYS_STAT:

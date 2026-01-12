@@ -1,0 +1,51 @@
+#include "ferrite/major.h"
+#include <drivers/block/device.h>
+#include <drivers/chrdev.h>
+#include <ferrite/errno.h>
+#include <ferrite/types.h>
+#include <fs/vfs.h>
+#include <sys/file/file.h>
+
+struct device_struct {
+    char const* name;
+    struct file_operations* fops;
+};
+
+static struct device_struct chrdevs[MAX_CHRDEV] = {
+    { NULL, NULL },
+};
+
+static int chrdev_open(vfs_inode_t* node, file_t* file)
+{
+    int i = MAJOR(node->i_dev);
+
+    if (i >= MAX_CHRDEV || !chrdevs[i].fops) {
+        return -ENODEV;
+    }
+
+    file->f_op = chrdevs[i].fops;
+    if (file->f_op->open) {
+        return file->f_op->open(node, file);
+    }
+
+    return 0;
+}
+
+struct file_operations chrdev_file_ops = {
+    .read = NULL,
+    .write = NULL,
+    .readdir = NULL,
+    .open = chrdev_open,
+    .release = NULL,
+    .lseek = NULL,
+};
+
+struct inode_operations chrdev_inode_ops
+    = { .default_file_ops = &chrdev_file_ops,
+        .create = NULL,
+        .lookup = NULL,
+        .unlink = NULL,
+        .mkdir = NULL,
+        .rmdir = NULL,
+        .truncate = NULL,
+        .permission = NULL };
