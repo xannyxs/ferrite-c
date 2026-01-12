@@ -5,8 +5,6 @@
 #include <fs/vfs.h>
 #include <sys/file/file.h>
 
-#include <drivers/printk.h>
-
 static int chrdev_open(vfs_inode_t* node, file_t* file)
 {
     int i = MAJOR(node->i_rdev);
@@ -19,7 +17,6 @@ static int chrdev_open(vfs_inode_t* node, file_t* file)
     if (file->f_op->open) {
         return file->f_op->open(node, file);
     }
-    printk("0x%x\n", &file);
 
     return 0;
 }
