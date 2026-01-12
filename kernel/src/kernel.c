@@ -15,6 +15,7 @@
 #include "memory/vmm.h"
 #include "sys/process/process.h"
 
+#include <drivers/serial.h>
 #include <ferrite/types.h>
 #include <lib/stdlib.h>
 
@@ -36,6 +37,7 @@ __attribute__((noreturn)) void kmain(u32 magic, multiboot_info_t* mbd)
 
     vga_init();
     rtc_init();
+    serial_init();
 
     pmm_init_from_map(mbd);
     memblock_init();
