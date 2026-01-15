@@ -194,6 +194,7 @@ SYSCALL_ATTR static pid_t sys_waitpid(pid_t pid, s32* status, s32 options)
 {
     (void)pid;
     (void)options;
+
     return do_wait(status);
 }
 
