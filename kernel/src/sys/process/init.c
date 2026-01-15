@@ -3,9 +3,9 @@
 #include "drivers/printk.h"
 #include "fs/vfs.h"
 #include "idt/syscalls.h"
+#include "io.h"
 #include "lib/stdlib.h"
 #include "memory/consts.h"
-#include "memory/kmalloc.h"
 #include "memory/page.h"
 #include "memory/vmm.h"
 #include "sys/file/fcntl.h"
@@ -34,19 +34,19 @@ __attribute__((naked)) void user_init(void)
         "1: pop %%ebx\n" // EBX = current address
 
         // Set up argv on stack
-        "sub $16, %%esp\n"     // Make room
-        "movl $0, 12(%%esp)\n" // argv[1] = NULL
+        "sub $16, %%esp\n"
+        "movl $0, 12(%%esp)\n"
         "lea (.sh_str-1b)(%%ebx), %%eax\n"
-        "movl %%eax, 8(%%esp)\n" // argv[0] = "sh"
-        "lea 8(%%esp), %%ecx\n"  // ecx = argv
+        "movl %%eax, 8(%%esp)\n"
+        "lea 8(%%esp), %%ecx\n"
 
         // Set up envp
-        "movl $0, 4(%%esp)\n"   // envp[0] = NULL
-        "lea 4(%%esp), %%edx\n" // edx = envp
+        "movl $0, 4(%%esp)\n"
+        "lea 4(%%esp), %%edx\n"
 
         // Call execve
-        "movl $11, %%eax\n"                 // SYS_EXECVE
-        "lea (.sh_path-1b)(%%ebx), %%ebx\n" // filename = "/bin/sh"
+        "movl $11, %%eax\n" // SYS_EXECVE
+        "lea (.sh_path-1b)(%%ebx), %%ebx\n"
         "int $0x80\n"
 
         // If execve fails, exit
@@ -54,8 +54,8 @@ __attribute__((naked)) void user_init(void)
         "mov $1, %%eax\n" // SYS_EXIT
         "int $0x80\n"
 
-        ".sh_path: .asciz \"/bin/hello\"\n"
-        ".sh_str:  .asciz \"hello\"\n"
+        ".sh_path: .asciz \"/bin/sh\"\n"
+        ".sh_str:  .asciz \"shell\"\n"
         :
         :
         : "memory"
@@ -99,6 +99,8 @@ void init_process(void)
         abort("Init process should be PID 1!");
     }
 
+    sti();
+
     devfs_init();
     printk("Initial process started...!\n");
 
@@ -121,8 +123,6 @@ void init_process(void)
         abort("Init: could not create a new process");
     }
 #endif
-
-    printk("Init: Created child PID %d with PID %d\n", pid, current->pid);
 
     while (1) {
         for (s32 i = 0; i < NUM_PROC; i++) {
