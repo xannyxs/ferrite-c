@@ -1,3 +1,4 @@
+#include "cpu.h"
 #include <drivers/chrdev.h>
 #include <drivers/printk.h>
 #include <drivers/vga.h>
@@ -70,8 +71,10 @@ console_dev_read(vfs_inode_t* inode, file_t* file, void* buf_ptr, int count)
 
     while (read_count < (size_t)count) {
         while (tty_is_empty()) {
-            __asm__ volatile("hlt");
+            sti();
+            halt();
         }
+
         u8 ch = tty_read();
         if (ch == 0) {
             break;
