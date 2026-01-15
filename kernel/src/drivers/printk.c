@@ -5,10 +5,6 @@
 #include <stdarg.h>
 #include <stdbool.h>
 
-#if defined(__print_serial)
-#    include "drivers/serial.h"
-#endif
-
 char buf[1024];
 
 /* Private */
@@ -168,9 +164,6 @@ __attribute__((target("general-regs-only"))) s32 printk(char const* fmt, ...)
     va_end(args);
     vga_puts(buf);
 
-#if defined(__print_serial)
-    serial_write_string(buf);
-#endif
 #if defined(__bochs)
     bochs_print_string(buf);
 #endif
