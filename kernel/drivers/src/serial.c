@@ -1,27 +1,12 @@
-#include "arch/x86/io.h"
-#include "lib/stdlib.h"
-#include <ferrite/types.h>
+#include <arch/x86/io.h>
+#include <lib/stdlib.h>
 
 u16 const PORT = 0x3f8;
 
-/* Private */
-
-static u8 is_transmit_empty(void) { return inb(PORT + 5) & 0x20; }
-
-static void serial_write_byte(u8 a)
+void serial_write_byte(u8 a)
 {
-    while (is_transmit_empty() == 0) { }
-
+    while ((inb(PORT + 5) & 0x20) == 0) { }
     outb(PORT, a);
-}
-
-/* Public */
-
-void serial_write_string(char const* s)
-{
-    for (s32 i = 0; s[i]; i++) {
-        serial_write_byte(s[i]);
-    }
 }
 
 void serial_init(void)

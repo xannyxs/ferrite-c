@@ -728,6 +728,8 @@ SYSCALL_ATTR static s32 sys_getcwd(char* buf, unsigned long size)
 __attribute__((target("general-regs-only"))) void
 syscall_dispatcher_c(registers_t* reg)
 {
+    sti();
+
     switch (reg->eax) {
     case SYS_EXIT:
         sys_exit((s32)reg->ebx);

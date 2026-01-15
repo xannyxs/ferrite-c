@@ -50,11 +50,11 @@ keyboard_handler(registers_t* regs)
     (void)regs;
 
     s32 scancode = inb(KEYBOARD_DATA_PORT);
-    tty_write(scancode);
 
     int pressed = !(scancode & 0x80);
     u8 key = scancode & 0x7F;
     trigger_keyboard_callbacks(key, pressed);
+    keyboard_put(scancode);
 
     pic_send_eoi(1);
 }
