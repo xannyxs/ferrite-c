@@ -7,16 +7,9 @@ const PORT: u16 = 0x3f8;
 const inb = @import("io.zig").inb;
 const outb = @import("io.zig").outb;
 
-fn serial_write_byte(a: u8) void {
+pub export fn serial_write_byte(a: u8) void {
     while ((inb(PORT + 5) & 0x20) == 0) {}
     outb(PORT, a);
-}
-
-pub export fn serial_write_string(s: [*:0]const u8) void {
-    var i: usize = 0;
-    while (s[i] != 0) : (i += 1) {
-        serial_write_byte(s[i]);
-    }
 }
 
 pub export fn serial_init() void {

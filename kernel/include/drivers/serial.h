@@ -1,7 +1,9 @@
 #ifndef SERIAL_H
 #define SERIAL_H
 
-extern void serial_write_string(char const* s);
+#include <ferrite/types.h>
+
+extern void serial_write_byte(u8 c);
 
 extern void serial_init(void);
 

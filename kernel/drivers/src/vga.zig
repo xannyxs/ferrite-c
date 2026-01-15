@@ -4,8 +4,11 @@ const c = @cImport({
 
 const VGA_WIDTH: usize = c.VGA_WIDTH;
 const VGA_HEIGHT: usize = c.VGA_HEIGHT;
-
 const VGA_MEMORY = 0xC00B8000;
+
+const PRINT_SERIAL = @hasDecl(c, "__print_serial");
+
+extern fn serial_write_byte(c: u8) void;
 
 const VgaColour = enum(u8) {
     VGA_COLOR_BLACK = 0,
@@ -62,6 +65,10 @@ pub const Writer = struct {
     }
 
     pub fn writeChar(self: *Writer, ch: u8) void {
+        if (PRINT_SERIAL) {
+            serial_write_byte(ch);
+        }
+
         if (ch == '\n') {
             self.newLine();
             return;
