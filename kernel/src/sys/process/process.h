@@ -21,6 +21,15 @@ typedef struct {
     u32 edi, esi, ebx, ebp, eip;
 } context_t;
 
+typedef struct {
+    u32 edi, esi, ebp, oesp, ebx, edx, ecx, eax;
+
+    u32 gs, fs, es, ds;
+    u32 trapno, err;
+
+    u32 eip, cs, eflags, esp, ss;
+} trapframe_t;
+
 typedef struct process {
     pid_t pid;
 
@@ -71,7 +80,7 @@ void yield(void);
  * @param name  Process name for the child process
  * @return      Child PID in parent process, 0 in child process, -1 on error
  */
-pid_t do_fork(char const* name);
+pid_t do_fork(trapframe_t*, char const*);
 
 /**
  * Creates a new process that starts executing the specified function.

@@ -1,7 +1,7 @@
 #ifndef SYSCALLS_H
 #define SYSCALLS_H
 
-#include "arch/x86/idt/idt.h"
+#include "sys/process/process.h"
 
 #define USER_CS 0x1B
 #define USER_DS 0x23
@@ -79,7 +79,7 @@ enum syscalls_e {
     SYS_GETCWD = 183,
 };
 
-void syscall_dispatcher_c(registers_t*);
+void syscall_dispatcher_c(trapframe_t*);
 
 int sys_socketcall(int call, unsigned long* args);
 

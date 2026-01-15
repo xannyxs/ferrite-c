@@ -80,7 +80,6 @@ int main(void)
 
         pid_t pid = fork();
         if (pid == 0) {
-            print("Child\n");
             execve(argv[0], argv, 0);
 
             print("Command not found: ");
@@ -88,8 +87,6 @@ int main(void)
             print("\n");
             exit(1);
         } else if (pid > 0) {
-            print("Parent\n");
-
             int status;
             waitpid(&status);
         } else {
