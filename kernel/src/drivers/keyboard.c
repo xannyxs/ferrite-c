@@ -1,6 +1,4 @@
-#include "drivers/console.h"
-#include "drivers/printk.h"
-
+#include <drivers/console.h>
 #include <ferrite/types.h>
 #include <stdbool.h>
 
@@ -76,5 +74,8 @@ void keyboard_put(u8 scancode)
     if (!c)
         return;
 
+    tty_write(c);
+
+    // FIXME: This is obsolete and should be removed at some point
     console_add_buffer(c);
 }

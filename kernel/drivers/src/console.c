@@ -42,41 +42,16 @@ typedef struct {
     size_t cmd_len;
 } Tty;
 
-static void tty_clear_line(Tty* self)
-{
-    self->cmd_len = 0;
-    memset(self->cmd_buffer, 0, 256);
-    vga_puts(PROMPT);
-}
-
 static void tty_add_buffer(Tty* self, u8 c)
 {
-    switch (c) {
-    case '\x03': // Ctrl+C
+    // Ctrl+C
+    if (c == '\x03') {
         vga_puts("^C\n");
         do_kill(myproc()->pid, SIGINT);
-        tty_clear_line(self);
-        break;
+        self->cmd_len = 0;
 
-    case '\n':
-        vga_putchar('\n');
-        break;
-
-    case '\x08': // Backspace
-        if (self->cmd_len > 0) {
-            self->cmd_len--;
-            self->cmd_buffer[self->cmd_len] = 0;
-            vga_delete();
-        }
-        break;
-
-    default:
-        if (c >= 32 && c < 127 && self->cmd_len < 255) {
-            self->cmd_buffer[self->cmd_len] = c;
-            self->cmd_len++;
-            vga_putchar(c);
-        }
-        break;
+        memset(self->cmd_buffer, 0, 256);
+        vga_puts(PROMPT);
     }
 }
 
