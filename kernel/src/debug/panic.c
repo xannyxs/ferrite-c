@@ -1,9 +1,8 @@
 #include "arch/x86/idt/idt.h"
 #include "arch/x86/io.h"
 #include "drivers/printk.h"
-#include <ferrite/types.h>
 
-#include <stdbool.h>
+#include <ferrite/types.h>
 
 __attribute__((target("general-regs-only"))) static void
 save_stack(u32 stack_pointer)
@@ -32,7 +31,7 @@ __attribute__((target("general-regs-only"))) static void clean_registers(void)
 }
 
 __attribute__((target("general-regs-only"), noreturn)) void
-panic(registers_t* regs, char const* msg)
+panic(trapframe_t* regs, char const* msg)
 {
     cli();
 
@@ -42,14 +41,13 @@ panic(registers_t* regs, char const* msg)
     printk("EIP: 0x%x\n", regs->eip);
     printk("CS:  0x%x\n", regs->cs);
     printk("EFLAGS: 0x%x\n", regs->eflags);
-    printk("INT: 0x%x\n", regs->int_no);
 
     save_stack((u32)regs);
     clean_registers();
 
     printk("\nSystem Halted.");
 
-    while (true) {
+    while (1) {
         cli();
         __asm__ volatile("hlt");
     }

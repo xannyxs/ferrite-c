@@ -4,6 +4,7 @@
 #include "arch/x86/pit.h"
 #include "ferrite/limits.h"
 #include "fs/vfs.h"
+#include "idt/idt.h"
 #include "sys/file/file.h"
 
 #include <ferrite/types.h>
@@ -20,15 +21,6 @@ typedef enum { UNUSED, EMBRYO, SLEEPING, READY, RUNNING, ZOMBIE } procstate_e;
 typedef struct {
     u32 edi, esi, ebx, ebp, eip;
 } context_t;
-
-typedef struct {
-    u32 edi, esi, ebp, oesp, ebx, edx, ecx, eax;
-
-    u32 gs, fs, es, ds;
-    u32 trapno, err;
-
-    u32 eip, cs, eflags, esp, ss;
-} trapframe_t;
 
 typedef struct process {
     pid_t pid;

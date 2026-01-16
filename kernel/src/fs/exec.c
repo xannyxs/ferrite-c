@@ -126,7 +126,7 @@ int do_execve(
     char const* filename,
     char const* const* argv,
     char const* const* envp,
-    registers_t* regs
+    trapframe_t* regs
 )
 {
     int retval = 0;

@@ -1,6 +1,7 @@
 #ifndef SYSCALLS_H
 #define SYSCALLS_H
 
+#include "idt/idt.h"
 #include "sys/process/process.h"
 
 #define USER_CS 0x1B
