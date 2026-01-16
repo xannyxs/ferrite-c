@@ -12,11 +12,11 @@ typedef struct timer {
     void (*function)(void*);
 } timer_t;
 
-s32 ksleep(s32 seconds);
+int ksleep(int);
 
-s32 knanosleep(s32 ms);
+int knanosleep(u32);
 
-void waitchan(void* channel);
+void waitchan(void*);
 
 void check_timers(void);
 
