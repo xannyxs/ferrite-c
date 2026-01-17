@@ -805,7 +805,7 @@ syscall_dispatcher_c(trapframe_t* reg)
     sti();
 
     u32 syscall_num = reg->eax;
-    if (syscall_num >= NR_SYSCALLS || !syscall_table[syscall_num].handler) {
+    if (syscall_num == 0 || syscall_num >= NR_SYSCALLS) {
         reg->eax = -ENOSYS;
         check_resched();
         return;
