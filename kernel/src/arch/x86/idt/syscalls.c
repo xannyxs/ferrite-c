@@ -1,8 +1,6 @@
 #include "arch/x86/idt/syscalls.h"
 #include "arch/x86/idt/idt.h"
 #include "arch/x86/time/time.h"
-#include "drivers/block/device.h"
-#include "drivers/printk.h"
 #include "ferrite/dirent.h"
 #include "fs/exec.h"
 #include "fs/ext2/ext2.h"
@@ -585,49 +583,6 @@ SYSCALL_ATTR static s32 sys_readdir(u32 fd, dirent_t* dirent, s32 count)
     }
 
     return result;
-}
-
-SYSCALL_ATTR static s32 sys_truncate(char const* path, off_t len)
-{
-    vfs_inode_t* node = vfs_lookup(myproc()->root, path);
-    if (!node) {
-        return -ENOENT;
-    }
-
-    if (S_ISDIR(node->i_mode) || !vfs_permission(node, MAY_WRITE)) {
-        inode_put(node);
-        return -EACCES;
-    }
-
-    // if (IS_RDONLY(node)) {
-    //     inode_put(node);
-    //     return -EROFS;
-    // }
-
-    if (!node->i_op->truncate) {
-        inode_put(node);
-        return -ENOSYS;
-    }
-
-    int ret = node->i_op->truncate(node, len);
-
-    inode_put(node);
-    return ret;
-}
-
-SYSCALL_ATTR static s32 sys_ftruncate(s32 fd, off_t len)
-{
-    file_t* file = fd_get(fd);
-    if (!file) {
-        return -EBADF;
-    }
-
-    if (!file->f_inode->i_op->truncate) {
-        return -ENOSYS;
-    }
-
-    int ret = file->f_inode->i_op->truncate(file->f_inode, len);
-    return ret;
 }
 
 SYSCALL_ATTR static int sys_fchdir(s32 fd)

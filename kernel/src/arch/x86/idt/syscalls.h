@@ -84,11 +84,15 @@ void syscall_dispatcher_c(trapframe_t*);
 
 int sys_socketcall(int call, unsigned long* args);
 
-/* fscalls.c */
+/* fscalls */
 
 SYSCALL_ATTR int sys_open(char const*, int, int);
 
 SYSCALL_ATTR int sys_mkdir(char const*, int);
+
+SYSCALL_ATTR int sys_truncate(char const*, off_t);
+
+SYSCALL_ATTR int sys_ftruncate(int, off_t);
 
 /* sys.c */
 
