@@ -2,7 +2,6 @@
 #include "arch/x86/pic.h"
 #include "arch/x86/pit.h"
 #include "arch/x86/time/time.h"
-#include "drivers/console.h"
 #include "drivers/keyboard.h"
 #include "drivers/printk.h"
 #include "module/keyboard.h"
@@ -19,7 +18,7 @@ extern int volatile need_resched;
 unsigned long long volatile ticks = 0;
 
 __attribute__((target("general-regs-only"))) void
-timer_handler(registers_t* regs)
+timer_handler(trapframe_t* regs)
 {
     (void)regs;
 
@@ -45,7 +44,7 @@ timer_handler(registers_t* regs)
 }
 
 __attribute__((target("general-regs-only"))) void
-keyboard_handler(registers_t* regs)
+keyboard_handler(trapframe_t* regs)
 {
     (void)regs;
 
@@ -60,7 +59,7 @@ keyboard_handler(registers_t* regs)
 }
 
 __attribute__((target("general-regs-only"))) void
-spurious_handler(registers_t* regs)
+spurious_handler(trapframe_t* regs)
 {
     (void)regs;
 
@@ -76,7 +75,7 @@ spurious_handler(registers_t* regs)
 }
 
 __attribute__((target("general-regs-only"))) void
-irq_dispatcher_c(registers_t* regs)
+irq_dispatcher_c(trapframe_t* regs)
 {
     u32 irq_num = regs->int_no - 0x20;
 

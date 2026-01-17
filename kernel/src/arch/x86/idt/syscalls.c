@@ -188,12 +188,16 @@ SYSCALL_ATTR static int sys_close(int fd)
     return 0;
 }
 
-SYSCALL_ATTR static s32 sys_fork(void) { return do_fork("user process"); }
+SYSCALL_ATTR static s32 sys_fork(trapframe_t* tf)
+{
+    return do_fork(tf, "user process");
+}
 
 SYSCALL_ATTR static pid_t sys_waitpid(pid_t pid, s32* status, s32 options)
 {
     (void)pid;
     (void)options;
+
     return do_wait(status);
 }
 
@@ -246,7 +250,7 @@ SYSCALL_ATTR static int sys_execve(
     char const* filename,
     char const* const* argv,
     char const* const* envp,
-    registers_t* regs
+    trapframe_t* regs
 )
 {
     return do_execve(filename, argv, envp, regs);
@@ -726,7 +730,7 @@ SYSCALL_ATTR static s32 sys_getcwd(char* buf, unsigned long size)
 }
 
 __attribute__((target("general-regs-only"))) void
-syscall_dispatcher_c(registers_t* reg)
+syscall_dispatcher_c(trapframe_t* reg)
 {
     sti();
 
@@ -736,7 +740,7 @@ syscall_dispatcher_c(registers_t* reg)
         break;
 
     case SYS_FORK:
-        reg->eax = sys_fork();
+        reg->eax = sys_fork((trapframe_t*)reg);
         break;
 
     case SYS_READ:

@@ -15,6 +15,15 @@ static Writer WRITER = WRITER_NEW;
 
 /* Private */
 
+static void writer_clear_char(Writer* self)
+{
+    if (self->column > 0) {
+        self->column -= 1;
+        size_t index = self->row * VGA_WIDTH + self->column;
+        self->buffer[index] = VGA_ENTRY(' ', self->colour);
+    }
+}
+
 static void writer_scroll(Writer* self)
 {
     for (size_t y = 1; y < VGA_HEIGHT; y++) {
@@ -54,6 +63,11 @@ static void writer_write_char(Writer* self, u8 c)
         return;
     }
 
+    if (c == '\b') {
+        writer_clear_char(self);
+        return;
+    }
+
     size_t index = self->row * VGA_WIDTH + self->column;
     self->buffer[index] = VGA_ENTRY(c, self->colour);
     self->column += 1;
@@ -80,15 +94,6 @@ static void writer_clear_screen(Writer* self)
     }
     self->column = 0;
     self->row = 0;
-}
-
-static void writer_clear_char(Writer* self)
-{
-    if (self->column > 0) {
-        self->column -= 1;
-        size_t index = self->row * VGA_WIDTH + self->column;
-        self->buffer[index] = VGA_ENTRY(' ', self->colour);
-    }
 }
 
 static void writer_init(Writer* self)

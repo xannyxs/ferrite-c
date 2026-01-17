@@ -4,6 +4,7 @@
 #include "arch/x86/pit.h"
 #include "ferrite/limits.h"
 #include "fs/vfs.h"
+#include "idt/idt.h"
 #include "sys/file/file.h"
 
 #include <ferrite/types.h>
@@ -71,7 +72,7 @@ void yield(void);
  * @param name  Process name for the child process
  * @return      Child PID in parent process, 0 in child process, -1 on error
  */
-pid_t do_fork(char const* name);
+pid_t do_fork(trapframe_t*, char const*);
 
 /**
  * Creates a new process that starts executing the specified function.

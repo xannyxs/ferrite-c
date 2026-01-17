@@ -48,7 +48,7 @@ s32 ksleep(s32 seconds) { return knanosleep(seconds * 1000); }
  * POSIX approach would use: alarm(seconds) + pause() + SIGALRM handler
  * TODO: Implement SIGALRM-based sleep for full POSIX compliance
  */
-s32 knanosleep(s32 ms)
+int knanosleep(unsigned int ms)
 {
     timer_t timer;
 

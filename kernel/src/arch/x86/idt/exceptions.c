@@ -4,12 +4,13 @@
 #include "drivers/printk.h"
 #include "memory/vmm.h"
 #include "sys/process/process.h"
+
 #include <ferrite/types.h>
 
 #define KERNEL_MODE 0
 #define USER_MODE 3
 
-typedef void (*exception_handler_t)(registers_t*, u32);
+typedef void (*exception_handler_t)(trapframe_t*, u32);
 exception_handler_t const EXCEPTION_HANDLERS[NUM_EXCEPTION_HANDLERS] = {
     divide_by_zero_handler,
     debug_interrupt_handler,
@@ -30,18 +31,18 @@ exception_handler_t const EXCEPTION_HANDLERS[NUM_EXCEPTION_HANDLERS] = {
     x87_fpu_exception,
 };
 
-void exception_dispatcher_c(registers_t* reg)
+void exception_dispatcher_c(trapframe_t* reg)
 {
     if (reg->int_no >= NUM_EXCEPTION_HANDLERS) {
         printk("Unknown exception: %d\n", reg->int_no);
         return;
     }
 
-    EXCEPTION_HANDLERS[reg->int_no](reg, reg->err_code);
+    EXCEPTION_HANDLERS[reg->int_no](reg, reg->err);
 }
 
 __attribute__((target("general-regs-only"))) void
-divide_by_zero_handler(registers_t* regs, u32 error_code)
+divide_by_zero_handler(trapframe_t* regs, u32 error_code)
 {
     (void)error_code;
     if ((regs->cs & 3) == KERNEL_MODE) {
@@ -52,7 +53,7 @@ divide_by_zero_handler(registers_t* regs, u32 error_code)
 }
 
 __attribute__((target("general-regs-only"))) void
-debug_interrupt_handler(registers_t* regs, u32 error_code)
+debug_interrupt_handler(trapframe_t* regs, u32 error_code)
 {
     (void)error_code;
     (void)regs;
@@ -62,14 +63,14 @@ debug_interrupt_handler(registers_t* regs, u32 error_code)
 }
 
 __attribute__((target("general-regs-only"))) void
-non_maskable_interrupt_handler(registers_t* regs, u32 error_code)
+non_maskable_interrupt_handler(trapframe_t* regs, u32 error_code)
 {
     (void)error_code;
     panic(regs, "Non Maskable Interrupt");
 }
 
 __attribute__((target("general-regs-only"))) void
-breakpoint_handler(registers_t* regs, u32 error_code)
+breakpoint_handler(trapframe_t* regs, u32 error_code)
 {
     (void)error_code;
     (void)regs;
@@ -77,7 +78,7 @@ breakpoint_handler(registers_t* regs, u32 error_code)
 }
 
 __attribute__((target("general-regs-only"))) void
-overflow_handler(registers_t* regs, u32 error_code)
+overflow_handler(trapframe_t* regs, u32 error_code)
 {
     (void)regs;
     (void)error_code;
@@ -87,7 +88,7 @@ overflow_handler(registers_t* regs, u32 error_code)
 }
 
 __attribute__((target("general-regs-only"))) void
-bound_range_exceeded_handler(registers_t* regs, u32 error_code)
+bound_range_exceeded_handler(trapframe_t* regs, u32 error_code)
 {
     (void)regs;
     (void)error_code;
@@ -97,7 +98,7 @@ bound_range_exceeded_handler(registers_t* regs, u32 error_code)
 }
 
 __attribute__((target("general-regs-only"))) void
-invalid_opcode(registers_t* regs, u32 error_code)
+invalid_opcode(trapframe_t* regs, u32 error_code)
 {
     (void)error_code;
     if ((regs->cs & 3) == 0) {
@@ -111,7 +112,7 @@ invalid_opcode(registers_t* regs, u32 error_code)
 // This exception is primarily used to handle FPU context switching. Without an
 // FPU, the CPU won't generate this fault for floating-point instructions.
 __attribute__((target("general-regs-only"))) void
-device_not_available(registers_t* regs, u32 error_code)
+device_not_available(trapframe_t* regs, u32 error_code)
 {
     (void)error_code;
     (void)regs;
@@ -119,7 +120,7 @@ device_not_available(registers_t* regs, u32 error_code)
     __asm__ volatile("cli; hlt");
 }
 
-void x87_fpu_exception(registers_t* regs, u32 error_code)
+void x87_fpu_exception(trapframe_t* regs, u32 error_code)
 {
     (void)regs;
     (void)error_code;
@@ -128,7 +129,7 @@ void x87_fpu_exception(registers_t* regs, u32 error_code)
 }
 
 __attribute__((target("general-regs-only"))) void
-reserved_by_cpu(registers_t* regs, u32 error_code)
+reserved_by_cpu(trapframe_t* regs, u32 error_code)
 {
     (void)error_code;
     (void)regs;
@@ -137,7 +138,7 @@ reserved_by_cpu(registers_t* regs, u32 error_code)
 // --- Handlers that HAVE an error code ---
 
 __attribute__((target("general-regs-only"))) void
-double_fault(registers_t* regs, u32 error_code)
+double_fault(trapframe_t* regs, u32 error_code)
 {
     (void)error_code;
     (void)error_code;
@@ -145,7 +146,7 @@ double_fault(registers_t* regs, u32 error_code)
 }
 
 __attribute__((target("general-regs-only"))) void
-invalid_tss(registers_t* regs, u32 error_code)
+invalid_tss(trapframe_t* regs, u32 error_code)
 {
     (void)error_code;
     (void)error_code;
@@ -154,7 +155,7 @@ invalid_tss(registers_t* regs, u32 error_code)
 }
 
 __attribute__((target("general-regs-only"))) void
-segment_not_present(registers_t* regs, u32 error_code)
+segment_not_present(trapframe_t* regs, u32 error_code)
 {
     (void)error_code;
     (void)regs;
@@ -164,7 +165,7 @@ segment_not_present(registers_t* regs, u32 error_code)
 }
 
 __attribute__((target("general-regs-only"))) void
-stack_segment_fault(registers_t* regs, u32 error_code)
+stack_segment_fault(trapframe_t* regs, u32 error_code)
 {
     (void)error_code;
     (void)regs;
@@ -173,12 +174,12 @@ stack_segment_fault(registers_t* regs, u32 error_code)
 }
 
 __attribute__((target("general-regs-only"))) void
-general_protection_fault(registers_t* regs, u32 error_code)
+general_protection_fault(trapframe_t* regs, u32 error_code)
 {
     printk("=== GPF ===\n");
     printk("error_code: %x\n", error_code);
     printk("cs: %x, eip: %x\n", regs->cs, regs->eip);
-    printk("ss: %x, esp: %x\n", regs->ss, regs->useresp);
+    printk("ss: %x, esp: %x\n", regs->ss, regs->esp);
     printk("eflags: %x\n", regs->eflags);
 
     if (error_code) {
@@ -194,7 +195,7 @@ general_protection_fault(registers_t* regs, u32 error_code)
 #define USER_SPACE_END 0xC0000000
 
 __attribute__((target("general-regs-only"))) void
-page_fault(registers_t* regs, u32 error_code)
+page_fault(trapframe_t* regs, u32 error_code)
 {
     u32 fault_addr;
     __asm__ volatile("movl %%cr2, %0" : "=r"(fault_addr));

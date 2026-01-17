@@ -114,8 +114,4 @@ static const struct file_operations console_ops = { .readdir = NULL,
                                                     .release = NULL,
                                                     .lseek = NULL };
 
-void console_chrdev_init(void)
-{
-    unsigned int const CONSOLE_MAJOR = 5;
-    register_chrdev(CONSOLE_MAJOR, &console_ops);
-}
+void console_chrdev_init(void) { register_chrdev(5, &console_ops); }

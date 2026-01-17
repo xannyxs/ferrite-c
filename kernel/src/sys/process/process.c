@@ -7,6 +7,7 @@
 #include "fs/vfs.h"
 #include "lib/stdlib.h"
 #include "memory/consts.h"
+#include "memory/kmalloc.h"
 #include "memory/page.h"
 #include "memory/vmm.h"
 #include "sys/file/file.h"
@@ -129,14 +130,6 @@ inline void check_resched(void)
     yield();
 }
 
-__attribute__((naked)) static void fork_ret(void)
-{
-    __asm__ volatile("movl $0, %%eax\n\t"
-                     "popl %%ecx\n\t"
-                     "jmp *%%ecx" ::
-                         : "eax", "ecx");
-}
-
 void wakeup(void* channel)
 {
     for (proc_t* p = &ptables[0]; p < &ptables[NUM_PROC]; p += 1) {
@@ -244,7 +237,7 @@ void* setup_kvm(void)
         }
     }
 
-    for (int i = KERNBASE << 22; i < 1024; i++) {
+    for (int i = (KERNBASE >> 22); i < 1024; i++) {
         if (page_directory[i] & PTE_P) {
             pgdir[i] = page_directory[i];
         }
@@ -276,27 +269,79 @@ pid_t do_exec(char const* name, void (*f)(void))
     return p->pid;
 }
 
-pid_t do_fork(char const* name)
+extern u32 trapret(void);
+
+#define PTE_ADDR(pte) ((pte) & ~0xFFF)
+
+void* vmm_copy_pgdir(u32* parent_pgdir)
+{
+    u32* child_pgdir = (u32*)setup_kvm();
+    if (!child_pgdir)
+        return NULL;
+
+    u32 pde_limit = KERNBASE >> 22;
+
+    for (u32 pde = 4; pde < pde_limit; pde++) {
+        if (!(parent_pgdir[pde] & PTE_P))
+            continue;
+
+        u32* new_pt = (u32*)get_free_page();
+        if (!new_pt)
+            return NULL;
+
+        u32* parent_pt = (u32*)P2V_WO(PTE_ADDR(parent_pgdir[pde]));
+
+        for (u32 pte = 0; pte < 1024; pte++) {
+            if (!(parent_pt[pte] & PTE_P)) {
+                new_pt[pte] = 0;
+                continue;
+            }
+
+            char* new_page = get_free_page();
+            if (!new_page)
+                return NULL; // TODO: cleanup
+
+            char* parent_page = (char*)P2V_WO(PTE_ADDR(parent_pt[pte]));
+            memcpy(new_page, parent_page, PAGE_SIZE);
+
+            new_pt[pte] = V2P_WO((u32)new_page) | (parent_pt[pte] & 0xFFF);
+        }
+
+        child_pgdir[pde] = V2P_WO((u32)new_pt) | (parent_pgdir[pde] & 0xFFF);
+    }
+
+    return child_pgdir;
+}
+
+pid_t do_fork(trapframe_t* parent_tf, char const* name)
 {
     proc_t* p = __alloc_proc();
     if (!p) {
         return -1;
     }
 
-    u32 caller_return;
-    __asm__ volatile("movl 4(%%ebp), %0" : "=r"(caller_return));
-    u32* ctx = (u32*)(p->kstack + PAGE_SIZE);
-    *(--ctx) = caller_return; // Return address for fork_ret (on stack)
-    *(--ctx) = (u32)fork_ret; // EIP
-    *(--ctx) = 0;             // EBP
-    *(--ctx) = 0;             // EBX
-    *(--ctx) = 0;             // ESI
-    *(--ctx) = 0;             // EDI
+    free_page(p->pgdir);
+    p->pgdir = vmm_copy_pgdir(myproc()->pgdir);
+    if (!p->pgdir) {
+        return -1;
+    }
+
+    trapframe_t* child_tf
+        = (trapframe_t*)(p->kstack + PAGE_SIZE - sizeof(trapframe_t));
+    *child_tf = *parent_tf;
+    child_tf->eax = 0;
+
+    u32* ctx = (u32*)child_tf;
+    *(--ctx) = (u32)trapret; // EIP
+    *(--ctx) = 0;            // EBP
+    *(--ctx) = 0;            // EBX
+    *(--ctx) = 0;            // ESI
+    *(--ctx) = 0;            // EDI
     p->context = (context_t*)ctx;
 
     strlcpy(p->name, name, sizeof(p->name));
-    p->state = READY;
 
+    p->state = READY;
     return p->pid;
 }
 

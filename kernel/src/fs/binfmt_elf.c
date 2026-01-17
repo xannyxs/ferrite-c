@@ -12,18 +12,17 @@
 #include <ferrite/errno.h>
 #include <ferrite/string.h>
 
-int load_elf_binary(binpgm_t* pgm, registers_t* regs)
+int load_elf_binary(binpgm_t* pgm, trapframe_t* regs)
 {
     elf32_hdr_t* elf = (elf32_hdr_t*)pgm->b_buf;
 
     if (memcmp(elf->e_ident, ELFMAG, SELFMAG) != 0) {
         return -ENOEXEC;
     }
+
     if (elf->e_type != ET_EXEC) {
         return -ENOEXEC;
     }
-
-    printk("Loading ELF: entry=0x%x, phnum=%d\n", elf->e_entry, elf->e_phnum);
 
     for (int i = 0; i < elf->e_phnum; i++) {
         elf32_phdr_t* phdr = (elf32_phdr_t*)(pgm->b_buf + elf->e_phoff
@@ -31,11 +30,6 @@ int load_elf_binary(binpgm_t* pgm, registers_t* regs)
         if (phdr->p_type != PT_LOAD) {
             continue;
         }
-
-        printk(
-            "LOAD: vaddr=0x%x, filesz=%d, memsz=%d\n", phdr->p_vaddr,
-            phdr->p_filesz, phdr->p_memsz
-        );
 
         u32 addr = phdr->p_vaddr & PAGE_MASK;
         u32 end = ALIGN(phdr->p_vaddr + phdr->p_memsz, PAGE_SIZE);
@@ -79,8 +73,6 @@ int load_elf_binary(binpgm_t* pgm, registers_t* regs)
     regs->eflags = 0x200;
     regs->cs = USER_CS;
     regs->ss = regs->ds = regs->es = USER_DS;
-
-    printk("Jumping to 0x%x\n", regs->eip);
 
     return 0;
 }

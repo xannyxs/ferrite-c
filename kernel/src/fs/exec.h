@@ -3,6 +3,7 @@
 
 #include "arch/x86/idt/idt.h"
 #include "fs/vfs.h"
+#include "sys/process/process.h"
 
 /*
  * From Linux 1.0:
@@ -34,16 +35,16 @@ typedef struct binpgm {
 } binpgm_t;
 
 typedef struct binfmt {
-    int (*load_binary)(binpgm_t*, registers_t*);
+    int (*load_binary)(binpgm_t*, trapframe_t*);
     int (*load_shlib)(int);
 } binfmt_t;
 
 /* exec.c */
 int read_exec(vfs_inode_t*, int, char*, int);
 
-int do_execve(char const*, char const* const*, char const* const*, registers_t*);
+int do_execve(char const*, char const* const*, char const* const*, trapframe_t*);
 
 /* binfmt_elf.c */
-int load_elf_binary(binpgm_t*, registers_t*);
+int load_elf_binary(binpgm_t*, trapframe_t*);
 
 #endif

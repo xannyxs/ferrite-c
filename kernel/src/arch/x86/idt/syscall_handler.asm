@@ -1,27 +1,17 @@
 section .text
 global  syscall_handler
-
-extern syscall_dispatcher_c
-
-	; This is the entry point for `int 0x80`
+extern  syscall_dispatcher_c
 
 syscall_handler:
-	push dword 0
-	push dword 0x80
+	push dword 0; err_code
+	push dword 0x80; int_no
 
 	push ds
 	push es
 	push fs
 	push gs
 
-	push edi
-	push esi
-	push ebp
-	push esp
-	push ebx
-	push edx
-	push ecx
-	push eax
+	pusha ; This pushes: EDI, ESI, EBP, ESP, EBX, EDX, ECX, EAX
 
 	mov ax, 0x10
 	mov ds, ax
@@ -29,24 +19,19 @@ syscall_handler:
 	mov fs, ax
 	mov gs, ax
 
-	push esp
+	push esp; Pass trapframe pointer
 	call syscall_dispatcher_c
 	add  esp, 4
 
-	pop eax
-	pop ecx
-	pop edx
-	pop ebx
-	add esp, 4
-	pop ebp
-	pop esi
-	pop edi
+	; Fall through to trapret
 
-	pop gs
-	pop fs
-	pop es
-	pop ds
+	global trapret
 
-	add esp, 8
-
+trapret:
+	popa ; Pop: EAX, ECX, EDX, EBX, ESP, EBP, ESI, EDI
+	pop  gs
+	pop  fs
+	pop  es
+	pop  ds
+	add  esp, 8; Skip int_no and err_code
 	iret

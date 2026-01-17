@@ -1,7 +1,7 @@
 #include "arch/x86/idt/idt.h"
 #include "arch/x86/entry.h"
 
-extern void syscall_handler(registers_t*);
+extern void syscall_handler(trapframe_t*);
 extern void divide_by_zero_stub(void);
 extern void debug_interrupt_stub(void);
 extern void non_maskable_interrupt_stub(void);
