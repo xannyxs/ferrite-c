@@ -1,6 +1,9 @@
 #ifndef SYSCALLS_H
 #define SYSCALLS_H
 
+#include "ferrite/dirent.h"
+#include "fs/stat.h"
+#include "fs/vfs/mode_t.h"
 #include "idt/idt.h"
 
 #define USER_CS 0x1B
@@ -86,13 +89,39 @@ int sys_socketcall(int call, unsigned long* args);
 
 /* fscalls */
 
+SYSCALL_ATTR int sys_read(int, void*, int);
+
+SYSCALL_ATTR int sys_write(int, void*, int);
+
 SYSCALL_ATTR int sys_open(char const*, int, int);
 
+SYSCALL_ATTR int sys_close(int);
+
+SYSCALL_ATTR int sys_unlink(char const*);
+
+SYSCALL_ATTR int sys_chdir(char const*);
+
+SYSCALL_ATTR int sys_mknod(char const*, mode_t, dev_t);
+
+SYSCALL_ATTR int sys_stat(char const*, struct stat*);
+
+SYSCALL_ATTR int sys_fstat(int, struct stat*);
+
+SYSCALL_ATTR int sys_lseek(u32, off_t, u32);
+
+SYSCALL_ATTR int sys_readdir(u32, dirent_t*, int);
+
 SYSCALL_ATTR int sys_mkdir(char const*, int);
+
+SYSCALL_ATTR int sys_rmdir(char const*);
+
+SYSCALL_ATTR int sys_fchdir(int);
 
 SYSCALL_ATTR int sys_truncate(char const*, off_t);
 
 SYSCALL_ATTR int sys_ftruncate(int, off_t);
+
+SYSCALL_ATTR int sys_getcwd(char*, unsigned long);
 
 /* sys.c */
 
