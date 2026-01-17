@@ -110,8 +110,6 @@ vfs_inode_t* inode_get(vfs_superblock_t* sb, unsigned long ino);
 
 void inode_put(vfs_inode_t*);
 
-void inode_cache_init(void);
-
 void vfs_init(void);
 
 /* namei.c */
