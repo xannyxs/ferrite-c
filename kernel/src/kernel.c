@@ -54,8 +54,6 @@ __attribute__((noreturn)) void kmain(u32 magic, multiboot_info_t* mbd)
     mount_root_device((char*)mbd->cmdline);
     vfs_init();
 
-    ptables_init();
-
     sti();
 
     create_initial_process();
