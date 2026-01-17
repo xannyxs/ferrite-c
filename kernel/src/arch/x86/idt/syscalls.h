@@ -78,6 +78,7 @@ enum syscalls_e {
     SYS_GETRESGID = 171,
 
     SYS_GETCWD = 183,
+    NR_SYSCALLS
 };
 
 void syscall_dispatcher_c(trapframe_t*);

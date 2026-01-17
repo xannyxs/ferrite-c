@@ -22,6 +22,21 @@
 #include <ferrite/string.h>
 #include <ferrite/types.h>
 
+#define SYSCALL_ENTRY_0(num, fname) \
+    [num] = { .handler = (void*)(sys_##fname), .nargs = 0, .name = #fname }
+
+#define SYSCALL_ENTRY_1(num, fname) \
+    [num] = { .handler = (void*)(sys_##fname), .nargs = 1, .name = #fname }
+
+#define SYSCALL_ENTRY_2(num, fname) \
+    [num] = { .handler = (void*)(sys_##fname), .nargs = 2, .name = #fname }
+
+#define SYSCALL_ENTRY_3(num, fname) \
+    [num] = { .handler = (void*)(sys_##fname), .nargs = 3, .name = #fname }
+
+#define SYSCALL_ENTRY_5(num, fname) \
+    [num] = { .handler = (void*)(sys_##fname), .nargs = 5, .name = #fname }
+
 __attribute__((target("general-regs-only"))) static void sys_exit(s32 status)
 {
     do_exit(status);
@@ -729,208 +744,124 @@ SYSCALL_ATTR static s32 sys_getcwd(char* buf, unsigned long size)
     return path_len;
 }
 
+struct syscall_entry {
+    void* handler;
+    u8 nargs;
+    char const* name;
+};
+
+typedef int (*syscall_fn_0)(void);
+typedef int (*syscall_fn_1)(long);
+typedef int (*syscall_fn_2)(long, long);
+typedef int (*syscall_fn_3)(long, long, long);
+typedef int (*syscall_fn_5)(long, long, long, long, long);
+
+static const struct syscall_entry syscall_table[NR_SYSCALLS] = {
+    SYSCALL_ENTRY_1(SYS_EXIT, exit),
+    SYSCALL_ENTRY_3(SYS_READ, read),
+    SYSCALL_ENTRY_3(SYS_WRITE, write),
+    SYSCALL_ENTRY_3(SYS_OPEN, open),
+    SYSCALL_ENTRY_1(SYS_CLOSE, close),
+    SYSCALL_ENTRY_3(SYS_WAITPID, waitpid),
+    SYSCALL_ENTRY_1(SYS_UNLINK, unlink),
+    SYSCALL_ENTRY_1(SYS_CHDIR, chdir),
+    SYSCALL_ENTRY_1(SYS_TIME, time),
+    SYSCALL_ENTRY_3(SYS_MKNOD, mknod),
+    SYSCALL_ENTRY_2(SYS_STAT, stat),
+    SYSCALL_ENTRY_3(SYS_LSEEK, lseek),
+    SYSCALL_ENTRY_0(SYS_GETPID, getpid),
+    SYSCALL_ENTRY_5(SYS_MOUNT, mount),
+    SYSCALL_ENTRY_1(SYS_SETUID, setuid),
+    SYSCALL_ENTRY_1(SYS_GETUID, getuid),
+    SYSCALL_ENTRY_2(SYS_FSTAT, fstat),
+    SYSCALL_ENTRY_2(SYS_KILL, kill),
+    SYSCALL_ENTRY_2(SYS_MKDIR, mkdir),
+    SYSCALL_ENTRY_1(SYS_RMDIR, rmdir),
+    SYSCALL_ENTRY_1(SYS_SETGID, setgid),
+    SYSCALL_ENTRY_0(SYS_GETGID, getgid),
+    SYSCALL_ENTRY_0(SYS_GETEUID, geteuid),
+    SYSCALL_ENTRY_0(SYS_GETEGID, getegid),
+    SYSCALL_ENTRY_2(SYS_UMOUNT, umount),
+    SYSCALL_ENTRY_2(SYS_SETREUID, setreuid),
+    SYSCALL_ENTRY_2(SYS_SETREGID, setregid),
+    SYSCALL_ENTRY_2(SYS_SETGROUPS, setgroups),
+    SYSCALL_ENTRY_2(SYS_GETGROUPS, getgroups),
+    SYSCALL_ENTRY_3(SYS_READDIR, readdir),
+    SYSCALL_ENTRY_2(SYS_TRUNCATE, truncate),
+    SYSCALL_ENTRY_2(SYS_FTRUNCATE, ftruncate),
+    SYSCALL_ENTRY_2(SYS_SOCKETCALL, socketcall),
+    SYSCALL_ENTRY_3(SYS_INIT_MODULE, init_module),
+    SYSCALL_ENTRY_2(SYS_DELETE_MODULE, delete_module),
+    SYSCALL_ENTRY_1(SYS_FCHDIR, fchdir),
+    SYSCALL_ENTRY_0(SYS_NANOSLEEP, nanosleep),
+    SYSCALL_ENTRY_3(SYS_SETRESUID, setresuid),
+    SYSCALL_ENTRY_3(SYS_SETRESGID, setresgid),
+    SYSCALL_ENTRY_2(SYS_GETCWD, getcwd),
+};
+
 __attribute__((target("general-regs-only"))) void
 syscall_dispatcher_c(trapframe_t* reg)
 {
     sti();
 
-    switch (reg->eax) {
-    case SYS_EXIT:
-        sys_exit((s32)reg->ebx);
-        break;
+    u32 syscall_num = reg->eax;
+    if (syscall_num >= NR_SYSCALLS || !syscall_table[syscall_num].handler) {
+        reg->eax = -ENOSYS;
+        check_resched();
+        return;
+    }
 
-    case SYS_FORK:
-        reg->eax = sys_fork((trapframe_t*)reg);
-        break;
+    s32 ret;
+    const struct syscall_entry* entry = &syscall_table[syscall_num];
 
-    case SYS_READ:
-        reg->eax = sys_read((s32)reg->ebx, (void*)reg->ecx, (s32)reg->edx);
-        break;
-
-    case SYS_WRITE:
-        reg->eax = sys_write((s32)reg->ebx, (void*)reg->ecx, (s32)reg->edx);
-        break;
-
-    case SYS_OPEN:
-        reg->eax = sys_open((char*)reg->ebx, (s32)reg->ecx, (s32)reg->edx);
-        break;
-
-    case SYS_CLOSE:
-        reg->eax = sys_close((s32)reg->ebx);
-        break;
-
-    case SYS_WAITPID:
-        reg->eax = sys_waitpid((s32)reg->ebx, (s32*)reg->ecx, (s32)reg->edx);
-        break;
-
-    case SYS_UNLINK:
-        reg->eax = sys_unlink((char*)reg->ebx);
-        break;
-
+    switch (syscall_num) {
     case SYS_EXECVE:
         if (reg->cs != USER_CS) {
-            reg->eax = -EINVAL;
+            ret = -EINVAL;
             break;
         }
 
-        reg->eax = sys_execve(
+        ret = sys_execve(
             (char*)reg->ebx, (char const* const*)reg->ecx,
             (char const* const*)reg->edx, reg
         );
         break;
 
-    case SYS_CHDIR:
-        reg->eax = sys_chdir((char*)reg->ebx);
-        break;
-
-    case SYS_TIME:
-        reg->eax = sys_time((time_t*)reg->ebx);
-        break;
-
-    case SYS_MKNOD:
-        reg->eax = sys_mknod((char*)reg->ebx, reg->ecx, reg->edx);
-        break;
-
-    case SYS_STAT:
-        reg->eax = sys_stat((char*)reg->ebx, (struct stat*)reg->ecx);
-        break;
-
-    case SYS_LSEEK:
-        reg->eax = sys_lseek(reg->ebx, reg->ecx, reg->edx);
-        break;
-
-    case SYS_GETPID:
-        reg->eax = sys_getpid();
-        break;
-
-    case SYS_MOUNT:
-        reg->eax = sys_mount(
-            (char*)reg->ebx, (char*)reg->ecx, (char*)reg->edx,
-            (unsigned long)reg->esi, (void*)reg->edi
-        );
-        break;
-
-    case SYS_SETUID:
-        reg->eax = sys_setuid((s32)reg->ebx);
-        break;
-
-    case SYS_GETUID:
-        reg->eax = sys_getuid();
-        break;
-
-    case SYS_FSTAT:
-        reg->eax = sys_fstat(reg->ebx, (struct stat*)reg->ecx);
-        break;
-
-    case SYS_KILL:
-        reg->eax = sys_kill((s32)reg->ebx, (s32)reg->ecx);
-        break;
-
-    case SYS_MKDIR:
-        reg->eax = sys_mkdir((char*)reg->ebx, (s32)reg->ecx);
-        break;
-
-    case SYS_RMDIR:
-        reg->eax = sys_rmdir((char*)reg->ebx);
-        break;
-
-    case SYS_SETGID:
-        reg->eax = sys_setgid(reg->ebx);
-        break;
-
-    case SYS_GETGID:
-        reg->eax = sys_getgid();
+    case SYS_FORK:
+        ret = sys_fork(reg);
         break;
 
     case SYS_SIGNAL:
-        reg->eax = -ENOSYS;
-        break;
-
-    case SYS_GETEUID:
-        reg->eax = sys_geteuid();
-        break;
-
-    case SYS_GETEGID:
-        reg->eax = sys_getegid();
-        break;
-
-    case SYS_UMOUNT:
-        reg->eax = sys_umount((char*)reg->ebx, reg->ecx);
-        break;
-
-    case SYS_SETREUID:
-        reg->eax = sys_setreuid(reg->ebx, reg->ecx);
-        break;
-
-    case SYS_SETREGID:
-        reg->eax = sys_setregid(reg->ebx, reg->ecx);
-        break;
-
-    case SYS_SETGROUPS:
-        reg->eax = sys_setgroups((gid_t*)reg->ebx, reg->ecx);
-        break;
-
-    case SYS_GETGROUPS:
-        reg->eax = sys_getgroups((gid_t*)reg->ebx, reg->ecx);
-        break;
-
-    case SYS_READDIR:
-        reg->eax = sys_readdir(reg->ebx, (void*)reg->ecx, (s32)reg->edx);
-        break;
-
-    case SYS_TRUNCATE:
-        reg->eax = sys_truncate((char*)reg->ebx, (off_t)reg->ecx);
-        break;
-
-    case SYS_FTRUNCATE:
-        reg->eax = sys_ftruncate((s32)reg->ebx, (off_t)reg->ecx);
-        break;
-
-    case SYS_SOCKETCALL:
-        reg->eax = sys_socketcall((s32)reg->ebx, (unsigned long*)reg->ecx);
-        break;
-
-    case SYS_INIT_MODULE:
-        reg->eax = sys_init_module((char*)reg->ebx, reg->ecx, (char*)reg->edx);
-        break;
-
-    case SYS_DELETE_MODULE:
-        reg->eax = sys_delete_module((char*)reg->ebx, reg->ecx);
-        break;
-
-    case SYS_FCHDIR:
-        reg->eax = sys_fchdir(reg->ebx);
-        break;
-
-    case SYS_NANOSLEEP:
-        reg->eax = sys_nanosleep();
-        break;
-
-    case SYS_SETRESUID:
-        reg->eax = sys_setresuid(reg->ebx, reg->ecx, reg->edx);
-        break;
-
     case SYS_GETRESUID:
-        reg->eax = -ENOSYS;
-        break;
-
-    case SYS_SETRESGID:
-        reg->eax = sys_setresgid(reg->ebx, reg->ecx, reg->edx);
-        break;
-
     case SYS_GETRESGID:
-        reg->eax = -ENOSYS;
+        ret = -ENOSYS;
         break;
 
-    case SYS_GETCWD:
-        reg->eax = sys_getcwd((char*)reg->ebx, reg->ecx);
-        break;
-
-    default:
-        reg->eax = -EINVAL;
-        printk("Nothing...?\n");
-        break;
+    default: {
+        switch (entry->nargs) {
+        case 0:
+            ret = ((syscall_fn_0)entry->handler)();
+            break;
+        case 1:
+            ret = ((syscall_fn_1)entry->handler)(reg->ebx);
+            break;
+        case 2:
+            ret = ((syscall_fn_2)entry->handler)(reg->ebx, reg->ecx);
+            break;
+        case 3:
+            ret = ((syscall_fn_3)entry->handler)(reg->ebx, reg->ecx, reg->edx);
+            break;
+        case 5:
+            ret = ((syscall_fn_5
+            )entry->handler)(reg->ebx, reg->ecx, reg->edx, reg->esi, reg->edi);
+            break;
+        default:
+            ret = -ENOSYS;
+            break;
+        }
+    }
     }
 
+    reg->eax = ret;
     check_resched();
 }
