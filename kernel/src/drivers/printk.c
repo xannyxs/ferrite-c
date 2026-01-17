@@ -154,7 +154,8 @@ kfmt(char* buf, char const* fmt, va_list args)
 
 /* Public */
 
-__attribute__((target("general-regs-only"))) s32 printk(char const* fmt, ...)
+__attribute__((target("general-regs-only"), format(printf, 1, 2))) int
+printk(char const* fmt, ...)
 {
     cli();
 

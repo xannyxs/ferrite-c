@@ -104,8 +104,6 @@ proc_t* initproc(void);
 
 /* Main process */
 
-void shell_process(void);
-
 void init_process(void);
 
 #endif /* PROCESS_H */

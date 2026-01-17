@@ -1,6 +1,5 @@
 #include "net/unix.h"
 #include "drivers/printk.h"
-#include "ferrite/string.h"
 #include "fs/stat.h"
 #include "fs/vfs.h"
 #include "memory/kmalloc.h"
@@ -8,6 +7,7 @@
 #include "sys/process/process.h"
 
 #include <ferrite/errno.h>
+#include <ferrite/string.h>
 #include <ferrite/types.h>
 
 #define MAX_UNIX_SOCKETS 64
@@ -167,7 +167,7 @@ static int unix_bind(socket_t* s, void* addr, s32 addrlen)
         return -1;
     }
 
-    printk("node: 0x%x\n", sock_inode);
+    printk("node: 0x%x\n", (u32)sock_inode);
 
     return 0;
 }
@@ -185,10 +185,10 @@ static int unix_connect(socket_t* s, void* addr, int len)
     }
 
     printk(
-        "[CONNECT] Found inode=%x, i_ino=%d, i_sb=%x\n", node, node->i_ino,
-        node->i_sb
+        "[CONNECT] Found inode=%x, i_ino=%d, i_sb=%x\n", (u32)node,
+        (int)node->i_ino, (u32)node->i_sb
     );
-    printk("[CONNECT] node->u.i_socket=%x\n", node->u.i_socket);
+    printk("[CONNECT] node->u.i_socket=%x\n", (u32)node->u.i_socket);
 
     if (!S_ISSOCK(node->i_mode)) {
         inode_put(node);
@@ -201,8 +201,8 @@ static int unix_connect(socket_t* s, void* addr, int len)
     }
 
     printk(
-        "[CONNECT] server=%x, server->ops=%x, server->state=%d\n", server,
-        server->ops, server->state
+        "[CONNECT] server=%x, server->ops=%x, server->state=%d\n", (u32)server,
+        (u32)server->ops, server->state
     );
 
     s->conn = server;
@@ -263,7 +263,8 @@ static int unix_recvmsg(socket_t* s, void* buf, size_t len)
 static int unix_sendmsg(socket_t* s, void const* buf, size_t len)
 {
     printk(
-        "  [SENDMSG] socket=0x%x, state=%d, conn=0x%x\n", s, s->state, s->conn
+        "  [SENDMSG] socket=0x%x, state=%d, conn=0x%x\n", (u32)s, s->state,
+        (u32)s->conn
     );
 
     if (s->state != SS_CONNECTED) {

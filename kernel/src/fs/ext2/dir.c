@@ -397,8 +397,8 @@ repeat:
 
     if (!current->i_links_count) {
         printk(
-            "%s: Deleting nonexistent file (%u), %d", __func__, current->i_ino,
-            current->i_links_count
+            "%s: Deleting nonexistent file (%u), %d", __func__,
+            (int)current->i_ino, current->i_links_count
         );
 
         retval = -ENOENT;

@@ -144,7 +144,7 @@ int ext2_read_inode(vfs_inode_t* dir)
     } else if (S_ISCHR(dir->i_mode)) {
         dir->i_op = &chrdev_inode_ops;
     } else {
-        printk("Warning: no operation for inode %d\n", dir->i_ino);
+        printk("Warning: no operation for inode %d\n", (int)dir->i_ino);
     }
 
     return 0;
