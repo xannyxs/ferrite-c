@@ -47,14 +47,11 @@ __attribute__((noreturn)) void kmain(u32 magic, multiboot_info_t* mbd)
     memblock_deactivate();
     vmalloc_init();
 
-    inode_cache_init();
     ide_init();
     // FUTURE: Will add other type of devices
 
     mount_root_device((char*)mbd->cmdline);
     vfs_init();
-
-    ptables_init();
 
     sti();
 

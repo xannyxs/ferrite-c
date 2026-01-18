@@ -279,7 +279,7 @@ s32 ide_write(
 )
 {
     if (!d->d_data) {
-        printk("d_data is NULL\n", d->d_data);
+        printk("d_data is NULL\n");
         return -1;
     }
     if (len < count * d->d_sector_size) {

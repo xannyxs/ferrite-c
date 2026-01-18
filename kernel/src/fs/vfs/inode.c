@@ -6,14 +6,7 @@
 #include <ferrite/types.h>
 #include <lib/stdlib.h>
 
-vfs_inode_t inode_cache[MAX_INODES];
-
-void inode_cache_init(void)
-{
-    for (int i = 0; i < MAX_INODES; i++) {
-        inode_cache[i].i_count = 0;
-    }
-}
+vfs_inode_t inode_cache[MAX_INODES] = { 0 };
 
 vfs_inode_t* inode_get_empty(vfs_superblock_t* sb, unsigned long ino)
 {

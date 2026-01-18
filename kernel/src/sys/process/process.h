@@ -60,8 +60,6 @@ void schedule(void);
 
 void create_initial_process(void);
 
-void ptables_init(void);
-
 void yield(void);
 
 /**
@@ -105,8 +103,6 @@ proc_t* myproc(void);
 proc_t* initproc(void);
 
 /* Main process */
-
-void shell_process(void);
 
 void init_process(void);
 

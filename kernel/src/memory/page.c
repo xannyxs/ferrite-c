@@ -34,7 +34,7 @@ void free_page(void* ptr)
         return;
     }
     if ((u32)ptr & (PAGE_SIZE - 1)) {
-        printk("free_page: ptr 0x%lx not page-aligned\n", (u32)ptr);
+        printk("free_page: ptr 0x%lx not page-aligned\n", (unsigned long)ptr);
         return;
     }
 

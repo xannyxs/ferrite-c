@@ -87,7 +87,7 @@ static module_t* module_create(char const* name, void* code, size_t size)
 
     printk(
         "Registered module '%s' at 0x%x (%u bytes)\n", mod->name,
-        mod->code_addr, mod->code_size
+        (u32)mod->code_addr, mod->code_size
     );
 
     return mod;
@@ -161,8 +161,8 @@ void module_list(void)
         }
 
         printk(
-            "%s  0x%x  %u  %s\n", tmp->name, tmp->code_addr, tmp->code_size,
-            state_str
+            "%s  0x%x  %u  %s\n", tmp->name, (u32)tmp->code_addr,
+            tmp->code_size, state_str
         );
 
         tmp = tmp->next;

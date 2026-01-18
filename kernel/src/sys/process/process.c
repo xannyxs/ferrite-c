@@ -7,7 +7,6 @@
 #include "fs/vfs.h"
 #include "lib/stdlib.h"
 #include "memory/consts.h"
-#include "memory/kmalloc.h"
 #include "memory/page.h"
 #include "memory/vmm.h"
 #include "sys/file/file.h"
@@ -21,7 +20,7 @@
 extern vfs_inode_t* root_inode;
 extern u32 page_directory[1024];
 
-proc_t ptables[NUM_PROC];
+proc_t ptables[NUM_PROC] = { 0 };
 proc_t* current_proc = NULL;
 context_t* scheduler_context;
 s32 pid_counter = 1;
@@ -109,13 +108,6 @@ inline proc_t* find_process(pid_t pid)
     }
 
     return NULL;
-}
-
-inline void ptables_init(void)
-{
-    for (s32 i = 0; i < NUM_PROC; i += 1) {
-        ptables[i].state = UNUSED;
-    }
 }
 
 inline void check_resched(void)

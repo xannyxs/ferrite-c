@@ -1,5 +1,3 @@
-#include "drivers/console.h"
-#include "drivers/keyboard.h"
 #include "drivers/printk.h"
 #include "sys/process/process.h"
 
@@ -19,20 +17,8 @@ void process_list(void)
             printk(
                 "%3d  %8s  %16s  %4d  0x%08x\n", ptables[i].pid,
                 state_str[ptables[i].state], ptables[i].name, ppid,
-                ptables[i].parent
+                (u32)ptables[i].parent
             );
         }
-    }
-}
-
-void shell_process(void)
-{
-    while (1) {
-        while (!tty_is_empty()) {
-            u8 scancode = tty_read();
-            keyboard_put(scancode);
-        }
-
-        yield();
     }
 }
