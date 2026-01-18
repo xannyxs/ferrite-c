@@ -14,7 +14,7 @@ TEST(buddy_single_page_alloc)
     paddr_t page = (paddr_t)buddy_alloc(0); // Order 0 = 1 page
     ASSERT(page != 0, "Should allocate a page");
     ASSERT((page & (PAGE_SIZE - 1)) == 0, "Page should be aligned");
-    printk("  Allocated page at paddr: %x\n", page);
+    printk("  Allocated page at paddr: %x\n", (u32)page);
 
     buddy_dealloc(page, 0);
     printk("  Freed page successfully\n");
@@ -32,9 +32,9 @@ TEST(buddy_multiple_orders)
     ASSERT(page2 != 0, "Order 1 allocation should succeed");
     ASSERT(page3 != 0, "Order 2 allocation should succeed");
 
-    printk("  Order 0: %x\n", page1);
-    printk("  Order 1: %x\n", page2);
-    printk("  Order 2: %x\n", page3);
+    printk("  Order 0: %x\n", (u32)page1);
+    printk("  Order 1: %x\n", (u32)page2);
+    printk("  Order 2: %x\n", (u32)page3);
 
     buddy_dealloc(page1, 0);
     buddy_dealloc(page2, 1);
@@ -47,14 +47,14 @@ TEST(buddy_alloc_free_alloc)
     printk("  Testing alloc -> free -> alloc...\n");
     paddr_t page1 = (paddr_t)buddy_alloc(0);
     ASSERT(page1 != 0, "First allocation should succeed");
-    printk("  First alloc: %x\n", page1);
+    printk("  First alloc: %x\n", (u32)page1);
 
     buddy_dealloc(page1, 0);
     printk("  Freed page\n");
 
     paddr_t page2 = (paddr_t)buddy_alloc(0);
     ASSERT(page2 != 0, "Second allocation should succeed");
-    printk("  Second alloc: %x\n", page2);
+    printk("  Second alloc: %x\n", (u32)page2);
 
     // Should get the same page back (LIFO behavior)
     ASSERT(page1 == page2, "Should reuse the freed page");
@@ -71,7 +71,7 @@ TEST(buddy_alignment)
         printk("  Attempting to allocate order %u...\n", order);
         paddr_t block = (paddr_t)buddy_alloc(order);
 
-        printk("    Allocated block: %x\n", block);
+        printk("    Allocated block: %x\n", (u32)block);
 
         if (block == 0) {
             printk("    Allocation FAILED - skipping\n");
@@ -79,9 +79,9 @@ TEST(buddy_alignment)
         }
 
         size_t block_size = PAGE_SIZE << order;
-        printk("    Block size: %u (0x%x)\n", block_size, block_size);
-        printk("    Block address: 0x%x\n", block);
-        printk("    Alignment mask: 0x%x\n", block_size - 1);
+        printk("    Block size: %u (0x%x)\n", block_size, (u32)block_size);
+        printk("    Block address: 0x%x\n", (u32)block);
+        printk("    Alignment mask: 0x%x\n", (u32)(block_size - 1));
         printk(
             "    block & (block_size - 1) = 0x%x\n", block & (block_size - 1)
         );

@@ -15,6 +15,11 @@ static Writer WRITER = WRITER_NEW;
 
 /* Private */
 
+static void writer_set_colour(Writer* self, u8 fg, u8 bg)
+{
+    self->colour = VGA_ENTRY_COLOUR(fg, bg);
+}
+
 static void writer_clear_char(Writer* self)
 {
     if (self->column > 0) {
@@ -117,3 +122,5 @@ void vga_puts(char const* str) { writer_write_string(&WRITER, str); }
 void vga_clear(void) { writer_clear_screen(&WRITER); }
 
 void vga_delete(void) { writer_clear_char(&WRITER); }
+
+void vga_setcolour(u8 fg, u8 bg) { writer_set_colour(&WRITER, fg, bg); }

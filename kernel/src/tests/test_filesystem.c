@@ -399,7 +399,7 @@ TEST(fs_readdir_basic)
     int count = 0;
     int ret;
     while ((ret = k_readdir(dirfd, &dirent, 1)) > 0) {
-        printk("  Entry: %s (inode=%d)\n", dirent.d_name, dirent.d_ino);
+        printk("  Entry: %s (inode=%d)\n", dirent.d_name, (int)dirent.d_ino);
         count++;
     }
 
