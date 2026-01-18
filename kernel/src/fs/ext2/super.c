@@ -5,6 +5,7 @@
 #include "lib/math.h"
 #include "memory/kmalloc.h"
 
+#include <ferrite/errno.h>
 #include <ferrite/string.h>
 #include <ferrite/types.h>
 #include <lib/stdlib.h>
@@ -28,14 +29,21 @@ s32 ext2_bgd_write(vfs_superblock_t* sb, u32 bgd_index)
     u32 offset
         = sizeof(ext2_block_group_descriptor_t) * (bgd_index % bgd_per_sector);
 
-    u8 buff[d->d_sector_size];
+    u8* buff = kmalloc(d->d_sector_size);
+    if (!buff) {
+        return -ENOMEM;
+    }
+
     if (d->d_op->read(d, sector, 1, buff, d->d_sector_size) < 0) {
+        kfree(buff);
         return -1;
     }
 
     memcpy(&buff[offset], bgd, sizeof(ext2_block_group_descriptor_t));
 
-    return d->d_op->write(d, sector, 1, buff, d->d_sector_size);
+    int retval = d->d_op->write(d, sector, 1, buff, d->d_sector_size);
+    kfree(buff);
+    return retval;
 }
 
 static s32 ext2_bgd_read(vfs_superblock_t* sb, u32 num_block_groups)

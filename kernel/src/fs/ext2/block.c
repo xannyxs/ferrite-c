@@ -2,6 +2,7 @@
 #include "drivers/printk.h"
 #include "fs/ext2/ext2.h"
 #include "fs/vfs.h"
+#include "memory/kmalloc.h"
 
 #include <ferrite/errno.h>
 #include <ferrite/string.h>
@@ -22,7 +23,7 @@ s32 ext2_read_block(vfs_inode_t const* node, u8* buff, u32 block_num)
     return d->d_op->read(d, sector_pos, count, buff, sb->s_blocksize);
 }
 
-s32 ext2_write_block(
+int ext2_write_block(
     vfs_inode_t* node,
     u32 block_num,
     void const* buff,
@@ -30,6 +31,7 @@ s32 ext2_write_block(
     u32 len
 )
 {
+    int retval = 0;
     vfs_superblock_t* sb = node->i_sb;
     block_device_t* d = get_device(sb->s_dev);
     if (!d || !d->d_op || !d->d_op->write || !d->d_op->read) {
@@ -41,13 +43,22 @@ s32 ext2_write_block(
     u32 sector_pos = start_byte / d->d_sector_size;
     u32 count = sb->s_blocksize / d->d_sector_size;
 
-    u8 tmp[sb->s_blocksize];
-    int retval = d->d_op->read(d, sector_pos, count, tmp, sb->s_blocksize);
-    if (retval < 0) {
-        return retval;
+    u8* tmp = kmalloc(sb->s_blocksize);
+    if (!tmp) {
+        return -ENOMEM;
+    }
+
+    if (offset != 0 || len < sb->s_blocksize) {
+        retval = d->d_op->read(d, sector_pos, count, tmp, sb->s_blocksize);
+        if (retval < 0) {
+            kfree(tmp);
+            return retval;
+        }
     }
 
     memcpy(&tmp[offset], buff, len);
+    retval = d->d_op->write(d, sector_pos, count, tmp, sb->s_blocksize);
 
-    return d->d_op->write(d, sector_pos, count, tmp, sb->s_blocksize);
+    kfree(tmp);
+    return retval;
 }

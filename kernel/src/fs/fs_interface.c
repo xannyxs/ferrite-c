@@ -58,7 +58,11 @@ SYSCALL_ATTR int sys_open(char const* path, int flags, int mode)
             parent_len = 1;
         }
 
-        char parent_path[parent_len + 1];
+        char* parent_path = kmalloc(parent_len + 1);
+        if (!parent_path) {
+            return -ENOMEM;
+        }
+
         memcpy(parent_path, path, parent_len);
         parent_path[parent_len] = '\0';
 
@@ -66,6 +70,7 @@ SYSCALL_ATTR int sys_open(char const* path, int flags, int mode)
         size_t name_len = strlen(name);
 
         vfs_inode_t* parent = vfs_lookup(myproc()->root, parent_path);
+        kfree(parent_path);
         if (!parent) {
             return -ENOENT;
         }
@@ -188,7 +193,11 @@ SYSCALL_ATTR int sys_unlink(char const* path)
         parent_len = 1;
     }
 
-    char parent_path[parent_len + 1];
+    char* parent_path = kmalloc(parent_len + 1);
+    if (!parent_path) {
+        return -ENOMEM;
+    }
+
     memcpy(parent_path, path, parent_len);
     parent_path[parent_len] = '\0';
 
@@ -196,6 +205,7 @@ SYSCALL_ATTR int sys_unlink(char const* path)
     size_t name_len = strlen(name);
 
     vfs_inode_t* parent = vfs_lookup(root, parent_path);
+    kfree(parent_path);
     if (!parent) {
         return -ENOTDIR;
     }
@@ -420,7 +430,11 @@ SYSCALL_ATTR int sys_mkdir(char const* pathname, int mode)
         parent_len = 1;
     }
 
-    char parent_path[parent_len + 1];
+    char* parent_path = kmalloc(parent_len + 1);
+    if (!parent_path) {
+        return -ENOMEM;
+    }
+
     memcpy(parent_path, pathname, parent_len);
     parent_path[parent_len] = '\0';
 
@@ -428,6 +442,8 @@ SYSCALL_ATTR int sys_mkdir(char const* pathname, int mode)
     size_t name_len = strlen(name);
 
     vfs_inode_t* parent = vfs_lookup(myproc()->root, parent_path);
+    kfree(parent_path);
+
     if (!parent) {
         return -ENOENT;
     }
@@ -467,7 +483,11 @@ SYSCALL_ATTR int sys_rmdir(char const* path)
         parent_len = 1;
     }
 
-    char parent_path[parent_len + 1];
+    char* parent_path = kmalloc(parent_len + 1);
+    if (!parent_path) {
+        return -ENOMEM;
+    }
+
     memcpy(parent_path, path, parent_len);
     parent_path[parent_len] = '\0';
 
@@ -475,6 +495,7 @@ SYSCALL_ATTR int sys_rmdir(char const* path)
     size_t name_len = strlen(name);
 
     vfs_inode_t* parent = vfs_lookup(myproc()->root, parent_path);
+    kfree(parent_path);
     if (!parent) {
         return -ENOTDIR;
     }

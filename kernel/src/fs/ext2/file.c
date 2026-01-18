@@ -6,6 +6,7 @@
 #include "fs/stat.h"
 #include "fs/vfs.h"
 #include "lib/math.h"
+#include "memory/kmalloc.h"
 #include "sys/file/fcntl.h"
 
 #include <ferrite/errno.h>
@@ -61,7 +62,10 @@ int ext2_file_read(vfs_inode_t* node, file_t* file, void* buff, s32 count)
     u32 const sectors_per_block = sb->s_blocksize / d->d_sector_size;
     u32 offset = file->f_pos;
     s32 bytes_copied = 0;
-    u8 block_buffer[sb->s_blocksize];
+    u8* block_buffer = kmalloc(sb->s_blocksize);
+    if (!block_buffer) {
+        return -ENOMEM;
+    }
 
     while (bytes_copied < count && offset < ext2_node->i_size) {
         u32 i = offset / sb->s_blocksize;
@@ -82,11 +86,8 @@ int ext2_file_read(vfs_inode_t* node, file_t* file, void* buff, s32 count)
                 d, sector_pos, sectors_per_block, block_buffer, sb->s_blocksize
             )
             < 0) {
-            printk(
-                "%s: failed to read from device (LBA %u, "
-                "count %u)\n",
-                __func__, sector_pos, 1
-            );
+
+            kfree(block_buffer);
             return -1;
         }
 
@@ -99,6 +100,7 @@ int ext2_file_read(vfs_inode_t* node, file_t* file, void* buff, s32 count)
     }
 
     file->f_pos = offset;
+    kfree(block_buffer);
     return (s32)bytes_copied;
 }
 

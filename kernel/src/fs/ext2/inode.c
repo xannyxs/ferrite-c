@@ -38,6 +38,11 @@ s32 ext2_write_inode(vfs_inode_t* dir)
         return -1;
     }
 
+    u8* buff = kmalloc(d->d_sector_size);
+    if (!buff) {
+        return -ENOMEM;
+    }
+
     ext2_super_t* es = sb->u.ext2_sb.s_es;
     ext2_inode_t* ext2_inode = dir->u.i_ext2;
 
@@ -53,8 +58,8 @@ s32 ext2_write_inode(vfs_inode_t* dir)
     u32 sector_pos = absolute_addr / d->d_sector_size;
     u32 offset_in_sector = absolute_addr % d->d_sector_size;
 
-    u8 buff[d->d_sector_size];
     if (d->d_op->read(d, sector_pos, 1, buff, d->d_sector_size) < 0) {
+        kfree(buff);
         return -1;
     }
 
@@ -75,11 +80,12 @@ s32 ext2_write_inode(vfs_inode_t* dir)
     ext2_inode->i_links_count = dir->i_links_count;
 
     memcpy(disk_inode, ext2_inode, es->s_inode_size);
-
     if (d->d_op->write(d, sector_pos, 1, buff, d->d_sector_size) < 0) {
+        kfree(buff);
         return -1;
     }
 
+    kfree(buff);
     return 0;
 }
 
@@ -100,6 +106,11 @@ int ext2_read_inode(vfs_inode_t* dir)
     ext2_inode_t* node = dir->u.i_ext2;
     vfs_superblock_t* sb = dir->i_sb;
 
+    u8* buff = kmalloc(d->d_sector_size);
+    if (!buff) {
+        return -ENOMEM;
+    }
+
     u32 block_group = (dir->i_ino - 1) / sb->u.ext2_sb.s_es->s_inodes_per_group;
     ext2_block_group_descriptor_t* bgd
         = &sb->u.ext2_sb.s_group_desc[block_group];
@@ -109,14 +120,15 @@ int ext2_read_inode(vfs_inode_t* dir)
     u32 addr = (bgd->bg_inode_table * sb->s_blocksize) + offset_in_table;
     u32 sector_pos = addr / d->d_sector_size;
 
-    u8 buff[d->d_sector_size];
     if (d->d_op->read(d, sector_pos, 1, buff, d->d_sector_size) < 0) {
+        kfree(buff);
         return -1;
     }
 
     u32 offset = addr % d->d_sector_size;
     if (offset > d->d_sector_size) {
         printk("%s: offset it bigger than sector size\n", __func__);
+        kfree(buff);
         return -1;
     }
 
@@ -147,5 +159,6 @@ int ext2_read_inode(vfs_inode_t* dir)
         printk("Warning: no operation for inode %d\n", (int)dir->i_ino);
     }
 
+    kfree(buff);
     return 0;
 }

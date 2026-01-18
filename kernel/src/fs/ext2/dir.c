@@ -70,6 +70,11 @@ static s32 ext2_is_empty_dir(vfs_inode_t const* node)
     ext2_super_t* es = sb->u.ext2_sb.s_es;
     u32 pos = 0;
 
+    u8* buff = kmalloc(sb->s_blocksize);
+    if (!buff) {
+        return -ENOMEM;
+    }
+
     while (pos < node->i_size) {
         unsigned long offset = pos & (sb->s_blocksize - 1);
         unsigned long block = (pos) >> (es->s_log_block_size + 10);
@@ -79,9 +84,9 @@ static s32 ext2_is_empty_dir(vfs_inode_t const* node)
         }
 
         u32 block_num = node->u.i_ext2->i_block[block];
-        u8 buff[sb->s_blocksize];
 
         if (ext2_read_block(node, buff, block_num) < 0) {
+            kfree(buff);
             return -EIO;
         }
 
@@ -89,19 +94,23 @@ static s32 ext2_is_empty_dir(vfs_inode_t const* node)
             ext2_entry_t* entry = (ext2_entry_t*)&buff[offset];
 
             if (entry->rec_len == 0 || entry->rec_len > sb->s_blocksize) {
+                kfree(buff);
                 return -EIO;
             }
 
             if (entry->inode) {
                 if (entry->name_len > 2) {
+                    kfree(buff);
                     return -ENOTEMPTY;
                 }
 
                 if (entry->name[0] != '.') {
+                    kfree(buff);
                     return -ENOTEMPTY;
                 }
 
                 if (entry->name_len == 2 && entry->name[1] != '.') {
+                    kfree(buff);
                     return -ENOTEMPTY;
                 }
             }
@@ -111,10 +120,11 @@ static s32 ext2_is_empty_dir(vfs_inode_t const* node)
         }
     }
 
+    kfree(buff);
     return 0;
 }
 
-s32 ext2_readdir(vfs_inode_t* node, file_t* file, dirent_t* dirent, s32 count)
+int ext2_readdir(vfs_inode_t* node, file_t* file, dirent_t* dirent, int count)
 {
     (void)count;
 
@@ -126,25 +136,32 @@ s32 ext2_readdir(vfs_inode_t* node, file_t* file, dirent_t* dirent, s32 count)
     vfs_superblock_t* sb = node->i_sb;
     ext2_super_t* es = sb->u.ext2_sb.s_es;
 
+    u8* buff = kmalloc(sb->s_blocksize);
+    if (!buff) {
+        return -ENOMEM;
+    }
+
     while (file->f_pos < (long)node->i_size) {
         unsigned long offset = file->f_pos & (sb->s_blocksize - 1);
         unsigned long block = (file->f_pos) >> (es->s_log_block_size + 10);
 
         if (block >= 12) {
+            kfree(buff);
             return -ENOSYS;
         }
 
         u32 block_num = node->u.i_ext2->i_block[block];
-        u8 buff[sb->s_blocksize];
 
         int retval = ext2_read_block(node, buff, block_num);
         if (retval < 0) {
+            kfree(buff);
             return retval;
         }
 
         entry = (ext2_entry_t*)&buff[offset];
         while (offset < sb->s_blocksize && file->f_pos < (long)node->i_size) {
             if (entry->rec_len == 0 || entry->rec_len > sb->s_blocksize) {
+                kfree(buff);
                 return -EIO;
             }
 
@@ -159,6 +176,7 @@ s32 ext2_readdir(vfs_inode_t* node, file_t* file, dirent_t* dirent, s32 count)
                 dirent->d_reclen = entry->name_len;
                 dirent->d_off = file->f_pos;
 
+                kfree(buff);
                 return entry->name_len;
             }
 
@@ -166,6 +184,7 @@ s32 ext2_readdir(vfs_inode_t* node, file_t* file, dirent_t* dirent, s32 count)
         }
     }
 
+    kfree(buff);
     return 0;
 }
 
@@ -224,7 +243,11 @@ int ext2_mkdir(vfs_inode_t* dir, char const* name, int len, int mode)
         return err;
     }
 
-    u8 buff[sb->s_blocksize];
+    u8* buff = kmalloc(sb->s_blocksize);
+    if (!buff) {
+        return -ENOMEM;
+    }
+
     memset(buff, 0, sb->s_blocksize);
 
     u8 current_buf[sizeof(ext2_entry_t) + 1];
@@ -262,12 +285,14 @@ int ext2_mkdir(vfs_inode_t* dir, char const* name, int len, int mode)
 
     err = d->d_op->write(d, sector_pos, count, buff, sb->s_blocksize);
     if (err < 0) {
-        return -1;
+        kfree(buff);
+        return err;
     }
 
     err = sb->s_op->write_inode(new);
     if (err < 0) {
-        return -1;
+        kfree(buff);
+        return err;
     }
 
     inode_put(new);
@@ -277,6 +302,7 @@ int ext2_mkdir(vfs_inode_t* dir, char const* name, int len, int mode)
     dir->i_ctime = now;
     dir->i_mtime = now;
 
+    kfree(buff);
     err = sb->s_op->write_inode(dir);
     return err;
 }

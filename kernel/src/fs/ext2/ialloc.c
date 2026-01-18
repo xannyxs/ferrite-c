@@ -34,11 +34,20 @@ vfs_inode_t* ext2_new_inode(vfs_inode_t const* dir, int mode, int* err)
         return NULL;
     }
 
-    u8 bitmap[sb->s_blocksize];
+    u8* bitmap = kmalloc(sb->s_blocksize);
+    if (!bitmap) {
+        if (err) {
+            *err = -ENOMEM;
+        }
+        return NULL;
+    }
+
     if (ext2_read_block((vfs_inode_t*)dir, bitmap, bgd->bg_inode_bitmap) < 0) {
         if (err) {
             *err = -EIO;
         }
+
+        kfree(bitmap);
         return NULL;
     }
 
@@ -48,14 +57,16 @@ vfs_inode_t* ext2_new_inode(vfs_inode_t const* dir, int mode, int* err)
         if (err) {
             *err = -ENOSPC;
         }
+
+        kfree(bitmap);
         return NULL;
     }
 
     int node_num = (s32)(bit + (es->s_inodes_per_group * bgd_index) + 1);
-
     int oldbit = atomic_set_bit((s32)bit, (void*)bitmap);
     if (oldbit) {
         printk("%s: Warning: inode %u already allocated\n", __func__, node_num);
+        kfree(bitmap);
         return NULL;
     }
 
@@ -75,6 +86,7 @@ vfs_inode_t* ext2_new_inode(vfs_inode_t const* dir, int mode, int* err)
         if (err) {
             *err = -EIO;
         }
+        kfree(bitmap);
         return NULL;
     }
 
@@ -82,6 +94,7 @@ vfs_inode_t* ext2_new_inode(vfs_inode_t const* dir, int mode, int* err)
         if (err) {
             *err = -EIO;
         }
+        kfree(bitmap);
         return NULL;
     }
 
@@ -89,6 +102,7 @@ vfs_inode_t* ext2_new_inode(vfs_inode_t const* dir, int mode, int* err)
         if (err) {
             *err = -EIO;
         }
+        kfree(bitmap);
         return NULL;
     }
 
@@ -97,6 +111,7 @@ vfs_inode_t* ext2_new_inode(vfs_inode_t const* dir, int mode, int* err)
         if (err) {
             *err = -ENOMEM;
         }
+        kfree(bitmap);
         return NULL;
     }
 
@@ -106,6 +121,7 @@ vfs_inode_t* ext2_new_inode(vfs_inode_t const* dir, int mode, int* err)
             *err = -ENOMEM;
         }
 
+        kfree(bitmap);
         inode_put(inode);
         return NULL;
     }
@@ -138,10 +154,13 @@ vfs_inode_t* ext2_new_inode(vfs_inode_t const* dir, int mode, int* err)
         ext2_inode->i_block[i] = 0;
     }
 
+    inode->u.i_ext2 = ext2_inode;
+
     if (err) {
         *err = 0;
     }
 
+    kfree(bitmap);
     return inode;
 }
 
@@ -151,22 +170,27 @@ int ext2_free_inode(vfs_inode_t* dir)
     block_device_t* d = get_device(sb->s_dev);
     ext2_super_t* es = sb->u.ext2_sb.s_es;
 
-    u32 bgd_index = (dir->i_ino - 1) / es->s_inodes_per_group;
-    ext2_block_group_descriptor_t* bgd = &sb->u.ext2_sb.s_group_desc[bgd_index];
+    u32 bgd_count = CEIL_DIV(es->s_inodes_count, es->s_inodes_per_group);
+    ext2_block_group_descriptor_t* bgd = &sb->u.ext2_sb.s_group_desc[bgd_count];
     if (!bgd) {
         return -ENOSPC;
     }
 
-    u8 bitmap[sb->s_blocksize];
-    if (ext2_read_block((vfs_inode_t*)dir, bitmap, bgd->bg_inode_bitmap) < 0) {
+    u8* bitmap = kmalloc(sb->s_blocksize);
+    if (!bitmap) {
+        return -ENOMEM;
+    }
+
+    if (ext2_read_block(dir, bitmap, bgd->bg_inode_bitmap) < 0) {
+        kfree(bitmap);
         return -EIO;
     }
 
     unsigned long bit = (dir->i_ino - 1) % es->s_inodes_per_group;
     int oldbit = atomic_clear_bit((s32)bit, (void*)bitmap);
     if (!oldbit) {
-        printk("%s: Race condition on bit %d, retrying\n", __func__, (int)bit);
-        return -1;
+        kfree(bitmap);
+        return -EALREADY;
     }
 
     bgd->bg_free_inodes_count += 1;
@@ -182,16 +206,20 @@ int ext2_free_inode(vfs_inode_t* dir)
         )
         < 0) {
 
+        kfree(bitmap);
         return -EIO;
     }
 
-    if (ext2_bgd_write(sb, bgd_index) < 0) {
+    if (ext2_bgd_write(sb, bgd_count) < 0) {
+        kfree(bitmap);
         return -EIO;
     }
 
     if (sb->s_op->write_super(sb) < 0) {
+        kfree(bitmap);
         return -EIO;
     }
 
+    kfree(bitmap);
     return 0;
 }

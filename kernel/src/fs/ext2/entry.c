@@ -5,10 +5,11 @@
 #include "lib/math.h"
 #include "memory/kmalloc.h"
 
+#include <ferrite/errno.h>
 #include <ferrite/string.h>
 #include <ferrite/types.h>
 
-s32 ext2_delete_entry(vfs_inode_t* dir, ext2_entry_t* entry)
+int ext2_delete_entry(vfs_inode_t* dir, ext2_entry_t* entry)
 {
     block_device_t* d = get_device(dir->i_sb->s_dev);
     if (!d || !d->d_op || !d->d_op->read) {
@@ -20,115 +21,151 @@ s32 ext2_delete_entry(vfs_inode_t* dir, ext2_entry_t* entry)
     vfs_superblock_t* sb = dir->i_sb;
 
     u32 const count = sb->s_blocksize / d->d_sector_size;
-
     u32 blocks = (dir->i_size + sb->s_blocksize - 1) / sb->s_blocksize;
+
+    u8* buff = kmalloc(sb->s_blocksize);
+    if (!buff) {
+        return -ENOMEM;
+    }
+
     for (int i = 0; (u32)i < blocks && i < 12; i += 1) {
         if (!node->i_block[i]) {
             break;
         }
-
         u32 addr = node->i_block[i] * sb->s_blocksize;
         u32 sector_pos = addr / d->d_sector_size;
 
-        u8 buff[sb->s_blocksize];
         if (d->d_op->read(d, sector_pos, count, buff, sb->s_blocksize) < 0) {
-            return -1;
+            kfree(buff);
+            return -EIO;
         }
 
         u32 offset = 0;
-        u32 prev_offset = 0;
+        ext2_entry_t* prev = NULL;
+
         while (offset < sb->s_blocksize) {
             ext2_entry_t* e = (ext2_entry_t*)&buff[offset];
+
+            if (e->rec_len == 0 || e->rec_len + offset > sb->s_blocksize) {
+                kfree(buff);
+                return -EUCLEAN;
+            }
 
             if (entry->name_len == e->name_len
                 && strncmp((char*)entry->name, (char*)e->name, e->name_len)
                     == 0) {
 
-                ext2_entry_t* prev = (ext2_entry_t*)&buff[prev_offset];
-                prev->rec_len += e->rec_len;
+                if (prev) {
+                    prev->rec_len += e->rec_len;
+                } else {
+                    e->inode = 0;
+                }
 
                 if (d->d_op->write(d, sector_pos, count, buff, sb->s_blocksize)
                     < 0) {
-                    return -1;
+                    kfree(buff);
+                    return -EIO;
                 }
-
+                kfree(buff);
                 return 0;
             }
 
-            prev_offset = offset;
+            prev = e;
             offset += e->rec_len;
         }
     }
 
-    return -1;
+    kfree(buff);
+    return -ENOENT;
 }
 
-// TODO: If all blocks are full it should grow
 s32 ext2_write_entry(vfs_inode_t* dir, ext2_entry_t* entry)
 {
     block_device_t* d = get_device(dir->i_dev);
-    if (!d || !d->d_op || !d->d_op->write) {
-        printk("%s: device has no write operation\n", __func__);
-        return -1;
+    if (!d || !d->d_op || !d->d_op->write || !d->d_op->read) {
+        return -EIO;
     }
 
     vfs_superblock_t* sb = dir->i_sb;
     ext2_inode_t* ext2_node = dir->u.i_ext2;
-    if (sb->s_op->read_inode(dir) < 0) {
-        return -1;
-    }
-
     u32 const count = sb->s_blocksize / d->d_sector_size;
     u32 const max_block = CEIL_DIV(dir->i_size, sb->s_blocksize);
 
+    u8* buff = kmalloc(sb->s_blocksize);
+    if (!buff) {
+        return -ENOMEM;
+    }
+
+    u32 block_num = 0;
     u32 offset = 0;
     u32 sector_pos = 0;
     ext2_entry_t* e = NULL;
-    u8 buff[sb->s_blocksize];
-    for (u32 i = 0; i < max_block; i += 1) {
-        u32 const addr = ext2_node->i_block[i] * sb->s_blocksize;
-        sector_pos = addr / d->d_sector_size;
 
-        if (d->d_op->read(d, sector_pos, count, buff, sb->s_blocksize) < 0) {
-            return -1;
-        }
-
-        while (offset < sb->s_blocksize
-               && (i * sb->s_blocksize) + offset <= ext2_node->i_size) {
-            e = (ext2_entry_t*)&buff[offset];
-
-            u32 size_of_entry
-                = ALIGN(sizeof(ext2_entry_t) + e->name_len, sizeof(e->inode));
-            if (e->rec_len > size_of_entry) {
-                break;
-            }
-            offset += e->rec_len;
-        }
-
-        if (offset < sb->s_blocksize) {
+    for (block_num = 0; block_num < max_block && block_num < 12; block_num++) {
+        if (!ext2_node->i_block[block_num]) {
             break;
         }
 
+        u32 const addr = ext2_node->i_block[block_num] * sb->s_blocksize;
+        sector_pos = addr / d->d_sector_size;
+
+        if (d->d_op->read(d, sector_pos, count, buff, sb->s_blocksize) < 0) {
+            kfree(buff);
+            return -EIO;
+        }
+
         offset = 0;
-        e = NULL;
+        while (offset < sb->s_blocksize
+               && offset < dir->i_size - (block_num * sb->s_blocksize)) {
+            e = (ext2_entry_t*)&buff[offset];
+
+            if (e->rec_len == 0 || offset + e->rec_len > sb->s_blocksize) {
+                kfree(buff);
+                return -EUCLEAN;
+            }
+
+            u32 actual_size = ALIGN(sizeof(ext2_entry_t) + e->name_len, 4);
+
+            if (e->inode == 0 || e->rec_len > actual_size) {
+                goto found_space;
+            }
+
+            offset += e->rec_len;
+        }
     }
 
-    if (!e) {
-        return -1;
+    kfree(buff);
+    return -ENOSPC;
+
+found_space:
+    if (e->inode == 0) {
+        memcpy(&buff[offset], entry, sizeof(ext2_entry_t) + entry->name_len);
+    } else {
+        u32 const original_rec_len = e->rec_len;
+        u32 const actual_size = ALIGN(sizeof(ext2_entry_t) + e->name_len, 4);
+
+        e->rec_len = actual_size;
+        offset += actual_size;
+
+        entry->rec_len = original_rec_len - actual_size;
+        memcpy(&buff[offset], entry, sizeof(ext2_entry_t) + entry->name_len);
     }
 
-    u32 const original_rec_len = e->rec_len;
-    u32 const last_aligned_size
-        = ALIGN(sizeof(ext2_entry_t) + e->name_len, sizeof(entry->inode));
+    int retval = d->d_op->write(d, sector_pos, count, buff, sb->s_blocksize);
+    kfree(buff);
 
-    e->rec_len = last_aligned_size;
-    entry->rec_len = original_rec_len - last_aligned_size;
+    if (retval < 0) {
+        return -EIO;
+    }
 
-    offset += e->rec_len;
-    memcpy(&buff[offset], entry, sizeof(ext2_entry_t) + entry->name_len);
+    u32 new_size = (block_num * sb->s_blocksize) + offset + entry->rec_len;
+    if (new_size > dir->i_size) {
+        dir->i_size = new_size;
+        ext2_node->i_size = new_size;
 
-    if (d->d_op->write(d, sector_pos, count, buff, sb->s_blocksize) < 0) {
-        return -1;
+        if (sb->s_op->write_inode(dir) < 0) {
+            return -EIO;
+        }
     }
 
     return 0;
@@ -150,8 +187,13 @@ s32 ext2_find_entry_by_ino(
     vfs_superblock_t* sb = dir->i_sb;
 
     u32 const count = sb->s_blocksize / d->d_sector_size;
-
     u32 blocks = (dir->i_size + sb->s_blocksize - 1) / sb->s_blocksize;
+
+    u8* buff = kmalloc(sb->s_blocksize);
+    if (!buff) {
+        return -ENOMEM;
+    }
+
     for (int i = 0; (u32)i < blocks && i < 12; i += 1) {
         if (!node->i_block[i]) {
             break;
@@ -160,8 +202,8 @@ s32 ext2_find_entry_by_ino(
         u32 addr = node->i_block[i] * sb->s_blocksize;
         u32 sector_pos = addr / d->d_sector_size;
 
-        u8 buff[sb->s_blocksize];
         if (d->d_op->read(d, sector_pos, count, buff, sb->s_blocksize) < 0) {
+            kfree(buff);
             return -1;
         }
 
@@ -174,12 +216,14 @@ s32 ext2_find_entry_by_ino(
                 memcpy(
                     *result, &buff[offset], sizeof(ext2_entry_t) + e->name_len
                 );
+                kfree(buff);
                 return 0;
             }
             offset += e->rec_len;
         }
     }
 
+    kfree(buff);
     return -1;
 }
 
@@ -200,37 +244,50 @@ s32 ext2_find_entry(
     vfs_superblock_t* sb = dir->i_sb;
 
     u32 const count = sb->s_blocksize / d->d_sector_size;
-
     u32 blocks = (dir->i_size + sb->s_blocksize - 1) / sb->s_blocksize;
+
+    u8* buff = kmalloc(sb->s_blocksize);
+    if (!buff) {
+        return -ENOMEM;
+    }
+
     for (int i = 0; (u32)i < blocks && i < 12; i += 1) {
         if (!node->i_block[i]) {
             break;
         }
-
         u32 addr = node->i_block[i] * sb->s_blocksize;
         u32 sector_pos = addr / d->d_sector_size;
 
-        u8 buff[sb->s_blocksize];
         if (d->d_op->read(d, sector_pos, count, buff, sb->s_blocksize) < 0) {
-            return -1;
+            kfree(buff);
+            return -EIO;
         }
 
         u32 offset = 0;
         while (offset < sb->s_blocksize) {
             ext2_entry_t* e = (ext2_entry_t*)&buff[offset];
 
-            if (name_len == e->name_len && *name == (char)*e->name
-                && strncmp(name, (char*)e->name, e->name_len) == 0) {
+            if (e->rec_len == 0 || offset + e->rec_len > sb->s_blocksize) {
+                kfree(buff);
+                return -EUCLEAN;
+            }
 
+            if (e->inode != 0 && name_len == e->name_len
+                && strncmp(name, (char*)e->name, e->name_len) == 0) {
                 *result = kmalloc(sizeof(ext2_entry_t) + e->name_len);
-                memcpy(
-                    *result, &buff[offset], sizeof(ext2_entry_t) + e->name_len
-                );
+                if (!*result) {
+                    kfree(buff);
+                    return -ENOMEM;
+                }
+                memcpy(*result, e, sizeof(ext2_entry_t) + e->name_len);
+                kfree(buff);
                 return 0;
             }
+
             offset += e->rec_len;
         }
     }
 
-    return -1;
+    kfree(buff);
+    return -ENOENT;
 }
