@@ -112,17 +112,15 @@ void init_process(void)
         abort("Failed to open stdio!");
     }
 
-    pid_t pid = do_exec("execve test", prepare_for_jmp);
-    if (pid < 0) {
-        abort("Init: could not create execve test process");
-    }
-
+    pid_t pid;
 #ifdef __TEST
     pid = do_exec("test", main_tests);
+#else
+    pid = do_exec("execve test", prepare_for_jmp);
+#endif
     if (pid < 0) {
         abort("Init: could not create a new process");
     }
-#endif
 
     while (1) {
         for (s32 i = 0; i < NUM_PROC; i++) {
