@@ -11,18 +11,17 @@ SDIR = ./src
 ODIR = ./build
 
 CFLAGS = -I$(SDIR) -I$(INCDIR) -I$(SDIR)/arch/$(ARCH) \
-         -m32 -ffreestanding -ggdb3 -O2 \
-         -Wall -Wextra -Werror -Wstrict-prototypes \
-         -Wformat=2 -std=gnu17 \
-         -fno-stack-protector -march=i386 -nostdlib \
-         -D__DEBUG -D__is_libk -D__print_serial -D__bochs
-
-         # -Wvla
+				 -m32 -ffreestanding -ggdb3 -O2 \
+				 -Wall -Wextra -Werror -Wstrict-prototypes \
+				 -Wformat=2 -std=gnu17 \
+				 -fno-stack-protector -march=i386 -nostdlib \
+				 -D__DEBUG -D__is_libk -D__print_serial -D__bochs \
+				 -Wvla
 
 ASFLAGS = -felf32
 
 LDFLAGS = -T $(SDIR)/arch/x86/x86.ld \
-          -ffreestanding -nostdlib -march=i386
+					-ffreestanding -nostdlib -march=i386
 
 C_SOURCES = $(shell find $(SDIR) -type f -name '*.c')
 DRIVER_C_SOURCES = $(shell find $(DRIVER_DIR) -type f -name '*.c')
@@ -64,11 +63,11 @@ lint:
 	@find $(SDIR) -name '*.c' | while read file; do \
 		echo "Checking $$file..."; \
 		clang-tidy "$$file"; \
-	done
+		done
 	@find $(DRIVER_DIR) -name '*.c' | while read file; do \
 		echo "Checking $$file..."; \
 		clang-tidy "$$file"; \
-	done
+		done
 	@echo "Lint complete!"
 
 .PHONY: all clean re lint
