@@ -1,7 +1,6 @@
-// userspace/lib/libc/string.c
-// Minimal string functions
-
 typedef unsigned int size_t;
+
+extern int write(int fd, void const* buf, size_t count);
 
 int strlen(char const* s)
 {
@@ -11,13 +10,13 @@ int strlen(char const* s)
     return len;
 }
 
-int strcmp(char const* a, char const* b)
+int strcmp(char const* s1, char const* s2)
 {
-    while (*a && *a == *b) {
-        a++;
-        b++;
+    while (*s1 && (*s1 == *s2)) {
+        s1++;
+        s2++;
     }
-    return *a - *b;
+    return *(unsigned char*)s1 - *(unsigned char*)s2;
 }
 
 int strncmp(char const* a, char const* b, size_t n)
@@ -39,12 +38,4 @@ void* memcpy(void* dst, void const* src, size_t n)
     while (n--)
         *d++ = *s++;
     return dst;
-}
-
-void* memset(void* s, int c, size_t n)
-{
-    unsigned char* p = s;
-    while (n--)
-        *p++ = (unsigned char)c;
-    return s;
 }

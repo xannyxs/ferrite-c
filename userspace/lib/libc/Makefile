@@ -1,7 +1,7 @@
 CC = i686-elf-gcc
 AS = nasm
 AR = i686-elf-ar
-CFLAGS = -m32 -nostdlib -ffreestanding -O0 -Wall -Wextra -lgcc
+CFLAGS = -m32 -nostdlib -ffreestanding -O2 -Wall -Wextra 
 ASFLAGS = -f elf32
 
 BUILD_DIR = build
