@@ -19,6 +19,8 @@
 #include <ferrite/types.h>
 #include <lib/stdlib.h>
 
+extern void test_printk_formatting(void);
+
 __attribute__((noreturn)) void kmain(u32 magic, multiboot_info_t* mbd)
 {
 
@@ -38,6 +40,8 @@ __attribute__((noreturn)) void kmain(u32 magic, multiboot_info_t* mbd)
     vga_init();
     rtc_init();
     serial_init();
+
+    test_printk_formatting();
 
     pmm_init_from_map(mbd);
     memblock_init();

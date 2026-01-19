@@ -32,8 +32,8 @@ void buddy_visualize(void)
 {
     printk("\n--- Buddy Allocator Visualization ---\n");
     printk(
-        "  Base Address: 0x%x | Total Size: %u KB | Max Order: %u\n",
-        (u32)g_buddy.base, g_buddy.size / 1024, g_buddy.max_order
+        "  Base Address: %p | Total Size: %u KB | Max Order: %u\n",
+        (void*)g_buddy.base, g_buddy.size / 1024, g_buddy.max_order
     );
     printk("-------------------------------------\n");
 
