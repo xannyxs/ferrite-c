@@ -1,9 +1,8 @@
+#include "../../lib/libc/stdio/stdio.h"
 #include "../../lib/libc/syscalls.h"
 
 #define MAX_LINE 256
 #define MAX_ARGS 32
-
-void print(char const* s) { write(1, s, strlen(s)); }
 
 int parse(char* line, char** argv)
 {
@@ -32,23 +31,23 @@ int main(void)
     char line[MAX_LINE];
     char* argv[MAX_ARGS];
 
-    print("Ferrite Shell v0.1\n");
-    print("Type 'exit' to quit\n\n");
+    printf("Ferrite Shell v0.1\n");
+    printf("Type 'exit' to quit\n\n");
 
     while (1) {
-        print("[42]$ ");
+        printf("[42]$ ");
 
         int i = 0;
         char c;
         while (read(0, &c, 1) == 1) {
             if (c == '\n') {
                 line[i] = '\0';
-                print("\n");
+                printf("\n");
                 break;
             } else if (c == '\b' || c == 127) {
                 if (i > 0) {
                     i--;
-                    print("\b \b");
+                    printf("\b \b");
                 }
             } else if (c >= 32 && c < 127) {
                 if (i < MAX_LINE - 1) {
@@ -66,15 +65,15 @@ int main(void)
             continue;
 
         if (strcmp(argv[0], "exit") == 0) {
-            print("Goodbye!\n");
+            printf("Goodbye!\n");
             exit(0);
         }
 
         if (strcmp(argv[0], "help") == 0) {
-            print("Available commands:\n");
-            print("  help  - Show this message\n");
-            print("  exit  - Exit shell\n");
-            print("  hello - Test program\n");
+            printf("Available commands:\n");
+            printf("  help  - Show this message\n");
+            printf("  exit  - Exit shell\n");
+            printf("  hello - Test program\n");
             continue;
         }
 
@@ -82,15 +81,15 @@ int main(void)
         if (pid == 0) {
             execve(argv[0], argv, 0);
 
-            print("Command not found: ");
-            print(argv[0]);
-            print("\n");
+            printf("Command not found: ");
+            printf(argv[0]);
+            printf("\n");
             exit(1);
         } else if (pid > 0) {
             int status;
             waitpid(&status);
         } else {
-            print("Fork failed!\n");
+            printf("Fork failed!\n");
         }
     }
 

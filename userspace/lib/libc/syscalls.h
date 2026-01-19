@@ -19,10 +19,11 @@ ssize_t read(int fd, void* buf, size_t count);
 ssize_t write(int fd, void const* buf, size_t count);
 
 // String
+#define memcpy(dest, src, n) __builtin_memcpy((dest), (src), (n))
+#define memset(s, c, n) __builtin_memset((s), (c), (n))
+
 int strlen(char const* s);
 int strcmp(char const* a, char const* b);
 int strncmp(char const* a, char const* b, size_t n);
-void* memcpy(void* dst, void const* src, size_t n);
-void* memset(void* s, int c, size_t n);
 
 #endif
