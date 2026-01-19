@@ -1,15 +1,67 @@
-#include "debug/debug.h"
+#include "arch/x86/io.h"
 #include "drivers/vga.h"
 
 #include <ferrite/string.h>
 #include <stdarg.h>
 #include <stdbool.h>
 
-char buf[1024];
+static char buf[1024];
 
 /* Private */
 
-__attribute__((target("general-regs-only"))) static char* simple_number(
+static char* simple_number_64(
+    char* str,
+    unsigned long long num,
+    int base,
+    bool is_signed,
+    int width,
+    bool zero_pad
+)
+{
+    char tmp[65];
+    int i = 0;
+    bool negative = false;
+
+    if (is_signed && base == 10 && (long long)num < 0) {
+        negative = true;
+        num = -(long long)num;
+    }
+
+    if (num == 0) {
+        tmp[i++] = '0';
+    } else {
+        while (num != 0) {
+            unsigned long long rem = num % base;
+            tmp[i++] = (char)((rem > 9) ? (rem - 10) + 'a' : rem + '0');
+            num /= base;
+        }
+    }
+
+    int num_len = i + (negative ? 1 : 0);
+    if (width > num_len) {
+        int pad_count = width - num_len;
+        if (zero_pad && negative) {
+            *str++ = '-';
+            negative = false;
+        }
+        char pad_char = zero_pad ? '0' : ' ';
+        while (pad_count-- > 0) {
+            *str++ = pad_char;
+        }
+    }
+
+    if (negative) {
+        *str++ = '-';
+    }
+
+    while (i-- > 0) {
+        *str++ = tmp[i];
+    }
+
+    return str;
+}
+
+static char* simple_number(
     char* str,
     long num,
     s32 base,
@@ -37,9 +89,9 @@ __attribute__((target("general-regs-only"))) static char* simple_number(
         }
     }
 
-    s32 num_len = i + (negative ? 1 : 0);
+    int num_len = i + (negative ? 1 : 0);
     if (width > num_len) {
-        s32 pad_count = width - num_len;
+        int pad_count = width - num_len;
         if (zero_pad && negative) {
             *str++ = '-';
             negative = false;
@@ -61,7 +113,7 @@ __attribute__((target("general-regs-only"))) static char* simple_number(
     return str;
 }
 
-__attribute__((target("general-regs-only"))) static s32
+__attribute__((target("general-regs-only"))) static int
 kfmt(char* buf, char const* fmt, va_list args)
 {
     char* str = buf;
@@ -78,18 +130,28 @@ kfmt(char* buf, char const* fmt, va_list args)
             ++fmt;
         }
 
-        s32 width = 0;
+        int width = 0;
         while (*fmt >= '0' && *fmt <= '9') {
             width = width * 10 + (*fmt - '0');
             ++fmt;
         }
 
-        s32 precision = -1;
+        int precision = -1;
         if (*fmt == '.') {
             ++fmt;
             precision = 0;
             while (*fmt >= '0' && *fmt <= '9') {
                 precision = precision * 10 + (*fmt - '0');
+                ++fmt;
+            }
+        }
+
+        int length = 0;
+        if (*fmt == 'l') {
+            length = 1;
+            ++fmt;
+            if (*fmt == 'l') {
+                length = 2;
                 ++fmt;
             }
         }
@@ -100,25 +162,30 @@ kfmt(char* buf, char const* fmt, va_list args)
             break;
         }
         case 's': {
-            char const* s = va_arg(args, char const*);
+            char* s = va_arg(args, char*);
             if (!s) {
-                s = "<NULL>";
+                strlcpy(s, "<NULL>", 6);
             }
+
             size_t len = strlen(s);
             if (precision >= 0 && (size_t)precision < len) {
                 len = precision;
             }
             if (width > (s32)len) {
-                s32 pad = width - len;
-                while (pad-- > 0) {
+                int pad = width - len;
+                while (pad > 0) {
                     *str++ = ' ';
+                    pad -= 1;
                 }
             }
+
             for (size_t i = 0; i < len; ++i) {
                 *str++ = *s++;
             }
+
             break;
         }
+
         case 'x':
         case 'X': {
             str = simple_number(
@@ -126,17 +193,35 @@ kfmt(char* buf, char const* fmt, va_list args)
             );
             break;
         }
+
+        case 'p': {
+            *str++ = '0';
+            *str++ = 'x';
+            str = simple_number(str, va_arg(args, unsigned long), 16, 0, 8, 1);
+            break;
+        }
+
         case 'd':
         case 'i': {
             long i = va_arg(args, long);
             str = simple_number(str, i, 10, 1, width, zero_pad);
             break;
         }
+
         case 'u': {
-            unsigned long const u = va_arg(args, unsigned long);
-            str = simple_number(str, u, 10, 0, width, zero_pad);
+            if (length == 2) {
+                unsigned long long ull = va_arg(args, unsigned long long);
+                str = simple_number_64(str, ull, 10, 0, width, zero_pad);
+            } else if (length == 1) {
+                unsigned long ul = va_arg(args, unsigned long);
+                str = simple_number(str, ul, 10, 0, width, zero_pad);
+            } else {
+                unsigned int u = va_arg(args, unsigned int);
+                str = simple_number(str, u, 10, 0, width, zero_pad);
+            }
             break;
         }
+
         default: {
             *str++ = '%';
             if (*fmt) {
@@ -148,6 +233,7 @@ kfmt(char* buf, char const* fmt, va_list args)
         }
         }
     }
+
     *str = '\0';
     return str - buf;
 }
@@ -161,13 +247,9 @@ printk(char const* fmt, ...)
 
     va_list args;
     va_start(args, fmt);
-    s32 len = kfmt(buf, fmt, args);
+    int len = kfmt(buf, fmt, args);
     va_end(args);
     vga_puts(buf);
-
-#if defined(__bochs)
-    bochs_print_string(buf);
-#endif
 
     sti();
     return len;
