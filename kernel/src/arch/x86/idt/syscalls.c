@@ -155,7 +155,7 @@ syscall_dispatcher_c(trapframe_t* reg)
         return;
     }
 
-    s32 ret;
+    int ret;
     const struct syscall_entry* entry = &syscall_table[syscall_num];
 
     switch (syscall_num) {
