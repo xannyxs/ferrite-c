@@ -164,7 +164,7 @@ kfmt(char* buf, char const* fmt, va_list args)
         case 's': {
             char* s = va_arg(args, char*);
             if (!s) {
-                strlcpy(s, "<NULL>", 6);
+                s = "<NULL>";
             }
 
             size_t len = strlen(s);
@@ -222,6 +222,10 @@ kfmt(char* buf, char const* fmt, va_list args)
             break;
         }
 
+        case '%':
+            *str++ = '%';
+            break;
+
         default: {
             *str++ = '%';
             if (*fmt) {
@@ -250,6 +254,25 @@ printk(char const* fmt, ...)
     int len = kfmt(buf, fmt, args);
     va_end(args);
     vga_puts(buf);
+
+    sti();
+    return len;
+}
+
+__attribute__((target("general-regs-only"), format(printf, 3, 4))) int
+snprintk(char* local_buf, size_t size, char const* fmt, ...)
+{
+    cli();
+
+    va_list args;
+    va_start(args, fmt);
+    int len = kfmt(local_buf, fmt, args);
+    va_end(args);
+
+    if (len >= (int)size) {
+        local_buf[size - 1] = '\0';
+        return size - 1;
+    }
 
     sti();
     return len;
