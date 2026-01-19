@@ -1,7 +1,5 @@
 typedef unsigned int size_t;
 
-extern int write(int fd, void const* buf, size_t count);
-
 int strlen(char const* s)
 {
     int len = 0;
