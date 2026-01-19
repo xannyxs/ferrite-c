@@ -15,9 +15,10 @@ CFLAGS = -I$(SDIR) -I$(INCDIR) -I$(SDIR)/arch/$(ARCH) \
          -Wall -Wextra -Werror -Wstrict-prototypes \
          -Wformat=2 -std=gnu17 \
          -fno-stack-protector -march=i386 -nostdlib \
-         -D__DEBUG -D__is_libk -D__print_serial -D__bochs
+         -D__DEBUG -D__print_serial -D__bochs 
 
-         # -Wvla
+#-D__TEST
+# -Wvla
 
 ASFLAGS = -felf32
 

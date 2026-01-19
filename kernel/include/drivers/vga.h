@@ -45,4 +45,6 @@ void vga_clear(void);
 
 void vga_delete(void);
 
+void vga_setcolour(u8 fg, u8 bg);
+
 #endif /* VGA_H */

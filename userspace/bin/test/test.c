@@ -1,100 +1,44 @@
-#ifdef __TEST
-#    include "arch/x86/idt/syscalls.h"
-#    include "drivers/printk.h"
-#    include "ferrite/string.h"
-#    include "sys/file/fcntl.h"
-#    include "sys/process/process.h"
-#    include "tests/tests.h"
+#include "drivers/printk.h"
+#include "sys/file/fcntl.h"
+#include "sys/process/process.h"
 
-#    include <ferrite/dirent.h>
-#    include <ferrite/types.h>
-#    include <stdbool.h>
+#include <ferrite/dirent.h>
+#include <ferrite/types.h>
+#include <stdbool.h>
 
-extern u32 tests_passed;
-extern u32 tests_failed;
+#define ASSERT(cond, msg)                                      \
+    if (!(cond)) {                                             \
+        printk("[FAIL] %s:%d: %s\n", __FILE__, __LINE__, msg); \
+        do_exit(1);                                            \
+    }
 
-// Syscall wrappers
-static inline int k_mkdir(char const* path, int mode)
-{
-    int ret;
-    __asm__ volatile("int $0x80"
-                     : "=a"(ret)
-                     : "a"(SYS_MKDIR), "b"(path), "c"(mode)
-                     : "memory");
-    return ret;
-}
+#define ASSERT_EQ(a, b, message) ASSERT((a) == (b), message)
 
-static inline int k_rmdir(char const* path)
-{
-    int ret;
-    __asm__ volatile("int $0x80"
-                     : "=a"(ret)
-                     : "a"(SYS_RMDIR), "b"(path)
-                     : "memory");
-    return ret;
-}
+#define TEST(name) static void __attribute__((unused)) test_##name(void)
 
-static inline int k_open(char const* path, int flags, int mode)
-{
-    int ret;
-    __asm__ volatile("int $0x80"
-                     : "=a"(ret)
-                     : "a"(SYS_OPEN), "b"(path), "c"(flags), "d"(mode)
-                     : "memory");
-    return ret;
-}
+#define RUN_TEST(name)                                            \
+    do {                                                          \
+        printk("[TEST] " #name "... ");                           \
+        do_exec(#name, test_##name);                              \
+        int status;                                               \
+        do_wait(&status);                                         \
+                                                                  \
+        if (status == 0) {                                        \
+            vga_setcolour(VGA_COLOR_GREEN, VGA_COLOR_BLACK);      \
+            printk("PASS\n");                                     \
+            vga_setcolour(VGA_COLOR_LIGHT_GREY, VGA_COLOR_BLACK); \
+            tests_passed++;                                       \
+        } else {                                                  \
+            vga_setcolour(VGA_COLOR_RED, VGA_COLOR_BLACK);        \
+            printk("FAIL\n");                                     \
+            vga_setcolour(VGA_COLOR_LIGHT_GREY, VGA_COLOR_BLACK); \
+            tests_failed++;                                       \
+        }                                                         \
+    } while (0)
 
-static inline int k_close(int fd)
-{
-    int ret;
-    __asm__ volatile("int $0x80"
-                     : "=a"(ret)
-                     : "a"(SYS_CLOSE), "b"(fd)
-                     : "memory");
-    return ret;
-}
+u32 tests_passed = 0;
+u32 tests_failed = 0;
 
-static inline int k_unlink(char const* path)
-{
-    int ret;
-    __asm__ volatile("int $0x80"
-                     : "=a"(ret)
-                     : "a"(SYS_UNLINK), "b"(path)
-                     : "memory");
-    return ret;
-}
-
-static inline int k_chdir(char const* path)
-{
-    int ret;
-    __asm__ volatile("int $0x80"
-                     : "=a"(ret)
-                     : "a"(SYS_CHDIR), "b"(path)
-                     : "memory");
-    return ret;
-}
-
-static inline int k_getcwd(char* buf, unsigned long size)
-{
-    int ret;
-    __asm__ volatile("int $0x80"
-                     : "=a"(ret)
-                     : "a"(SYS_GETCWD), "b"(buf), "c"(size)
-                     : "memory");
-    return ret;
-}
-
-static inline int k_readdir(int fd, dirent_t* dirent, int count)
-{
-    int ret;
-    __asm__ volatile("int $0x80"
-                     : "=a"(ret)
-                     : "a"(SYS_READDIR), "b"(fd), "c"(dirent), "d"(count)
-                     : "memory");
-    return ret;
-}
-
-// Tests
 TEST(fs_mkdir_basic)
 {
     printk("  Creating directory /test_dir...\n");
@@ -426,25 +370,25 @@ TEST(fs_readdir_empty)
 {
     printk("  Testing readdir on empty directory...\n");
 
-    int result = k_mkdir("/test_empty", 0755);
+    int result = mkdir("/test_empty", 0755);
     ASSERT(result == 0, "mkdir() should succeed");
 
-    int dirfd = k_open("/test_empty", O_RDONLY, 0);
+    int dirfd = open("/test_empty", O_RDONLY, 0);
     ASSERT(dirfd >= 0, "Should open directory");
 
     dirent_t dirent;
     int count = 0;
-    while (k_readdir(dirfd, &dirent, 1) > 0) {
+    while (readdir(dirfd, &dirent, 1) > 0) {
         count++;
     }
 
     ASSERT(count == 2, "Empty directory should have . and ..");
     printk("  Empty directory has %d entries (. and ..)\n", count);
 
-    result = k_close(dirfd);
+    result = close(dirfd);
     ASSERT(result == 0, "close() should succeed");
 
-    result = k_rmdir("/test_empty");
+    result = rmdir("/test_empty");
     ASSERT(result == 0, "rmdir() should succeed");
 
     do_exit(0);
@@ -475,6 +419,20 @@ void filesystem_tests(void)
     printk("\n============================================\n");
 }
 
-#endif
+int main(void)
+{
+    filesystem_tests();
 
-typedef int _test_translation_unit_not_empty;
+    printf("\n========== TEST RESULTS ==========\n");
+    printf("Passed: %u\n", tests_passed);
+    printf("Failed: %u\n", tests_failed);
+
+    if (tests_failed > 0) {
+        printf("STATUS: FAILED ❌\n");
+    } else {
+        printf("STATUS: ALL TESTS PASSED ✅\n");
+    }
+    printf("====================================\n\n");
+
+    qemu_exit(0);
+}
