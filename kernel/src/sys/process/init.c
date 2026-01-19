@@ -14,10 +14,6 @@
 #include <ferrite/string.h>
 #include <ferrite/types.h>
 
-#ifdef __TEST
-#    include "tests/tests.h"
-#endif
-
 proc_t* initial_proc;
 
 extern vfs_inode_t* root_inode;
@@ -28,38 +24,40 @@ extern void jump_to_usermode(void* entry, void* user_stack);
 
 __attribute__((naked)) void user_init(void)
 {
-    __asm__ volatile(
-        // Get current position (PIC trick for 32-bit)
-        "call 1f\n"
-        "1: pop %%ebx\n" // EBX = current address
+    __asm__ volatile("call 1f\n"
+                     "1: pop %%ebx\n"
 
-        // Set up argv on stack
-        "sub $16, %%esp\n"
-        "movl $0, 12(%%esp)\n"
-        "lea (.sh_str-1b)(%%ebx), %%eax\n"
-        "movl %%eax, 8(%%esp)\n"
-        "lea 8(%%esp), %%ecx\n"
+                     // Set up argv on stack
+                     "sub $16, %%esp\n"
+                     "movl $0, 12(%%esp)\n"
+                     "lea (.prog_str-1b)(%%ebx), %%eax\n"
+                     "movl %%eax, 8(%%esp)\n"
+                     "lea 8(%%esp), %%ecx\n"
 
-        // Set up envp
-        "movl $0, 4(%%esp)\n"
-        "lea 4(%%esp), %%edx\n"
+                     // Set up envp
+                     "movl $0, 4(%%esp)\n"
+                     "lea 4(%%esp), %%edx\n"
 
-        // Call execve
-        "movl $11, %%eax\n" // SYS_EXECVE
-        "lea (.sh_path-1b)(%%ebx), %%ebx\n"
-        "int $0x80\n"
+                     // Call execve
+                     "movl $11, %%eax\n" // SYS_EXECVE
+                     "lea (.prog_path-1b)(%%ebx), %%ebx\n"
+                     "int $0x80\n"
 
-        // If execve fails, exit
-        "mov %%eax, %%ebx\n"
-        "mov $1, %%eax\n" // SYS_EXIT
-        "int $0x80\n"
+                     // If execve fails, exit
+                     "mov %%eax, %%ebx\n"
+                     "mov $1, %%eax\n" // SYS_EXIT
+                     "int $0x80\n"
 
-        ".sh_path: .asciz \"/bin/sh\"\n"
-        ".sh_str:  .asciz \"shell\"\n"
-        :
-        :
-        : "memory"
-    );
+#ifdef __TEST
+                     ".prog_path: .asciz \"/bin/tests\"\n"
+                     ".prog_str:  .asciz \"tests\"\n"
+#else
+                     ".prog_path: .asciz \"/bin/sh\"\n"
+                     ".prog_str:  .asciz \"shell\"\n"
+#endif
+                     :
+                     :
+                     : "memory");
 }
 
 void prepare_for_jmp(void)
@@ -112,18 +110,13 @@ void init_process(void)
         abort("Failed to open stdio!");
     }
 
-    pid_t pid;
-#ifdef __TEST
-    pid = do_exec("test", main_tests);
-#else
-    pid = do_exec("execve test", prepare_for_jmp);
-#endif
+    pid_t pid = do_exec("Userprocess", prepare_for_jmp);
     if (pid < 0) {
         abort("Init: could not create a new process");
     }
 
     while (1) {
-        for (s32 i = 0; i < NUM_PROC; i++) {
+        for (int i = 0; i < NUM_PROC; i++) {
             proc_t* p = &ptables[i];
             if (p->state == ZOMBIE && p->parent == current) {
                 p->state = UNUSED;
