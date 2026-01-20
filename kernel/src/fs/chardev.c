@@ -1,7 +1,7 @@
 #include "idt/syscalls.h"
 #include <drivers/block/device.h>
 #include <drivers/chrdev.h>
-#include <ferrite/errno.h>
+#include <uapi/errno.h>
 #include <ferrite/string.h>
 #include <types.h>
 #include <uapi/stat.h>

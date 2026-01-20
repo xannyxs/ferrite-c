@@ -5,7 +5,7 @@
 #include "fs/vfs.h"
 #include "memory/kmalloc.h"
 
-#include <ferrite/errno.h>
+#include <uapi/errno.h>
 #include <ferrite/string.h>
 #include <types.h>
 

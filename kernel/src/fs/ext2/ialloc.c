@@ -8,7 +8,7 @@
 #include "lib/math.h"
 #include "memory/kmalloc.h"
 
-#include <ferrite/errno.h>
+#include <uapi/errno.h>
 
 vfs_inode_t* ext2_new_inode(vfs_inode_t const* dir, int mode, int* err)
 {

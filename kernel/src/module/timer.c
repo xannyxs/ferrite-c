@@ -1,7 +1,7 @@
 #include "module/timer.h"
 #include "memory/kmalloc.h"
 
-#include <ferrite/errno.h>
+#include <uapi/errno.h>
 
 typedef struct timer_listener {
     timer_callback_t callback;

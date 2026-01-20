@@ -1,7 +1,7 @@
 #include "sys/file/file.h"
 
 #include <drivers/chrdev.h>
-#include <ferrite/errno.h>
+#include <uapi/errno.h>
 #include <types.h>
 
 #define MAX_CHRDEV 32

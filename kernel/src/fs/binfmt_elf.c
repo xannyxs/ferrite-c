@@ -9,7 +9,7 @@
 #include "memory/vmm.h"
 
 #include <ferrite/elf.h>
-#include <ferrite/errno.h>
+#include <uapi/errno.h>
 #include <ferrite/string.h>
 
 int load_elf_binary(binpgm_t* pgm, trapframe_t* regs)

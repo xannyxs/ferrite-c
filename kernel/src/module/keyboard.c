@@ -1,7 +1,7 @@
 #include "module/keyboard.h"
 #include "memory/kmalloc.h"
 
-#include <ferrite/errno.h>
+#include <uapi/errno.h>
 
 typedef struct keyboard_listener {
     keyboard_callback_t callback;

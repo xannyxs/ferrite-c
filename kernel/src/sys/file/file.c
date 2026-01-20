@@ -3,7 +3,7 @@
 #include "memory/kmalloc.h"
 #include "sys/process/process.h"
 
-#include <ferrite/errno.h>
+#include <uapi/errno.h>
 #include <ferrite/string.h>
 #include <types.h>
 

@@ -2,7 +2,7 @@
 #include "fs/mount.h"
 #include "sys/process/process.h"
 
-#include <ferrite/errno.h>
+#include <uapi/errno.h>
 #include <types.h>
 
 /* Mount */
