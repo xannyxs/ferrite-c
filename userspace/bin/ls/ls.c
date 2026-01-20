@@ -16,11 +16,7 @@ int main(char const* path)
 
     char const* dir = path ? path : (char*)buf;
 
-    int fd;
-    __asm__ volatile("int $0x80"
-                     : "=a"(fd)
-                     : "a"(5), "b"(dir), "c"(0), "d"(0)
-                     : "memory");
+    int fd = open(dir, 0, 0);
     if (fd < 0) {
         printf("Could not open dir\n");
         return -1;

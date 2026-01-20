@@ -53,6 +53,18 @@ read:
 	pop  ebx
 	ret
 
+global open
+
+open:
+	push ebx
+	mov  eax, SYS_OPEN
+	mov  ebx, [esp+8]
+	mov  ecx, [esp+12]
+	mov  edx, [esp+16]
+	int  0x80
+	pop  ebx
+	ret
+
 global close
 
 close:
