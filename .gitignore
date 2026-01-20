@@ -16,6 +16,7 @@ userspace/**/*.o
 userspace/**/*.a
 userspace/bin/sh/sh
 userspace/bin/hello/hello
+userspace/bin/ls/ls
 userspace/bin/*/build/
 
 # Sysroot (generated install directory)
