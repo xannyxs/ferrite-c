@@ -1,9 +1,5 @@
-	; userspace/lib/libc/syscalls.asm
-	; System call wrappers for userspace
-
 	BITS 32
 
-	;       Syscall numbers (must match your kernel!)
 	%define SYS_EXIT     1
 	%define SYS_FORK     2
 	%define SYS_READ     3
@@ -13,7 +9,10 @@
 	%define SYS_WAIT     7
 	%define SYS_EXECVE   11
 	%define SYS_CHDIR    12
+	%define SYS_STAT     18
 	%define SYS_GETPID   20
+	%define SYS_READDIR  89
+	%define SYS_GETCWD   183
 
 	section .text
 
@@ -52,6 +51,14 @@ read:
 	mov  edx, [esp+16]; count
 	int  0x80
 	pop  ebx
+	ret
+
+global close
+
+close:
+	mov eax, SYS_CLOSE
+	mov ebx, [esp+4]; fd
+	int 0x80
 	ret
 
 	;      pid_t fork(void)
@@ -93,5 +100,33 @@ waitpid:
 
 getpid:
 	mov eax, SYS_GETPID
+	int 0x80
+	ret
+
+global getcwd
+
+getcwd:
+	mov eax, SYS_GETCWD
+	mov ebx, [esp+4]
+	mov ecx, [esp+8]
+	int 0x80
+	ret
+
+global readdir
+
+readdir:
+	mov eax, SYS_READDIR
+	mov ebx, [esp+4]
+	mov ecx, [esp+8]
+	mov edx, [esp+12]
+	int 0x80
+	ret
+
+global stat
+
+stat:
+	mov eax, SYS_STAT
+	mov ebx, [esp+4]
+	mov ecx, [esp+8]
 	int 0x80
 	ret

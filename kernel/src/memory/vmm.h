@@ -1,7 +1,7 @@
 #ifndef VMM_H
 #define VMM_H
 
-#include <ferrite/types.h>
+#include <types.h>
 
 #define PTE_P (1 << 0)
 #define PTE_W (1 << 1)

@@ -5,7 +5,7 @@
 #include "memory/kmalloc.h"
 
 #include <ferrite/errno.h>
-#include <ferrite/limits.h>
+#include <limits.h>
 #include <ferrite/string.h>
 #include <lib/stdlib.h>
 

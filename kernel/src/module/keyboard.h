@@ -1,7 +1,7 @@
 #ifndef MODULE_KEYBOARD_H
 #define MODULE_KEYBOARD_H
 
-#include <ferrite/types.h>
+#include <types.h>
 
 typedef void (*keyboard_callback_t)(u8 scancode, int pressed);
 

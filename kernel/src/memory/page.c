@@ -4,7 +4,7 @@
 #include "memory/consts.h"
 
 #include <ferrite/string.h>
-#include <ferrite/types.h>
+#include <types.h>
 
 /*
  * Allocates a single 4KB page from the buddy allocator, converts it to a

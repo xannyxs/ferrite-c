@@ -1,6 +1,6 @@
 #include "net/unix.h"
 #include "drivers/printk.h"
-#include "fs/stat.h"
+#include <uapi/stat.h>
 #include "fs/vfs.h"
 #include "memory/kmalloc.h"
 #include "net/socket.h"
@@ -8,7 +8,7 @@
 
 #include <ferrite/errno.h>
 #include <ferrite/string.h>
-#include <ferrite/types.h>
+#include <types.h>
 
 #define MAX_UNIX_SOCKETS 64
 

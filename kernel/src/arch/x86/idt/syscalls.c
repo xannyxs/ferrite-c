@@ -9,7 +9,7 @@
 
 #include <ferrite/errno.h>
 #include <ferrite/string.h>
-#include <ferrite/types.h>
+#include <types.h>
 
 #define SYSCALL_ENTRY_0(num, fname) \
     [num] = { .handler = (void*)(sys_##fname), .nargs = 0, .name = #fname }

@@ -1,7 +1,7 @@
 #ifndef CHRDEV_H
 #define CHRDEV_H
 
-#include <ferrite/types.h>
+#include <types.h>
 #include <sys/file/file.h>
 
 struct file_operations const* get_chrdev(unsigned int major);

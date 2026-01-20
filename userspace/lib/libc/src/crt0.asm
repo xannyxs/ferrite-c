@@ -1,6 +1,3 @@
-	; userspace/lib/libc/crt0.asm
-	; C runtime startup
-
 	BITS 32
 
 	section .text

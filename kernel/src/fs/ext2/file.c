@@ -3,14 +3,14 @@
 #include "drivers/block/device.h"
 #include "drivers/printk.h"
 #include "fs/ext2/ext2.h"
-#include "fs/stat.h"
+#include <uapi/stat.h>
 #include "fs/vfs.h"
 #include "lib/math.h"
 #include "sys/file/fcntl.h"
 
 #include <ferrite/errno.h>
 #include <ferrite/string.h>
-#include <ferrite/types.h>
+#include <types.h>
 
 static int ext2_file_read(struct vfs_inode*, struct file*, void*, int);
 static int ext2_file_write(struct vfs_inode*, struct file*, void const*, int);

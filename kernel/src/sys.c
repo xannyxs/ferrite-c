@@ -3,7 +3,7 @@
 #include "sys/process/process.h"
 
 #include <ferrite/errno.h>
-#include <ferrite/types.h>
+#include <types.h>
 
 /* Mount */
 

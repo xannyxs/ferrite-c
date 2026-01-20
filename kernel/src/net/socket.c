@@ -1,6 +1,6 @@
 #include "net/socket.h"
 #include "arch/x86/time/time.h"
-#include "fs/stat.h"
+#include <uapi/stat.h>
 #include "fs/vfs.h"
 #include "memory/kmalloc.h"
 #include "net/unix.h"
@@ -10,7 +10,7 @@
 
 #include <ferrite/errno.h>
 #include <ferrite/string.h>
-#include <ferrite/types.h>
+#include <types.h>
 #include <lib/stdlib.h>
 
 static int socket_read(vfs_inode_t* node, file_t* file, void* buf, int len);

@@ -2,17 +2,17 @@
 #include "drivers/block/device.h"
 #include "drivers/printk.h"
 #include "fs/ext2/ext2.h"
-#include "fs/stat.h"
+#include <uapi/stat.h>
 #include "fs/vfs.h"
 #include "lib/math.h"
 #include "memory/kmalloc.h"
 #include "sys/file/file.h"
 #include "sys/process/process.h"
 
-#include <ferrite/dirent.h>
+#include <dirent.h>
 #include <ferrite/errno.h>
 #include <ferrite/string.h>
-#include <ferrite/types.h>
+#include <types.h>
 
 extern struct inode_operations chrdev_inode_ops;
 

@@ -3,7 +3,7 @@
 #include <drivers/printk.h>
 #include <drivers/vga.h>
 #include <ferrite/string.h>
-#include <ferrite/types.h>
+#include <types.h>
 #include <sys/file/file.h>
 #include <sys/process/process.h>
 #include <sys/signal/signal.h>

@@ -16,7 +16,7 @@
 #include "sys/process/process.h"
 
 #include <drivers/serial.h>
-#include <ferrite/types.h>
+#include <types.h>
 #include <lib/stdlib.h>
 
 extern void test_printk_formatting(void);

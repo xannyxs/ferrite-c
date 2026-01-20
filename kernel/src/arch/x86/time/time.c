@@ -1,6 +1,6 @@
 #include "time.h"
 #include "rtc.h"
-#include <ferrite/types.h>
+#include <types.h>
 
 #include <stdbool.h>
 

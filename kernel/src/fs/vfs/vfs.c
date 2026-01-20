@@ -3,7 +3,7 @@
 #include "lib/stdlib.h"
 
 #include <ferrite/string.h>
-#include <ferrite/types.h>
+#include <types.h>
 
 vfs_inode_t* root_inode = NULL;
 

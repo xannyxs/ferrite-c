@@ -8,7 +8,7 @@
 #include "memory/vmm.h"
 
 #include <ferrite/string.h>
-#include <ferrite/types.h>
+#include <types.h>
 #include <lib/stdlib.h>
 #include <stdbool.h>
 

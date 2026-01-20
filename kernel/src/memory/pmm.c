@@ -7,7 +7,7 @@
 #include "memory/consts.h"
 #include "memory/vmm.h"
 
-#include <ferrite/types.h>
+#include <types.h>
 
 static u32 pmm_bitmap_size = 0;
 

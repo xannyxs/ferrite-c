@@ -1,7 +1,7 @@
-#ifndef STDIO_H
-#define STDIO_H
+#ifndef _LIBC_STDIO_H
+#define _LIBC_STDIO_H
 
-#include "../syscalls.h"
+#include <uapi/types.h>
 
 __attribute__((format(printf, 1, 2))) int printf(char const*, ...);
 

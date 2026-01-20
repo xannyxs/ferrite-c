@@ -2,7 +2,7 @@
 #define FS_EXT2_H
 
 #include "fs/vfs.h"
-#include <ferrite/types.h>
+#include <types.h>
 
 struct vfs_inode;
 struct vfs_dentry;

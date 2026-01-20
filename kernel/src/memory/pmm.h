@@ -3,7 +3,7 @@
 
 #include "arch/x86/multiboot.h"
 #include "memory/consts.h"
-#include <ferrite/types.h>
+#include <types.h>
 
 extern u32 _kernel_end[];
 extern u8 volatile pmm_bitmap[];

@@ -1,18 +1,18 @@
 #ifndef _STAT_H
 #define _STAT_H
 
-#include <ferrite/types.h>
+#include <uapi/types.h>
 
 struct stat {
-    u16 st_dev;
-    u16 __pad1;
+    unsigned short st_dev;
+    unsigned short __pad1;
     unsigned long st_ino;
-    u16 st_mode;
-    u16 st_nlink;
-    u16 st_uid;
-    u16 st_gid;
-    u16 st_rdev;
-    u16 __pad2;
+    unsigned short st_mode;
+    unsigned short st_nlink;
+    unsigned short st_uid;
+    unsigned short st_gid;
+    unsigned short st_rdev;
+    unsigned short __pad2;
     unsigned long st_size;
     unsigned long st_blksize;
     unsigned long st_blocks;

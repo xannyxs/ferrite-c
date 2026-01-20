@@ -1,7 +1,7 @@
 #ifndef MODULE_TIMER_H
 #define MODULE_TIMER_H
 
-#include <ferrite/types.h>
+#include <types.h>
 
 typedef void (*timer_callback_t)(unsigned long);
 

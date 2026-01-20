@@ -1,7 +1,7 @@
 #ifndef STRING32_H
 #define STRING32_H
 
-#include <ferrite/types.h>
+#include <types.h>
 
 /* Optimized functions */
 size_t strlen(char const*);

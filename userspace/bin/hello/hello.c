@@ -1,5 +1,5 @@
-// userspace/bin/hello/hello.c
-#include "../../lib/libc/syscalls.h"
+#include <libc/string.h>
+#include <libc/syscalls.h>
 
 void print(char const* s) { write(1, s, strlen(s)); }
 
@@ -8,7 +8,6 @@ int main(int argc, char** argv)
     print("Hello from userspace!\n");
     print("PID: ");
 
-    // Print PID (simple integer to string)
     int pid = getpid();
     char buf[16];
     int i = 0;

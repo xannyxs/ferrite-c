@@ -12,7 +12,7 @@
 #include "sys/process/process.h"
 
 #include <ferrite/string.h>
-#include <ferrite/types.h>
+#include <types.h>
 
 proc_t* initial_proc;
 

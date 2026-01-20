@@ -1,8 +1,8 @@
 #ifndef SYSCALLS_H
 #define SYSCALLS_H
 
-#include "ferrite/dirent.h"
-#include "fs/stat.h"
+#include <dirent.h>
+#include <uapi/stat.h>
 #include "fs/vfs/mode_t.h"
 #include "idt/idt.h"
 

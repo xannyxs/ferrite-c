@@ -2,7 +2,7 @@
 #define PIT_H
 
 #include "arch/x86/io.h"
-#include <ferrite/types.h>
+#include <types.h>
 
 #ifndef HZ
 #    define HZ 100

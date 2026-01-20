@@ -1,7 +1,7 @@
 #include "sys/signal/signal.h"
 #include "drivers/printk.h"
 #include "sys/process/process.h"
-#include <ferrite/types.h>
+#include <types.h>
 
 extern proc_t ptables[NUM_PROC];
 extern proc_t* current_proc;

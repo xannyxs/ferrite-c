@@ -2,7 +2,7 @@
 #include "arch/x86/io.h"
 #include "drivers/printk.h"
 
-#include <ferrite/types.h>
+#include <types.h>
 
 __attribute__((target("general-regs-only"))) static void
 save_stack(u32 stack_pointer)

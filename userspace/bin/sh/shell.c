@@ -1,10 +1,61 @@
-#include "../../lib/libc/stdio/stdio.h"
-#include "../../lib/libc/syscalls.h"
+#include <libc/stdio.h>
+#include <libc/string.h>
+#include <libc/syscalls.h>
 
 #define MAX_LINE 256
 #define MAX_ARGS 32
 
-int parse(char* line, char** argv)
+/* Private */
+
+static void print_help(void)
+{
+    printf("\n");
+    printf("╔════════════════════════════════════════════════════════╗\n");
+    printf("║            Ferrite Kernel Shell - Help                ║\n");
+    printf("╚════════════════════════════════════════════════════════╝\n\n");
+
+    printf("SYSTEM\n");
+    printf("  reboot                      Restart the system\n");
+    printf("  clear                       Clear the terminal screen\n");
+    printf("  time                        Show current date and time\n");
+    printf("  epoch                       Show Unix timestamp\n");
+    printf("  sleep <milliseconds>        Pause for specified duration\n");
+    printf("\n");
+
+    printf("DIAGNOSTICS\n");
+    printf("  gdt                         Dump Global Descriptor Table\n");
+    printf("  idt                         Dump Interrupt Descriptor Table\n");
+    printf("  memory                      Show memory allocator status\n");
+    printf("  top                         List running processes\n");
+    printf("  devices                     List block devices\n");
+    printf("\n");
+
+    printf("FILE OPERATIONS\n");
+    printf("  ls [path]                   List directory (default: current)\n");
+    printf("  cd <directory>              Change working directory\n");
+    printf("  pwd                         Print working directory\n");
+    printf("  cat <file>                  Display file contents\n");
+    printf("  echo <text>                 Write text to file\n");
+    printf("  touch <file>                Create empty file\n");
+    printf("  rm <file>                   Delete file\n");
+    printf("  mkdir <directory>           Create directory\n");
+    printf("  rmdir <directory>           Remove empty directory\n");
+    printf("\n");
+
+    printf("FILESYSTEMS\n");
+    printf("  mount <device> <path>       Mount filesystem\n");
+    printf("                              Example: mount /dev/hdb /mnt\n");
+    printf("  umount <device>             Unmount filesystem\n");
+    printf("\n");
+
+    printf("MODULES\n");
+    printf("  insmod <module.o>           Load kernel module\n");
+    printf("  rmmod <module_name>         Unload kernel module\n");
+    printf("  lsmod                       List loaded modules\n");
+    printf("\n");
+}
+
+static int parse(char* line, char** argv)
 {
     int argc = 0;
 
@@ -25,6 +76,8 @@ int parse(char* line, char** argv)
     argv[argc] = 0;
     return argc;
 }
+
+/* Public */
 
 int main(void)
 {
@@ -70,10 +123,7 @@ int main(void)
         }
 
         if (strcmp(argv[0], "help") == 0) {
-            printf("Available commands:\n");
-            printf("  help  - Show this message\n");
-            printf("  exit  - Exit shell\n");
-            printf("  hello - Test program\n");
+            print_help();
             continue;
         }
 
@@ -82,8 +132,7 @@ int main(void)
             execve(argv[0], argv, 0);
 
             printf("Command not found: ");
-            printf(argv[0]);
-            printf("\n");
+            printf("%s\n", argv[0]);
             exit(1);
         } else if (pid > 0) {
             int status;

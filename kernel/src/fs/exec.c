@@ -1,7 +1,7 @@
 #include "fs/exec.h"
 #include "drivers/printk.h"
 #include "ferrite/types.h"
-#include "fs/stat.h"
+#include <uapi/stat.h>
 #include "fs/vfs.h"
 #include "idt/idt.h"
 #include "memory/page.h"
