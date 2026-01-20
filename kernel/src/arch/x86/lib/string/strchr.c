@@ -1,4 +1,4 @@
-#include <ferrite/types.h>
+#include <types.h>
 
 char* strchr(char const* str, s32 c)
 {

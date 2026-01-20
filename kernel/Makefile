@@ -6,16 +6,15 @@ NAME = kernel.elf
 ARCH = x86
 
 DRIVER_DIR = ./drivers
-INCDIR = ./include
 SDIR = ./src
 ODIR = ./build
 
-CFLAGS = -I$(SDIR) -I$(INCDIR) -I$(SDIR)/arch/$(ARCH) \
+CFLAGS = -I$(SDIR) -Iinclude -Iinclude/uapi -I$(SDIR)/arch/$(ARCH) \
          -m32 -ffreestanding -ggdb3 -O2 \
          -Wall -Wextra -Werror -Wstrict-prototypes \
          -Wformat=2 -std=gnu17 \
          -fno-stack-protector -march=i386 -nostdlib \
-         -D__DEBUG -D__print_serial -D__bochs 
+         -D__DEBUG -D__print_serial -D__bochs -D__KERNEL
 
 #-D__TEST
 # -Wvla

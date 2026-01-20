@@ -7,7 +7,7 @@
 #include "memory/kmalloc.h"
 #include "memory/memory.h"
 
-#include <ferrite/types.h>
+#include <types.h>
 
 void kfree(void* ptr)
 {

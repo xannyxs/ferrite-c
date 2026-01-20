@@ -1,6 +1,6 @@
 #include <drivers/serial.h>
 #include <drivers/vga.h>
-#include <ferrite/types.h>
+#include <types.h>
 
 #define VGA_ENTRY_COLOUR(fg, bg) ((u8)(fg) | ((u8)(bg) << 4))
 #define VGA_ENTRY(c, colour) ((u16)(c) | ((u16)(colour) << 8))

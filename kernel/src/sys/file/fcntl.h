@@ -1,7 +1,7 @@
 #ifndef FCNTL_H
 #define FCNTL_H
 
-#include <ferrite/types.h>
+#include <types.h>
 
 #define SEEK_SET 0
 #define SEEK_CUR 1

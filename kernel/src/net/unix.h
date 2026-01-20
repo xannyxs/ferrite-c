@@ -2,7 +2,7 @@
 #define UNIX_H
 
 #include "net/socket.h"
-#include <ferrite/types.h>
+#include <types.h>
 
 #define AF_UNIX 1
 #define UNIX_PATH_MAX 108

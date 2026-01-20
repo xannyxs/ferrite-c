@@ -1,7 +1,7 @@
 #ifndef MODULE_H
 #define MODULE_H
 
-#include <ferrite/types.h>
+#include <types.h>
 
 #define MOD_MAX_NAME 64
 

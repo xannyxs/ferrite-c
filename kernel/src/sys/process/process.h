@@ -2,12 +2,12 @@
 #define PROCESS_H
 
 #include "arch/x86/pit.h"
-#include "ferrite/limits.h"
+#include <limits.h>
 #include "fs/vfs.h"
 #include "idt/idt.h"
 #include "sys/file/file.h"
 
-#include <ferrite/types.h>
+#include <types.h>
 
 #define MAX_OPEN_FILES 64
 #define NUM_PROC 32

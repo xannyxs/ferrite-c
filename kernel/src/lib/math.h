@@ -1,7 +1,7 @@
 #ifndef MATH_H
 #define MATH_H
 
-#include <ferrite/types.h>
+#include <types.h>
 #include <stdbool.h>
 
 #define likely(x) __builtin_expect(!!(x), true)

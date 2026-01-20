@@ -1,10 +1,10 @@
 #ifndef FILE_H
 #define FILE_H
 
-#include "ferrite/dirent.h"
+#include <dirent.h>
 #include "fs/vfs/mode_t.h"
 
-#include <ferrite/types.h>
+#include <types.h>
 
 struct vfs_inode;
 

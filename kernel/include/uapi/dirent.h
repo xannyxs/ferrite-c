@@ -1,8 +1,8 @@
 #ifndef _DIRENT_H
 #define _DIRENT_H
 
-#include <ferrite/limits.h>
-#include <ferrite/types.h>
+#include <limits.h>
+#include <types.h>
 
 typedef struct {
     long d_ino;

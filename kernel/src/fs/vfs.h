@@ -5,7 +5,7 @@
 #include "net/socket.h"
 #include "sys/file/file.h"
 
-#include <ferrite/types.h>
+#include <types.h>
 
 struct vfs_mount;
 struct ext2_superblock;

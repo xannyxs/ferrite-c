@@ -5,7 +5,7 @@
 
 #include <ferrite/errno.h>
 #include <ferrite/string.h>
-#include <ferrite/types.h>
+#include <types.h>
 
 #include <drivers/printk.h>
 

@@ -6,7 +6,7 @@
 #include "memory/kmalloc.h"
 
 #include <ferrite/string.h>
-#include <ferrite/types.h>
+#include <types.h>
 #include <lib/stdlib.h>
 
 extern struct super_operations ext2_sops;

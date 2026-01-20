@@ -1,7 +1,7 @@
 #ifndef _STAT_H
 #define _STAT_H
 
-#include <ferrite/types.h>
+#include <types.h>
 
 struct stat {
     u16 st_dev;

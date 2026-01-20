@@ -2,7 +2,7 @@
 #define SOCKET_H
 
 #include "sys/file/file.h"
-#include <ferrite/types.h>
+#include <types.h>
 
 #define SOCK_STREAM 1 /* Stream socket (TCP, Unix STREAM) */
 #define SOCK_DGRAM 2  /* Datagram socket (UDP, Unix DGRAM) */

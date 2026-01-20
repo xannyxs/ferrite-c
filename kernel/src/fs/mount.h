@@ -3,7 +3,7 @@
 
 #include "fs/vfs.h"
 
-#include <ferrite/limits.h>
+#include <limits.h>
 
 #define find_mount(x)                                                                                             \
     _Generic((x), char*: find_mount_by_path, const char*: find_mount_by_path, vfs_inode_t*: find_mount_by_inode)( \

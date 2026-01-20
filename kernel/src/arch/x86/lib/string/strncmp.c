@@ -1,4 +1,4 @@
-#include <ferrite/types.h>
+#include <types.h>
 
 int strncmp(char const* _l, char const* _r, size_t n)
 {

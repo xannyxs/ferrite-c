@@ -9,10 +9,10 @@
 #include "sys/file/file.h"
 #include "sys/process/process.h"
 
-#include <ferrite/dirent.h>
+#include <dirent.h>
 #include <ferrite/errno.h>
 #include <ferrite/string.h>
-#include <ferrite/types.h>
+#include <types.h>
 
 extern struct inode_operations chrdev_inode_ops;
 

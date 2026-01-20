@@ -5,7 +5,7 @@
 #include "memory/vmm.h"
 #include "sys/process/process.h"
 
-#include <ferrite/types.h>
+#include <types.h>
 
 #define KERNEL_MODE 0
 #define USER_MODE 3

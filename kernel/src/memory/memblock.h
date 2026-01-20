@@ -1,7 +1,7 @@
 #ifndef MEMBLOCK_H
 #define MEMBLOCK_H
 
-#include <ferrite/types.h>
+#include <types.h>
 #include <stdbool.h>
 
 void memblock_init(void);

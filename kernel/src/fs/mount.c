@@ -1,7 +1,7 @@
 #include "fs/mount.h"
 #include "drivers/block/device.h"
 #include "drivers/printk.h"
-#include "ferrite/limits.h"
+#include <limits.h>
 #include "ferrite/major.h"
 #include "fs/filesystem.h"
 #include "fs/stat.h"

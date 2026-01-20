@@ -7,7 +7,7 @@
 
 #include <ferrite/errno.h>
 #include <ferrite/string.h>
-#include <ferrite/types.h>
+#include <types.h>
 
 #define DEVICE_ATAPI 1
 #define DEVICE_ATA 2

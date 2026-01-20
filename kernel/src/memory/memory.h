@@ -1,7 +1,7 @@
 #ifndef MEMORY_H
 #define MEMORY_H
 
-#include <ferrite/types.h>
+#include <types.h>
 
 #define HEAP_START (void*)0xD0000000
 #define MAXIMUM_SLAB_ALLOCATION 16384

@@ -1,7 +1,7 @@
 #include "arch/x86/gdt/gdt.h"
 #include "arch/x86/entry.h"
 #include "ferrite/string.h"
-#include <ferrite/types.h>
+#include <types.h>
 
 #define NUM_ENTRIES 6
 

@@ -5,7 +5,7 @@
 #include "memory/consts.h"
 #include "memory/memory.h"
 
-#include <ferrite/types.h>
+#include <types.h>
 
 /* Public */
 

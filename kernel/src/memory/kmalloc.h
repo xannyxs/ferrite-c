@@ -1,7 +1,7 @@
 #ifndef KMALLOC_H
 #define KMALLOC_H
 
-#include <ferrite/types.h>
+#include <types.h>
 
 size_t ksize(void* ptr);
 

@@ -7,7 +7,7 @@
 
 #include <ferrite/errno.h>
 #include <ferrite/string.h>
-#include <ferrite/types.h>
+#include <types.h>
 
 extern struct inode_operations chrdev_inode_ops;
 

@@ -14,7 +14,7 @@
 #include "sys/timer/timer.h"
 
 #include <ferrite/string.h>
-#include <ferrite/types.h>
+#include <types.h>
 #include <stdbool.h>
 
 extern vfs_inode_t* root_inode;

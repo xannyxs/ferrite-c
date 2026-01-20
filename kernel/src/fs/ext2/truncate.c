@@ -5,7 +5,7 @@
 #include "lib/math.h"
 
 #include <ferrite/errno.h>
-#include <ferrite/types.h>
+#include <types.h>
 
 int ext2_truncate(vfs_inode_t* node, off_t len)
 {

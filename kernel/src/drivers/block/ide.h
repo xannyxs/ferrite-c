@@ -1,7 +1,7 @@
 #ifndef IDE_H
 #define IDE_H
 
-#include <ferrite/types.h>
+#include <types.h>
 
 #define MAX_IDE_CONTR 2
 

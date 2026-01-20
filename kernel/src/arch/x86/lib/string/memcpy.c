@@ -1,5 +1,5 @@
 #include <drivers/printk.h>
-#include <ferrite/types.h>
+#include <types.h>
 
 void* memcpy(void* dest, void const* src, size_t n)
 {

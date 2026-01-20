@@ -1,5 +1,5 @@
 #include <drivers/console.h>
-#include <ferrite/types.h>
+#include <types.h>
 #include <stdbool.h>
 
 static bool SHIFT_PRESSED = false;

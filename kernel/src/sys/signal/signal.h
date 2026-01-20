@@ -2,7 +2,7 @@
 #define SIGNAL_H
 
 #include "sys/process/process.h"
-#include <ferrite/types.h>
+#include <types.h>
 
 #define _NSIG 32
 #define NSIG _NSIG

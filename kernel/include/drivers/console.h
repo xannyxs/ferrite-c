@@ -1,7 +1,7 @@
 #ifndef CONSOLE_H
 #define CONSOLE_H
 
-#include <ferrite/types.h>
+#include <types.h>
 #include <stdbool.h>
 
 extern void console_add_buffer(char c);

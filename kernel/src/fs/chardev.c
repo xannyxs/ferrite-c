@@ -3,7 +3,7 @@
 #include <drivers/chrdev.h>
 #include <ferrite/errno.h>
 #include <ferrite/string.h>
-#include <ferrite/types.h>
+#include <types.h>
 #include <fs/stat.h>
 #include <fs/vfs.h>
 #include <lib/stdlib.h>

@@ -2,8 +2,8 @@
 #include "fs/vfs.h"
 
 #include <drivers/printk.h>
-#include <ferrite/limits.h>
-#include <ferrite/types.h>
+#include <limits.h>
+#include <types.h>
 #include <lib/stdlib.h>
 
 vfs_inode_t inode_cache[MAX_INODES] = { 0 };

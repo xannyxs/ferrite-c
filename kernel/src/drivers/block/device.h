@@ -1,7 +1,7 @@
 #ifndef BLOCK_DEVICE_H
 #define BLOCK_DEVICE_H
 
-#include <ferrite/types.h>
+#include <types.h>
 
 #define MAJOR(a) (int)((unsigned short)(a) >> 8)
 #define MINOR(a) (int)((unsigned short)(a) & 0xFF)

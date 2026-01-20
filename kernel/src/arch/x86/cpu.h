@@ -3,7 +3,7 @@
 
 #include "arch/x86/io.h"
 
-#include <ferrite/types.h>
+#include <types.h>
 
 static inline void halt(void) { __asm__ __volatile__("hlt"); }
 

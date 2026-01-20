@@ -7,7 +7,7 @@
 #include "memory/memory.h"
 #include "memory/vmm.h"
 
-#include <ferrite/types.h>
+#include <types.h>
 
 static free_list_t* virtual_free_list_head = NULL;
 

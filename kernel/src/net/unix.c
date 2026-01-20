@@ -8,7 +8,7 @@
 
 #include <ferrite/errno.h>
 #include <ferrite/string.h>
-#include <ferrite/types.h>
+#include <types.h>
 
 #define MAX_UNIX_SOCKETS 64
 

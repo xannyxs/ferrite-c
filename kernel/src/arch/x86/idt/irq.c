@@ -9,7 +9,7 @@
 #include "sys/process/process.h"
 #include "sys/timer/timer.h"
 
-#include <ferrite/types.h>
+#include <types.h>
 
 extern s32 ticks_remaining;
 extern context_t* scheduler_context;
