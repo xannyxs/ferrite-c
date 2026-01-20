@@ -8,6 +8,7 @@
 #define NULL ((void*)0)
 
 typedef long off_t;
+typedef unsigned short mode_t;
 typedef unsigned short dev_t;
 typedef unsigned short uid_t;
 typedef unsigned short gid_t;

@@ -1,7 +1,6 @@
 #ifndef FS_VFS_H
 #define FS_VFS_H
 
-#include "fs/vfs/mode_t.h"
 #include "net/socket.h"
 #include "sys/file/file.h"
 

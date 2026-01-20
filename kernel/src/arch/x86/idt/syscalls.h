@@ -1,10 +1,11 @@
 #ifndef SYSCALLS_H
 #define SYSCALLS_H
 
-#include <dirent.h>
-#include <uapi/stat.h>
-#include "fs/vfs/mode_t.h"
 #include "idt/idt.h"
+
+#include <uapi/dirent.h>
+#include <uapi/stat.h>
+#include <uapi/types.h>
 
 #define USER_CS 0x1B
 #define USER_DS 0x23
