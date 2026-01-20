@@ -1,5 +1,5 @@
 #include "fs/ext2/ext2.h"
-#include "fs/stat.h"
+#include <uapi/stat.h>
 #include "fs/vfs.h"
 #include "lib/math.h"
 #include "memory/kmalloc.h"

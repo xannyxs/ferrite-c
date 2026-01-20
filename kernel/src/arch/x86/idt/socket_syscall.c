@@ -1,6 +1,6 @@
 #include "arch/x86/idt/syscalls.h"
 #include "drivers/printk.h"
-#include "fs/stat.h"
+#include <uapi/stat.h>
 #include "fs/vfs.h"
 #include "memory/kmalloc.h"
 #include "net/socket.h"

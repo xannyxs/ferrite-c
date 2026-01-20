@@ -1,10 +1,8 @@
 #include "fs/mount.h"
 #include "drivers/block/device.h"
 #include "drivers/printk.h"
-#include <limits.h>
 #include "ferrite/major.h"
 #include "fs/filesystem.h"
-#include "fs/stat.h"
 #include "fs/vfs.h"
 #include "idt/syscalls.h"
 #include "memory/kmalloc.h"
@@ -13,6 +11,8 @@
 #include <ferrite/errno.h>
 #include <ferrite/string.h>
 #include <lib/stdlib.h>
+#include <uapi/limits.h>
+#include <uapi/stat.h>
 
 block_device_t* root_device = NULL;
 vfs_mount_t* mount_table = NULL;

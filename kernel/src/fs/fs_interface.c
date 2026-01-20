@@ -1,6 +1,6 @@
 #include "fs/ext2/ext2.h"
 #include "fs/mount.h"
-#include "fs/stat.h"
+#include <uapi/stat.h>
 #include "fs/vfs.h"
 #include "idt/syscalls.h"
 #include "memory/kmalloc.h"

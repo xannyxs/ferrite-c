@@ -1,4 +1,4 @@
-#include "fs/stat.h"
+#include <uapi/stat.h>
 #include "fs/vfs.h"
 
 #include <drivers/printk.h>

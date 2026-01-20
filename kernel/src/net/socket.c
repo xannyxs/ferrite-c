@@ -1,6 +1,6 @@
 #include "net/socket.h"
 #include "arch/x86/time/time.h"
-#include "fs/stat.h"
+#include <uapi/stat.h>
 #include "fs/vfs.h"
 #include "memory/kmalloc.h"
 #include "net/unix.h"
