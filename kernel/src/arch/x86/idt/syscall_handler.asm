@@ -1,6 +1,8 @@
 section .text
-global  syscall_handler
-extern  syscall_dispatcher_c
+
+global syscall_handler
+global trapret
+extern syscall_dispatcher_c
 
 syscall_handler:
 	push dword 0; err_code
@@ -22,10 +24,6 @@ syscall_handler:
 	push esp; Pass trapframe pointer
 	call syscall_dispatcher_c
 	add  esp, 4
-
-	; Fall through to trapret
-
-	global trapret
 
 trapret:
 	popa ; Pop: EAX, ECX, EDX, EBX, ESP, EBP, ESI, EDI

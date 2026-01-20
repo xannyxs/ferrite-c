@@ -3,7 +3,7 @@ CC = i686-elf-gcc
 LIBC_DIR = ../../lib/libc
 KERNEL_INCLUDE = ../../../kernel/include
 
-CFLAGS = -m32 -nostdlib -ffreestanding -O2 -Wall \
+CFLAGS = -m32 -nostdlib -ffreestanding -O2 -Wall -std=gnu17 \
          -I$(LIBC_DIR)/include -I$(KERNEL_INCLUDE)
 
 LDFLAGS = -m32 -nostdlib 
