@@ -1,33 +1,46 @@
 CC = i686-elf-gcc
 AS = nasm
 AR = i686-elf-ar
-CFLAGS = -m32 -nostdlib -ffreestanding -O2 -Wall -Wextra 
-ASFLAGS = -f elf32
 
-BUILD_DIR = build
-OBJS = $(BUILD_DIR)/syscalls.o $(BUILD_DIR)/string.o $(BUILD_DIR)/printf.o
+KERNEL_UAPI = ../../../kernel/include
+SRCDIR = src
+BUILDDIR = build
+INCDIR = include
 
-all: libc.a $(BUILD_DIR)/crt0.o
+CFLAGS = -I$(INCDIR) -I$(KERNEL_UAPI) \
+         -m32 -ffreestanding -nostdlib -fno-builtin \
+         -Wall -Wextra -O2 -std=gnu17
 
-libc.a: $(OBJS)
-	$(AR) rcs $@ $^
+ASFLAGS = -felf32
 
-$(BUILD_DIR)/crt0.o: crt0.asm | $(BUILD_DIR)
-	$(AS) $(ASFLAGS) $< -o $@
+C_SOURCES = $(shell find $(SRCDIR) -name '*.c')
+ASM_SOURCES = $(shell find $(SRCDIR) -name '*.asm')
 
-$(BUILD_DIR)/syscalls.o: syscalls.asm | $(BUILD_DIR)
-	$(AS) $(ASFLAGS) $< -o $@
+C_OBJECTS = $(patsubst $(SRCDIR)/%.c,$(BUILDDIR)/%.o,$(C_SOURCES))
+ASM_OBJECTS = $(patsubst $(SRCDIR)/%.asm,$(BUILDDIR)/%.o,$(filter-out $(SRCDIR)/crt0.asm,$(ASM_SOURCES)))
 
-$(BUILD_DIR)/string.o: string.c | $(BUILD_DIR)
-	$(CC) $(CFLAGS) -c $< -o $@
+CRT0 = $(BUILDDIR)/crt0.o
 
-$(BUILD_DIR)/printf.o: stdio/printf.c | $(BUILD_DIR)
-	$(CC) $(CFLAGS) -c $< -o $@
+all: libc.a $(CRT0)
 
-$(BUILD_DIR):
-	mkdir -p $(BUILD_DIR)
+libc.a: $(C_OBJECTS) $(ASM_OBJECTS)
+	@echo "AR   => $@"
+	@$(AR) rcs $@ $^
+
+$(BUILDDIR)/%.o: $(SRCDIR)/%.c
+	@echo "CC   => $<"
+	@mkdir -p $(dir $@)
+	@$(CC) $(CFLAGS) -c $< -o $@
+
+$(BUILDDIR)/%.o: $(SRCDIR)/%.asm
+	@echo "AS   => $<"
+	@mkdir -p $(dir $@)
+	@$(AS) $(ASFLAGS) $< -o $@
 
 clean:
-	rm -rf $(BUILD_DIR) libc.a
+	@echo "CLEAN libc"
+	@rm -rf $(BUILDDIR) libc.a
 
-.PHONY: all clean
+re: clean all
+
+.PHONY: all clean re

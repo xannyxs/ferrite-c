@@ -1,7 +1,8 @@
 #include <stdarg.h>
 #include <stdbool.h>
 
-#include "../syscalls.h"
+#include <libc/string.h>
+#include <libc/syscalls.h>
 
 static char buf[1024];
 
