@@ -2,6 +2,8 @@
 #include "arch/x86/memlayout.h"
 #include "drivers/printk.h"
 #include "ferrite/string.h"
+#include "ferrite/types.h"
+#include "lib/math.h"
 #include "lib/stdlib.h"
 #include "memory/buddy_allocator/buddy.h"
 #include "memory/consts.h"
@@ -64,6 +66,38 @@ void visualize_paging(u32 limit_mb, u32 detailed_mb)
 
 /* Public */
 
+void vmm_clear_pages(void)
+{
+    u32* pd = (u32*)0xFFFFF000;
+
+    for (u32 pdi = 0; pdi < 768; pdi++) {
+        if (!(pd[pdi] & PTE_P)) {
+            continue;
+        }
+
+        u32* pt = (u32*)(0xFFC00000 + (pdi * PAGE_SIZE));
+        for (u32 pti = 0; pti < 1024; pti++) {
+            if (pt[pti] & PTE_P) {
+                u32 paddr = pt[pti] & PAGE_MASK;
+
+                if (buddy_manages((paddr_t)paddr)) {
+                    buddy_dealloc((paddr_t)paddr, 0);
+                }
+                pt[pti] = 0;
+            }
+        }
+
+        u32 pt_phys = pd[pdi] & PAGE_MASK;
+        pd[pdi] = 0;
+
+        if (buddy_manages((paddr_t)pt_phys)) {
+            buddy_dealloc((paddr_t)pt_phys, 0);
+        }
+    }
+
+    flush_tlb();
+}
+
 void vmm_free_pagedir(void* pgdir)
 {
     u32* pgdir_addr = (u32*)pgdir;
@@ -88,8 +122,13 @@ void vmm_free_pagedir(void* pgdir)
 
 void* vmm_unmap_page(void* vaddr)
 {
+    u32* pd = (u32*)0xFFFFF000;
     u32 pdindex = (u32)vaddr >> 22;
     u32 ptindex = (u32)vaddr >> 12 & 0x03FF;
+
+    if (!(pd[pdindex] & PTE_P)) {
+        return NULL;
+    }
 
     u32* pt = (u32*)(0xFFC00000 + (pdindex * PAGE_SIZE));
     u32* pte = &pt[ptindex];

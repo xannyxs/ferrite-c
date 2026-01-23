@@ -8,9 +8,9 @@
 #include "memory/vmm.h"
 
 #include <ferrite/string.h>
-#include <types.h>
 #include <lib/stdlib.h>
 #include <stdbool.h>
+#include <types.h>
 
 static buddy_allocator_t g_buddy = { 0 };
 
@@ -165,6 +165,11 @@ static inline void buddy_list_add(vaddr_t vaddr, u32 k)
 }
 
 /* Public */
+
+int buddy_manages(paddr_t addr)
+{
+    return (addr >= g_buddy.base && addr < g_buddy.base + g_buddy.size);
+}
 
 u32 buddy_get_max_order(void) { return g_buddy.max_order; }
 

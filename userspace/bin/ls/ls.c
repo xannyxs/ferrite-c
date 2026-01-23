@@ -28,6 +28,7 @@ int main(int argc, char** argv)
     int ret;
 
     while ((ret = readdir(fd, &dirent, 1)) > 0) {
+
         char fullpath[256];
         (void)snprintf(
             fullpath, sizeof(fullpath), "%s%s%s", path,

@@ -261,6 +261,7 @@ int snprintf(char* local_buf, size_t size, char const* fmt, ...)
     va_list args;
     va_start(args, fmt);
     int len = kfmt(local_buf, fmt, args);
+
     va_end(args);
 
     if (len >= (int)size) {

@@ -4,13 +4,14 @@
 #include "idt/idt.h"
 #include "idt/syscalls.h"
 #include "lib/math.h"
+#include "memory/buddy_allocator/buddy.h"
 #include "memory/consts.h"
 #include "memory/page.h"
 #include "memory/vmm.h"
 
 #include <ferrite/elf.h>
-#include <uapi/errno.h>
 #include <ferrite/string.h>
+#include <uapi/errno.h>
 
 int load_elf_binary(binpgm_t* pgm, trapframe_t* regs)
 {
@@ -24,6 +25,10 @@ int load_elf_binary(binpgm_t* pgm, trapframe_t* regs)
         return -ENOEXEC;
     }
 
+    // printk("About to clear pages...\n");
+    // vmm_clear_pages();
+    // printk("Pages cleared, loading ELF...\n");
+
     for (int i = 0; i < elf->e_phnum; i++) {
         elf32_phdr_t* phdr = (elf32_phdr_t*)(pgm->b_buf + elf->e_phoff
                                              + i * sizeof(elf32_phdr_t));
@@ -35,6 +40,11 @@ int load_elf_binary(binpgm_t* pgm, trapframe_t* regs)
         u32 end = ALIGN(phdr->p_vaddr + phdr->p_memsz, PAGE_SIZE);
 
         for (; addr < end; addr += PAGE_SIZE) {
+            void* old_page = vmm_unmap_page((void*)addr);
+            if (old_page && buddy_manages((paddr_t)old_page)) {
+                buddy_dealloc((paddr_t)old_page, 0);
+            }
+
             if (vmm_map_page(NULL, (void*)addr, PTE_P | PTE_U | PTE_W) < 0) {
                 printk("Failed to map page at 0x%x\n", addr);
                 return -ENOMEM;

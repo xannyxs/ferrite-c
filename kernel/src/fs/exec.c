@@ -1,18 +1,17 @@
 #include "fs/exec.h"
-#include "drivers/printk.h"
 #include "ferrite/types.h"
-#include <uapi/stat.h>
 #include "fs/vfs.h"
 #include "idt/idt.h"
 #include "memory/page.h"
 #include "sys/file/file.h"
 #include "sys/process/process.h"
 
-#include <uapi/errno.h>
 #include <ferrite/string.h>
 #include <lib/stdlib.h>
 #include <memory/consts.h>
 #include <sys/file/fcntl.h>
+#include <uapi/errno.h>
+#include <uapi/stat.h>
 
 /* Formats */
 
