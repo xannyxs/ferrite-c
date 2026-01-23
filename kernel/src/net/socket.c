@@ -4,7 +4,7 @@
 #include "fs/vfs.h"
 #include "memory/kmalloc.h"
 #include "net/unix.h"
-#include "sys/file/fcntl.h"
+#include <uapi/fcntl.h>
 #include "sys/file/file.h"
 #include "sys/process/process.h"
 

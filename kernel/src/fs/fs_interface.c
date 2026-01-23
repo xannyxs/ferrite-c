@@ -3,7 +3,7 @@
 #include "fs/vfs.h"
 #include "idt/syscalls.h"
 #include "memory/kmalloc.h"
-#include "sys/file/fcntl.h"
+#include <uapi/fcntl.h>
 #include "sys/process/process.h"
 #include <uapi/stat.h>
 

@@ -4,7 +4,7 @@
 #include "fs/vfs.h"
 #include "memory/kmalloc.h"
 #include "net/socket.h"
-#include "sys/file/fcntl.h"
+#include <uapi/fcntl.h>
 #include "sys/file/file.h"
 
 #include <uapi/errno.h>

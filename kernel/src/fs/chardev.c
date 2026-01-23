@@ -1,15 +1,15 @@
-#include "idt/syscalls.h"
 #include <drivers/block/device.h>
 #include <drivers/chrdev.h>
-#include <uapi/errno.h>
 #include <ferrite/string.h>
-#include <types.h>
-#include <uapi/stat.h>
 #include <fs/vfs.h>
+#include <idt/syscalls.h>
 #include <lib/stdlib.h>
 #include <memory/kmalloc.h>
-#include <sys/file/fcntl.h>
 #include <sys/file/file.h>
+#include <types.h>
+#include <uapi/errno.h>
+#include <uapi/fcntl.h>
+#include <uapi/stat.h>
 
 extern void console_chrdev_init(void);
 
