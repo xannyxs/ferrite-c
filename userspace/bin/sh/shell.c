@@ -56,6 +56,34 @@ static void print_help(void)
     printf("\n");
 }
 
+static int builtin_cd(int argc, char** argv)
+{
+    if (argc < 2) {
+        printf("cd: missing argument\n");
+        return 1;
+    }
+
+    if (chdir(argv[1]) < 0) {
+        printf("cd: cannot change directory to '%s'\n", argv[1]);
+        return 1;
+    }
+
+    return 0;
+}
+
+static int builtin_pwd(void)
+{
+    char buf[512];
+
+    if (getcwd(buf, sizeof(buf)) >= 0) {
+        printf("%s\n", buf);
+        return 0;
+    }
+
+    printf("pwd: failed\n");
+    return -1;
+}
+
 static int parse(char* line, char** argv)
 {
     int argc = 0;
@@ -121,6 +149,16 @@ int main(void)
         if (strcmp(argv[0], "exit") == 0) {
             printf("Goodbye!\n");
             exit(0);
+        }
+
+        if (strcmp(argv[0], "pwd") == 0) {
+            builtin_pwd();
+            continue;
+        }
+
+        if (strcmp(argv[0], "cd") == 0) {
+            builtin_cd(argc, argv);
+            continue;
         }
 
         if (strcmp(argv[0], "help") == 0) {
