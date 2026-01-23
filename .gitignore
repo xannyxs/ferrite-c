@@ -18,7 +18,7 @@ userspace/**/*.a
 userspace/bin/sh/sh
 userspace/bin/hello/hello
 userspace/bin/ls/ls
-userspace/bin/cd/cd
+userspace/bin/touch/touch
 
 userspace/bin/*/build/
 
