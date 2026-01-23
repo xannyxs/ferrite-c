@@ -151,3 +151,12 @@ getcwd:
 	pop  ebx
 	ret
 
+global chdir
+
+chdir:
+	push ebx
+	mov  eax, SYS_CHDIR
+	mov  ebx, [esp+8]
+	int  0x80
+	pop  ebx
+	ret
