@@ -33,4 +33,6 @@ size_t buddy_get_total_memory(void);
 
 void buddy_visualize(void);
 
+int buddy_manages(paddr_t);
+
 #endif /* BUDDY_H */

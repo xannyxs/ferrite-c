@@ -7,9 +7,11 @@ SRCDIR = src
 BUILDDIR = build
 INCDIR = include
 
+# DO NOT CHANGE the -O flag.
+# GCC is too aggresive with optimization, need to look into it.
 CFLAGS = -I$(INCDIR) -I$(KERNEL_UAPI) \
          -m32 -ffreestanding -nostdlib -fno-builtin \
-         -Wall -Wextra -O2 -std=gnu17
+         -Wall -Wextra -O0 -std=gnu17 
 
 ASFLAGS = -felf32
 

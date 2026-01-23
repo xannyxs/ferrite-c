@@ -77,7 +77,6 @@ static char* simple_number(
         negative = true;
         num = -num;
     }
-    write(1, "Hello4\n", 7);
 
     unsigned int unum = (unsigned int)num;
     if (unum == 0) {
@@ -89,8 +88,6 @@ static char* simple_number(
             unum /= base;
         }
     }
-
-    write(1, "Hello5\n", 7);
 
     int num_len = i + (negative ? 1 : 0);
     if (width > num_len) {
@@ -119,6 +116,7 @@ static char* simple_number(
 static int kfmt(char* buf, char const* fmt, va_list args)
 {
     char* str = buf;
+
     for (; *fmt; ++fmt) {
         if (*fmt != '%') {
             *str++ = *fmt;
@@ -263,6 +261,7 @@ int snprintf(char* local_buf, size_t size, char const* fmt, ...)
     va_list args;
     va_start(args, fmt);
     int len = kfmt(local_buf, fmt, args);
+
     va_end(args);
 
     if (len >= (int)size) {

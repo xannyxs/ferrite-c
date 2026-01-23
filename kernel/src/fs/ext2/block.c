@@ -3,7 +3,7 @@
 #include "fs/ext2/ext2.h"
 #include "fs/vfs.h"
 
-#include <ferrite/errno.h>
+#include <uapi/errno.h>
 #include <ferrite/string.h>
 #include <stdbool.h>
 

@@ -7,7 +7,7 @@
 #include "sys/file/fcntl.h"
 #include "sys/process/process.h"
 
-#include <ferrite/errno.h>
+#include <uapi/errno.h>
 #include <ferrite/string.h>
 
 SYSCALL_ATTR int sys_read(int fd, void* buf, int count)

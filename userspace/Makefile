@@ -8,6 +8,7 @@ libc:
 programs: libc
 	$(MAKE) -C bin/sh
 	$(MAKE) -C bin/hello
+	$(MAKE) -C bin/ls
 
 clean:
 	$(MAKE) -C lib/libc clean

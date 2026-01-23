@@ -30,6 +30,7 @@ install: kernel userspace
 	@cp $(KERNEL_ELF) $(SYSROOT_DIR)/boot/kernel.elf
 	@cp $(USERSPACE_DIR)/bin/sh/sh $(SYSROOT_DIR)/bin/
 	@cp $(USERSPACE_DIR)/bin/hello/hello $(SYSROOT_DIR)/bin/
+	@cp $(USERSPACE_DIR)/bin/ls/ls $(SYSROOT_DIR)/bin/
 	@echo "Sysroot populated"
 
 images: $(ROOT_IMG) $(TEST_IMG)

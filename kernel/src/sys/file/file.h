@@ -2,8 +2,6 @@
 #define FILE_H
 
 #include <dirent.h>
-#include "fs/vfs/mode_t.h"
-
 #include <types.h>
 
 struct vfs_inode;

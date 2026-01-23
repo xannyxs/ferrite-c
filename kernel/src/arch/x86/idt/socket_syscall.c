@@ -7,7 +7,7 @@
 #include "sys/file/fcntl.h"
 #include "sys/file/file.h"
 
-#include <ferrite/errno.h>
+#include <uapi/errno.h>
 #include <ferrite/string.h>
 #include <types.h>
 #include <lib/stdlib.h>

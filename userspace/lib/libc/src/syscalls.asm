@@ -56,9 +56,46 @@ read:
 global close
 
 close:
-	mov eax, SYS_CLOSE
-	mov ebx, [esp+4]; fd
-	int 0x80
+	push ebx
+	mov  eax, SYS_CLOSE
+	mov  ebx, [esp+8]
+	int  0x80
+	pop  ebx
+	ret
+
+global readdir
+
+readdir:
+	push ebx
+	mov  eax, SYS_READDIR
+	mov  ebx, [esp+8]
+	mov  ecx, [esp+12]
+	mov  edx, [esp+16]
+	int  0x80
+	pop  ebx
+	ret
+
+global stat
+
+stat:
+	push ebx
+	mov  eax, SYS_STAT
+	mov  ebx, [esp+8]
+	mov  ecx, [esp+12]
+	int  0x80
+	pop  ebx
+	ret
+
+global open
+
+open:
+	push ebx
+	mov  eax, SYS_OPEN
+	mov  ebx, [esp+8]
+	mov  ecx, [esp+12]
+	mov  edx, [esp+16]
+	int  0x80
+	pop  ebx
 	ret
 
 	;      pid_t fork(void)
@@ -106,27 +143,11 @@ getpid:
 global getcwd
 
 getcwd:
-	mov eax, SYS_GETCWD
-	mov ebx, [esp+4]
-	mov ecx, [esp+8]
-	int 0x80
+	push ebx
+	mov  eax, SYS_GETCWD
+	mov  ebx, [esp+8]
+	mov  ecx, [esp+12]
+	int  0x80
+	pop  ebx
 	ret
 
-global readdir
-
-readdir:
-	mov eax, SYS_READDIR
-	mov ebx, [esp+4]
-	mov ecx, [esp+8]
-	mov edx, [esp+12]
-	int 0x80
-	ret
-
-global stat
-
-stat:
-	mov eax, SYS_STAT
-	mov ebx, [esp+4]
-	mov ecx, [esp+8]
-	int 0x80
-	ret

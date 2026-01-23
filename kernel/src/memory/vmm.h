@@ -1,7 +1,7 @@
 #ifndef VMM_H
 #define VMM_H
 
-#include <types.h>
+#include <uapi/types.h>
 
 #define PTE_P (1 << 0)
 #define PTE_W (1 << 1)
@@ -18,5 +18,7 @@ void* vmm_unmap_page(void*);
 void vmm_remap_page(void* vaddr, void* paddr, s32 flags);
 
 void vmm_free_pagedir(void* pgdir);
+
+void vmm_clear_pages(void);
 
 #endif /* VMM_H */

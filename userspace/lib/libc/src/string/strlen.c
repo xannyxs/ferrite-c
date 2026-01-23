@@ -1,7 +1,11 @@
-int strlen(char const* s)
+#include <uapi/types.h>
+
+size_t strlen(char const* s)
 {
-    int len = 0;
+    size_t len = 0;
+
     while (s[len])
         len++;
+
     return len;
 }

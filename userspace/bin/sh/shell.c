@@ -1,6 +1,7 @@
 #include <libc/stdio.h>
 #include <libc/string.h>
 #include <libc/syscalls.h>
+#include <uapi/errno.h>
 
 #define MAX_LINE 256
 #define MAX_ARGS 32
@@ -129,10 +130,16 @@ int main(void)
 
         pid_t pid = fork();
         if (pid == 0) {
-            execve(argv[0], argv, 0);
+            int ret = execve(argv[0], argv, 0);
 
-            printf("Command not found: ");
-            printf("%s\n", argv[0]);
+            if (ret == -EINVAL || ret == -ENOENT) {
+                printf("Command not found: %s\n", argv[0]);
+            } else if (ret == -ENOMEM) {
+                printf("Kernel out of memory\n");
+            } else {
+                printf("Error %d was returned\n", ret);
+            }
+
             exit(1);
         } else if (pid > 0) {
             int status;

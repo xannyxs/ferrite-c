@@ -1,42 +1,26 @@
 	BITS 32
 
 	section .text
-
-	global _start
-	extern main
-	extern exit
+	global  _start
+	extern  main
+	extern  exit
 
 _start:
-	;   Clear frame pointer
 	xor ebp, ebp
 
-	; Stack layout at entry:
-	; [esp+0] = argc
-	; [esp+4] = argv[0]
-	; [esp+8] = argv[1]
-	; ...
-
-	;   Get argc
-	pop eax; eax = argc
-	mov ebx, esp; ebx = argv
-
-	;   Calculate envp (argv + argc + 1)
-	lea ecx, [esp + eax*4 + 4]
-
-	;   Align stack to 16 bytes
 	and esp, 0xFFFFFFF0
 
-	;    Push arguments in reverse order
-	push ecx; envp
-	push ebx; argv
-	push eax; argc
+	mov eax, [esp]; argc
+	lea ebx, [esp + 4]; argv
+	lea ecx, [esp + eax*4 + 8]; envp
 
-	;    Call main
+	sub esp, 16
+	mov [esp+8], ecx; envp
+	mov [esp+4], ebx; argv
+	mov [esp], eax; argc
+
 	call main
 
-	;    Exit with return value
 	push eax
 	call exit
-
-	; Should never reach here
 	hlt

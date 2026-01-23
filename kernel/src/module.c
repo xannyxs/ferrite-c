@@ -1,5 +1,5 @@
 #include <ferrite/elf.h>
-#include <ferrite/errno.h>
+#include <uapi/errno.h>
 #include <ferrite/ksyms.h>
 #include <ferrite/module.h>
 #include <ferrite/string.h>
