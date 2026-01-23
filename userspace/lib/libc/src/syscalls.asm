@@ -7,6 +7,7 @@
 	%define SYS_OPEN     5
 	%define SYS_CLOSE    6
 	%define SYS_WAIT     7
+	%define SYS_UNLINK   10
 	%define SYS_EXECVE   11
 	%define SYS_CHDIR    12
 	%define SYS_STAT     18
@@ -179,6 +180,16 @@ global rmdir
 rmdir:
 	push ebx
 	mov  eax, SYS_RMDIR
+	mov  ebx, [esp+8]
+	int  0x80
+	pop  ebx
+	ret
+
+global unlink
+
+unlink:
+	push ebx
+	mov  eax, SYS_UNLINK
 	mov  ebx, [esp+8]
 	int  0x80
 	pop  ebx

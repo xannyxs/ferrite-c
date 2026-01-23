@@ -28,4 +28,6 @@ int chdir(char const*);
 int mkdir(char const*, int);
 int rmdir(char const*);
 
+int unlink(char const*);
+
 #endif
