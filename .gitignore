@@ -19,6 +19,7 @@ userspace/bin/sh/sh
 userspace/bin/hello/hello
 userspace/bin/ls/ls
 userspace/bin/touch/touch
+userspace/bin/cat/cat
 
 userspace/bin/*/build/
 
