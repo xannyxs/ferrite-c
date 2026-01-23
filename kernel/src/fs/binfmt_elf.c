@@ -6,12 +6,13 @@
 #include "lib/math.h"
 #include "memory/buddy_allocator/buddy.h"
 #include "memory/consts.h"
-#include "memory/page.h"
 #include "memory/vmm.h"
 
 #include <ferrite/elf.h>
 #include <ferrite/string.h>
 #include <uapi/errno.h>
+
+#define MAX_ARGS 10
 
 int load_elf_binary(binpgm_t* pgm, trapframe_t* regs)
 {
@@ -24,10 +25,6 @@ int load_elf_binary(binpgm_t* pgm, trapframe_t* regs)
     if (elf->e_type != ET_EXEC) {
         return -ENOEXEC;
     }
-
-    // printk("About to clear pages...\n");
-    // vmm_clear_pages();
-    // printk("Pages cleared, loading ELF...\n");
 
     for (int i = 0; i < elf->e_phnum; i++) {
         elf32_phdr_t* phdr = (elf32_phdr_t*)(pgm->b_buf + elf->e_phoff
@@ -67,19 +64,40 @@ int load_elf_binary(binpgm_t* pgm, trapframe_t* regs)
         }
     }
 
-    void* stack_page = get_free_page();
-    if (!stack_page) {
-        return -ENOMEM;
+    u32 stack_start = KERNBASE - (PAGE_SIZE * MAX_ARG_PAGES);
+    for (int i = 0; i < MAX_ARG_PAGES; i++) {
+        if (pgm->b_page[i]) {
+            u32 vaddr = stack_start + (i * PAGE_SIZE);
+            u32 paddr = V2P_WO(pgm->b_page[i]);
+            vmm_remap_page((void*)vaddr, (void*)paddr, PTE_P | PTE_U | PTE_W);
+            pgm->b_page[i] = 0;
+        }
     }
 
-    // Might be leaking? Double check later
-    vmm_remap_page(
-        (void*)(KERNBASE - PAGE_SIZE), (void*)V2P_WO((u32)stack_page),
-        PTE_P | PTE_U | PTE_W
-    );
+    u32 sp = stack_start + pgm->b_p;
+    char* str_ptr = (char*)sp;
+    u32 argv_addrs[MAX_ARGS];
+    int argc = pgm->argc;
 
+    for (int i = 0; i < argc; i++) {
+        argv_addrs[i] = (u32)str_ptr;
+        str_ptr += strlen(str_ptr) + 1;
+    }
+
+    int total_entries = 1 + argc + 1;
+    int total_bytes = total_entries * 4;
+
+    sp = (stack_start + pgm->b_p - total_bytes) & ~0xF; // Align down
+
+    u32* stack = (u32*)sp;
+    stack[0] = argc;
+    for (int i = 0; i < argc; i++) {
+        stack[1 + i] = argv_addrs[i];
+    }
+    stack[1 + argc] = 0;
+
+    regs->esp = sp;
     regs->eip = elf->e_entry;
-    regs->esp = KERNBASE - 16;
     regs->eflags = 0x200;
     regs->cs = USER_CS;
     regs->ss = regs->ds = regs->es = USER_DS;
