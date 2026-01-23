@@ -1,3 +1,4 @@
+#include "uapi/fcntl.h"
 #include <libc/stdio.h>
 #include <libc/string.h>
 #include <libc/syscalls.h>
@@ -116,6 +117,72 @@ static void print_help(void)
     printf("  mkdir <directory>           Create directory\n");
     printf("  rmdir <directory>           Remove directory\n");
     printf("\n");
+}
+
+static int builtin_echo(int argc, char** argv)
+{
+    int redirect_type = 0;
+    int redirect_idx = -1;
+
+    for (int i = 1; i < argc; i++) {
+        if (strcmp(argv[i], ">") == 0) {
+            redirect_type = 1;
+            redirect_idx = i;
+            break;
+        } else if (strcmp(argv[i], ">>") == 0) {
+            redirect_type = 2;
+            redirect_idx = i;
+            break;
+        }
+    }
+
+    if (redirect_type == 0) {
+        for (int i = 1; i < argc; i++) {
+            printf("%s", argv[i]);
+            if (i < argc - 1)
+                printf(" ");
+        }
+        printf("\n");
+        return 0;
+    }
+
+    if (redirect_idx + 1 >= argc) {
+        printf("echo: missing filename\n");
+        return 1;
+    }
+
+    char const* filename = argv[redirect_idx + 1];
+
+    char text[512];
+    int pos = 0;
+    for (int i = 1; i < redirect_idx; i++) {
+        size_t len = strlen(argv[i]);
+        if (pos + len + 1 >= sizeof(text)) {
+            break;
+        }
+
+        if (i > 1)
+            text[pos++] = ' ';
+        memcpy(text + pos, argv[i], len);
+        pos += len;
+    }
+    text[pos++] = '\n';
+
+    int flags = O_CREAT | O_WRONLY;
+    int fd = open(filename, flags, 0644);
+    if (fd < 0) {
+        printf("echo: cannot write to '%s'\n", filename);
+        return 1;
+    }
+
+    if (redirect_type == 2) {
+        lseek(fd, 0, SEEK_END);
+    }
+
+    write(fd, text, pos);
+    close(fd);
+
+    return 0;
 }
 
 static int builtin_cd(int argc, char** argv)
@@ -272,6 +339,11 @@ int main(void)
 
         if (strcmp(argv[0], "env") == 0) {
             builtin_env();
+            continue;
+        }
+
+        if (strcmp(argv[0], "echo") == 0) {
+            builtin_echo(argc, argv);
             continue;
         }
 

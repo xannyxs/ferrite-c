@@ -29,5 +29,6 @@ int mkdir(char const*, int);
 int rmdir(char const*);
 
 int unlink(char const*);
+off_t lseek(int, off_t, int);
 
 #endif
