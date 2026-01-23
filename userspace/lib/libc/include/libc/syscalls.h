@@ -25,4 +25,7 @@ int stat(char const* pathname, struct stat* statbuf);
 int open(char const*, int, int);
 int chdir(char const*);
 
+int mkdir(char const*, int);
+int rmdir(char const*);
+
 #endif

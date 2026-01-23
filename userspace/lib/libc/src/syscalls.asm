@@ -11,6 +11,8 @@
 	%define SYS_CHDIR    12
 	%define SYS_STAT     18
 	%define SYS_GETPID   20
+	%define SYS_MKDIR    39
+	%define SYS_RMDIR    40
 	%define SYS_READDIR  89
 	%define SYS_GETCWD   183
 
@@ -156,6 +158,27 @@ global chdir
 chdir:
 	push ebx
 	mov  eax, SYS_CHDIR
+	mov  ebx, [esp+8]
+	int  0x80
+	pop  ebx
+	ret
+
+global mkdir
+
+mkdir:
+	push ebx
+	mov  eax, SYS_MKDIR
+	mov  ebx, [esp+8]
+	mov  ecx, [esp+12]
+	int  0x80
+	pop  ebx
+	ret
+
+global rmdir
+
+rmdir:
+	push ebx
+	mov  eax, SYS_RMDIR
 	mov  ebx, [esp+8]
 	int  0x80
 	pop  ebx
