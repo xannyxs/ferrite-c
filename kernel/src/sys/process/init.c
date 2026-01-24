@@ -8,7 +8,7 @@
 #include "memory/consts.h"
 #include "memory/page.h"
 #include "memory/vmm.h"
-#include "sys/file/fcntl.h"
+#include <uapi/fcntl.h>
 #include "sys/process/process.h"
 
 #include <ferrite/string.h>

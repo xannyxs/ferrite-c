@@ -1,12 +1,12 @@
 #include <ferrite/elf.h>
-#include <uapi/errno.h>
 #include <ferrite/ksyms.h>
 #include <ferrite/module.h>
 #include <ferrite/string.h>
+#include <uapi/errno.h>
 
 #include "drivers/printk.h"
 #include "memory/kmalloc.h"
-#include "sys/file/fcntl.h"
+#include <uapi/fcntl.h>
 
 module_t* modules = NULL;
 

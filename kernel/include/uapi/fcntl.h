@@ -1,7 +1,7 @@
 #ifndef FCNTL_H
 #define FCNTL_H
 
-#include <types.h>
+#include <uapi/types.h>
 
 #define SEEK_SET 0
 #define SEEK_CUR 1

@@ -16,4 +16,6 @@ size_t strlcat(char*, char const*, size_t);
 
 size_t strlcpy(char*, char const*, size_t);
 
+char* strchr(char const*, int);
+
 #endif

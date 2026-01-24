@@ -7,10 +7,14 @@
 	%define SYS_OPEN     5
 	%define SYS_CLOSE    6
 	%define SYS_WAIT     7
+	%define SYS_UNLINK   10
 	%define SYS_EXECVE   11
 	%define SYS_CHDIR    12
 	%define SYS_STAT     18
+	%define SYS_LSEEK    19
 	%define SYS_GETPID   20
+	%define SYS_MKDIR    39
+	%define SYS_RMDIR    40
 	%define SYS_READDIR  89
 	%define SYS_GETCWD   183
 
@@ -151,3 +155,55 @@ getcwd:
 	pop  ebx
 	ret
 
+global chdir
+
+chdir:
+	push ebx
+	mov  eax, SYS_CHDIR
+	mov  ebx, [esp+8]
+	int  0x80
+	pop  ebx
+	ret
+
+global mkdir
+
+mkdir:
+	push ebx
+	mov  eax, SYS_MKDIR
+	mov  ebx, [esp+8]
+	mov  ecx, [esp+12]
+	int  0x80
+	pop  ebx
+	ret
+
+global rmdir
+
+rmdir:
+	push ebx
+	mov  eax, SYS_RMDIR
+	mov  ebx, [esp+8]
+	int  0x80
+	pop  ebx
+	ret
+
+global unlink
+
+unlink:
+	push ebx
+	mov  eax, SYS_UNLINK
+	mov  ebx, [esp+8]
+	int  0x80
+	pop  ebx
+	ret
+
+global lseek
+
+lseek:
+	push ebx
+	mov  eax, SYS_LSEEK
+	mov  ebx, [esp+8]
+	mov  ecx, [esp+12]
+	mov  edx, [esp+16]
+	int  0x80
+	pop  ebx
+	ret

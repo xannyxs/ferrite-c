@@ -49,11 +49,10 @@ int load_elf_binary(binpgm_t* pgm, trapframe_t* regs)
         }
 
         if (phdr->p_filesz > 0) {
-            int ret = read_exec(
+            read_exec(
                 pgm->b_node, phdr->p_offset, (char*)phdr->p_vaddr,
                 phdr->p_filesz
             );
-            printk("read_exec returned %d\n", ret);
         }
 
         if (phdr->p_memsz > phdr->p_filesz) {

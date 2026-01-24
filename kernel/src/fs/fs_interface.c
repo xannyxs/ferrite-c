@@ -1,14 +1,14 @@
 #include "fs/ext2/ext2.h"
 #include "fs/mount.h"
-#include <uapi/stat.h>
 #include "fs/vfs.h"
 #include "idt/syscalls.h"
 #include "memory/kmalloc.h"
-#include "sys/file/fcntl.h"
+#include <uapi/fcntl.h>
 #include "sys/process/process.h"
+#include <uapi/stat.h>
 
-#include <uapi/errno.h>
 #include <ferrite/string.h>
+#include <uapi/errno.h>
 
 SYSCALL_ATTR int sys_read(int fd, void* buf, int count)
 {
@@ -218,7 +218,6 @@ SYSCALL_ATTR int sys_unlink(char const* path)
 
 SYSCALL_ATTR int sys_chdir(char const* path)
 {
-
     vfs_inode_t* base = NULL;
     if (path[0] == '/') {
         vfs_inode_t* root = myproc()->root;
