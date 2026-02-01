@@ -35,4 +35,9 @@ int time(time_t*);
 
 int reboot(int, int, unsigned int, void*);
 
+int init_module(void*, unsigned long, char const*);
+int delete_module(char const*, unsigned int);
+
+int mount(char const*, char const*, char const*, unsigned long, void const*);
+
 #endif

@@ -130,8 +130,7 @@ SYSCALL_ATTR int sys_getcwd(char*, unsigned long);
 
 /* General */
 
-SYSCALL_ATTR int
-sys_reboot(int magic1, int magic2, unsigned int cmd, void* arg);
+SYSCALL_ATTR int sys_reboot(int, int, unsigned int, void*);
 
 /* Mount */
 

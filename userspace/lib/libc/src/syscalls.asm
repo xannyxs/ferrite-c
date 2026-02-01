@@ -14,10 +14,13 @@
 	%define SYS_STAT     18
 	%define SYS_LSEEK    19
 	%define SYS_GETPID   20
+	%define SYS_MOUNT    22
 	%define SYS_MKDIR    39
 	%define SYS_RMDIR    40
 	%define SYS_REBOOT   88
 	%define SYS_READDIR  89
+	%define SYS_INIT_MODULE  128
+	%define SYS_DELETE_MODULE  129
 	%define SYS_GETCWD   183
 
 	section .text
@@ -226,5 +229,37 @@ reboot:
 	mov ecx, [esp+8]
 	mov edx, [esp+12]
 	mov esi, [esp+16]
+	int 0x80
+	ret
+
+global init_module
+
+init_module:
+	mov eax, SYS_INIT_MODULE
+	mov ebx, [esp+4]
+	mov ecx, [esp+8]
+	mov edx, [esp+12]
+	int 0x80
+	ret
+
+global delete_module
+
+delete_module:
+	mov eax, SYS_DELETE_MODULE
+	mov ebx, [esp+4]
+	mov ecx, [esp+8]
+	int 0x80
+	ret
+
+global mount
+
+mount:
+	mov eax, SYS_MOUNT
+	mov ebx, [esp+4]
+	mov ecx, [esp+8]
+	mov edx, [esp+12]
+	mov esi, [esp+16]
+	mov edi, [esp+20]
+
 	int 0x80
 	ret
