@@ -18,6 +18,7 @@
 	%define SYS_FSTAT    28
 	%define SYS_MKDIR    39
 	%define SYS_RMDIR    40
+	%define SYS_BRK      45
 	%define SYS_REBOOT   88
 	%define SYS_READDIR  89
 	%define SYS_INIT_MODULE  128
@@ -271,6 +272,15 @@ fstat:
 	mov eax, SYS_FSTAT
 	mov ebx, [esp+4]
 	mov ecx, [esp+8]
+
+	int 0x80
+	ret
+
+global brk
+
+brk:
+	mov eax, SYS_BRK
+	mov ebx, [esp+4]
 
 	int 0x80
 	ret

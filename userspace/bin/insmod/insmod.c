@@ -1,4 +1,5 @@
 #include <libc/stdio.h>
+#include <libc/stdlib.h>
 #include <libc/string.h>
 #include <libc/syscalls.h>
 #include <uapi/errno.h>
