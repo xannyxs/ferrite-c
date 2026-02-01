@@ -24,6 +24,9 @@ userspace/bin/rmdir/rmdir
 userspace/bin/mkdir/mkdir
 userspace/bin/rm/rm
 userspace/bin/time/time
+userspace/bin/insmod/insmod
+userspace/bin/rmmod/rmmod
+userspace/bin/mount/mount
 
 userspace/bin/*/build/
 
