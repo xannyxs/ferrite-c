@@ -23,6 +23,7 @@ userspace/bin/cat/cat
 userspace/bin/rmdir/rmdir
 userspace/bin/mkdir/mkdir
 userspace/bin/rm/rm
+userspace/bin/time/time
 
 userspace/bin/*/build/
 
