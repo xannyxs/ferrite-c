@@ -49,6 +49,7 @@ enum syscalls_e {
     SYS_MKDIR = 39,
     SYS_RMDIR = 40,
 
+    SYS_BRK = 45,
     SYS_SETGID = 46,
     SYS_GETGID = 47,
 

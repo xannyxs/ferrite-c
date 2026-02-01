@@ -15,6 +15,7 @@
 	%define SYS_LSEEK    19
 	%define SYS_GETPID   20
 	%define SYS_MOUNT    22
+	%define SYS_FSTAT    28
 	%define SYS_MKDIR    39
 	%define SYS_RMDIR    40
 	%define SYS_REBOOT   88
@@ -260,6 +261,16 @@ mount:
 	mov edx, [esp+12]
 	mov esi, [esp+16]
 	mov edi, [esp+20]
+
+	int 0x80
+	ret
+
+global fstat
+
+fstat:
+	mov eax, SYS_FSTAT
+	mov ebx, [esp+4]
+	mov ecx, [esp+8]
 
 	int 0x80
 	ret

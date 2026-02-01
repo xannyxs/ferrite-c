@@ -39,6 +39,12 @@ SYSCALL_ATTR static s32 sys_fork(trapframe_t* tf)
     return do_fork(tf, "user process");
 }
 
+SYSCALL_ATTR static int sys_brk(unsigned long brk)
+{
+    (void)brk;
+    return -ENOSYS;
+}
+
 SYSCALL_ATTR static pid_t sys_waitpid(pid_t pid, s32* status, s32 options)
 {
     (void)pid;
@@ -124,6 +130,7 @@ static const struct syscall_entry syscall_table[NR_SYSCALLS] = {
     SYSCALL_ENTRY_2(SYS_KILL, kill),
     SYSCALL_ENTRY_2(SYS_MKDIR, mkdir),
     SYSCALL_ENTRY_1(SYS_RMDIR, rmdir),
+    SYSCALL_ENTRY_1(SYS_BRK, brk),
     SYSCALL_ENTRY_1(SYS_SETGID, setgid),
     SYSCALL_ENTRY_0(SYS_GETGID, getgid),
     SYSCALL_ENTRY_0(SYS_GETEUID, geteuid),
