@@ -22,6 +22,8 @@ int close(int fd);
 int getcwd(char* buf, size_t size);
 int readdir(unsigned int fd, dirent_t* dirp, unsigned int count);
 int stat(char const* pathname, struct stat* statbuf);
+int fstat(int, struct stat*);
+
 int open(char const*, int, int);
 int chdir(char const*);
 
@@ -39,5 +41,18 @@ int init_module(void*, unsigned long, char const*);
 int delete_module(char const*, unsigned int);
 
 int mount(char const*, char const*, char const*, unsigned long, void const*);
+
+void* brk(void*);
+
+static inline void* sbrk(unsigned int increment)
+{
+    void* old = brk(NULL);
+    if (increment == 0) {
+        return old;
+    }
+
+    void* new = brk((char*)old + increment);
+    return (new == (char*)old + increment) ? old : (void*)-1;
+}
 
 #endif
