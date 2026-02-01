@@ -7,9 +7,9 @@
 #include "sys/timer/timer.h"
 #include "syscalls.h"
 
-#include <uapi/errno.h>
 #include <ferrite/string.h>
 #include <types.h>
+#include <uapi/errno.h>
 
 #define SYSCALL_ENTRY_0(num, fname) \
     [num] = { .handler = (void*)(sys_##fname), .nargs = 0, .name = #fname }
@@ -57,8 +57,7 @@ SYSCALL_ATTR static int sys_execve(
 SYSCALL_ATTR static time_t sys_time(time_t* tloc)
 {
     time_t current_time = getepoch();
-
-    if (tloc != NULL) {
+    if (tloc) {
         *tloc = current_time;
     }
 

@@ -14,6 +14,7 @@ programs: libc
 	$(MAKE) -C bin/mkdir
 	$(MAKE) -C bin/rmdir
 	$(MAKE) -C bin/rm
+	$(MAKE) -C bin/time
 
 clean:
 	$(MAKE) -C lib/libc clean
@@ -25,5 +26,6 @@ clean:
 	$(MAKE) -C bin/mkdir clean
 	$(MAKE) -C bin/rmdir clean
 	$(MAKE) -C bin/rm clean
+	$(MAKE) -C bin/time clean
 
 .PHONY: all libc programs clean

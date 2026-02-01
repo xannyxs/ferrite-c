@@ -31,4 +31,6 @@ int rmdir(char const*);
 int unlink(char const*);
 off_t lseek(int, off_t, int);
 
+int time(time_t*);
+
 #endif

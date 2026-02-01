@@ -10,6 +10,7 @@
 	%define SYS_UNLINK   10
 	%define SYS_EXECVE   11
 	%define SYS_CHDIR    12
+	%define SYS_TIME     13
 	%define SYS_STAT     18
 	%define SYS_LSEEK    19
 	%define SYS_GETPID   20
@@ -206,4 +207,12 @@ lseek:
 	mov  edx, [esp+16]
 	int  0x80
 	pop  ebx
+	ret
+
+global time
+
+time:
+	mov eax, SYS_TIME
+	mov ebx, [esp+4]
+	int 0x80
 	ret

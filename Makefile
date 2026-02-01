@@ -36,6 +36,7 @@ install: kernel userspace
 	@cp $(USERSPACE_DIR)/bin/rmdir/rmdir $(SYSROOT_DIR)/bin/
 	@cp $(USERSPACE_DIR)/bin/mkdir/mkdir $(SYSROOT_DIR)/bin/
 	@cp $(USERSPACE_DIR)/bin/rm/rm $(SYSROOT_DIR)/bin/
+	@cp $(USERSPACE_DIR)/bin/time/time $(SYSROOT_DIR)/bin/
 	@echo "Sysroot populated"
 
 images: $(ROOT_IMG) $(TEST_IMG)
