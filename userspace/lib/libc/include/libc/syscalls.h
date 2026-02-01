@@ -19,9 +19,40 @@ pid_t getpid(void);
 ssize_t read(int fd, void* buf, size_t count);
 ssize_t write(int fd, void const* buf, size_t count);
 int close(int fd);
-char* getcwd(char* buf, size_t size);
+int getcwd(char* buf, size_t size);
 int readdir(unsigned int fd, dirent_t* dirp, unsigned int count);
 int stat(char const* pathname, struct stat* statbuf);
+int fstat(int, struct stat*);
+
 int open(char const*, int, int);
+int chdir(char const*);
+
+int mkdir(char const*, int);
+int rmdir(char const*);
+
+int unlink(char const*);
+off_t lseek(int, off_t, int);
+
+int time(time_t*);
+
+int reboot(int, int, unsigned int, void*);
+
+int init_module(void*, unsigned long, char const*);
+int delete_module(char const*, unsigned int);
+
+int mount(char const*, char const*, char const*, unsigned long, void const*);
+
+void* brk(void*);
+
+static inline void* sbrk(unsigned int increment)
+{
+    void* old = brk(NULL);
+    if (increment == 0) {
+        return old;
+    }
+
+    void* new = brk((char*)old + increment);
+    return (new == (char*)old + increment) ? old : (void*)-1;
+}
 
 #endif

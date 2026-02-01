@@ -14,6 +14,6 @@ typedef unsigned short uid_t;
 typedef unsigned short gid_t;
 
 typedef unsigned int size_t;
-typedef unsigned long long time_t;
+typedef signed long time_t;
 
 #endif

@@ -7,9 +7,9 @@
 #include "sys/timer/timer.h"
 #include "syscalls.h"
 
-#include <uapi/errno.h>
 #include <ferrite/string.h>
 #include <types.h>
+#include <uapi/errno.h>
 
 #define SYSCALL_ENTRY_0(num, fname) \
     [num] = { .handler = (void*)(sys_##fname), .nargs = 0, .name = #fname }
@@ -23,6 +23,9 @@
 #define SYSCALL_ENTRY_3(num, fname) \
     [num] = { .handler = (void*)(sys_##fname), .nargs = 3, .name = #fname }
 
+#define SYSCALL_ENTRY_4(num, fname) \
+    [num] = { .handler = (void*)(sys_##fname), .nargs = 4, .name = #fname }
+
 #define SYSCALL_ENTRY_5(num, fname) \
     [num] = { .handler = (void*)(sys_##fname), .nargs = 5, .name = #fname }
 
@@ -34,6 +37,12 @@ __attribute__((target("general-regs-only"))) static void sys_exit(s32 status)
 SYSCALL_ATTR static s32 sys_fork(trapframe_t* tf)
 {
     return do_fork(tf, "user process");
+}
+
+SYSCALL_ATTR static int sys_brk(unsigned long brk)
+{
+    (void)brk;
+    return -ENOSYS;
 }
 
 SYSCALL_ATTR static pid_t sys_waitpid(pid_t pid, s32* status, s32 options)
@@ -57,8 +66,7 @@ SYSCALL_ATTR static int sys_execve(
 SYSCALL_ATTR static time_t sys_time(time_t* tloc)
 {
     time_t current_time = getepoch();
-
-    if (tloc != NULL) {
+    if (tloc) {
         *tloc = current_time;
     }
 
@@ -98,6 +106,7 @@ typedef int (*syscall_fn_0)(void);
 typedef int (*syscall_fn_1)(long);
 typedef int (*syscall_fn_2)(long, long);
 typedef int (*syscall_fn_3)(long, long, long);
+typedef int (*syscall_fn_4)(long, long, long, long);
 typedef int (*syscall_fn_5)(long, long, long, long, long);
 
 static const struct syscall_entry syscall_table[NR_SYSCALLS] = {
@@ -121,6 +130,7 @@ static const struct syscall_entry syscall_table[NR_SYSCALLS] = {
     SYSCALL_ENTRY_2(SYS_KILL, kill),
     SYSCALL_ENTRY_2(SYS_MKDIR, mkdir),
     SYSCALL_ENTRY_1(SYS_RMDIR, rmdir),
+    SYSCALL_ENTRY_1(SYS_BRK, brk),
     SYSCALL_ENTRY_1(SYS_SETGID, setgid),
     SYSCALL_ENTRY_0(SYS_GETGID, getgid),
     SYSCALL_ENTRY_0(SYS_GETEUID, geteuid),
@@ -130,6 +140,7 @@ static const struct syscall_entry syscall_table[NR_SYSCALLS] = {
     SYSCALL_ENTRY_2(SYS_SETREGID, setregid),
     SYSCALL_ENTRY_2(SYS_SETGROUPS, setgroups),
     SYSCALL_ENTRY_2(SYS_GETGROUPS, getgroups),
+    SYSCALL_ENTRY_4(SYS_REBOOT, reboot),
     SYSCALL_ENTRY_3(SYS_READDIR, readdir),
     SYSCALL_ENTRY_2(SYS_TRUNCATE, truncate),
     SYSCALL_ENTRY_2(SYS_FTRUNCATE, ftruncate),
@@ -195,6 +206,12 @@ syscall_dispatcher_c(trapframe_t* reg)
         case 3:
             ret = ((syscall_fn_3)entry->handler)(reg->ebx, reg->ecx, reg->edx);
             break;
+
+        case 4:
+            ret = ((syscall_fn_4
+            )entry->handler)(reg->ebx, reg->ecx, reg->edx, reg->esi);
+            break;
+
         case 5:
             ret = ((syscall_fn_5
             )entry->handler)(reg->ebx, reg->ecx, reg->edx, reg->esi, reg->edi);

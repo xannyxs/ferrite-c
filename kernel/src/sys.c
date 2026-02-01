@@ -1,9 +1,40 @@
 #include "arch/x86/idt/syscalls.h"
+#include "cpu.h"
 #include "fs/mount.h"
 #include "sys/process/process.h"
 
 #include <uapi/errno.h>
-#include <types.h>
+#include <uapi/reboot.h>
+#include <uapi/types.h>
+
+/* General */
+
+SYSCALL_ATTR int sys_reboot(int magic1, int magic2, unsigned int cmd, void* arg)
+{
+    (void)arg;
+
+    if (magic1 != (int)FERRITE_REBOOT_MAGIC1
+        || magic2 != (int)FERRITE_REBOOT_MAGIC2) {
+        return -EINVAL;
+    }
+
+    if (myproc()->euid != ROOT_UID) {
+        return -EPERM;
+    }
+
+    switch (cmd) {
+    case FERRITE_REBOOT_CMD_RESTART:
+        reboot();
+        break;
+    case FERRITE_REBOOT_CMD_HALT:
+        halt();
+        break;
+    default:
+        return -EINVAL;
+    }
+
+    return 0;
+}
 
 /* Mount */
 

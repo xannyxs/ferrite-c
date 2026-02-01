@@ -49,6 +49,7 @@ enum syscalls_e {
     SYS_MKDIR = 39,
     SYS_RMDIR = 40,
 
+    SYS_BRK = 45,
     SYS_SETGID = 46,
     SYS_GETGID = 47,
 
@@ -63,6 +64,8 @@ enum syscalls_e {
     SYS_SETREGID = 71,
     SYS_GETGROUPS = 80,
     SYS_SETGROUPS = 81,
+
+    SYS_REBOOT = 88,
 
     SYS_READDIR = 89,
     SYS_TRUNCATE = 92,
@@ -125,6 +128,10 @@ SYSCALL_ATTR int sys_ftruncate(int, off_t);
 SYSCALL_ATTR int sys_getcwd(char*, unsigned long);
 
 /* sys.c */
+
+/* General */
+
+SYSCALL_ATTR int sys_reboot(int, int, unsigned int, void*);
 
 /* Mount */
 
