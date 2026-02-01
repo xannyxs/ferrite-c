@@ -64,6 +64,8 @@ enum syscalls_e {
     SYS_GETGROUPS = 80,
     SYS_SETGROUPS = 81,
 
+    SYS_REBOOT = 88,
+
     SYS_READDIR = 89,
     SYS_TRUNCATE = 92,
     SYS_FTRUNCATE = 93,
@@ -125,6 +127,11 @@ SYSCALL_ATTR int sys_ftruncate(int, off_t);
 SYSCALL_ATTR int sys_getcwd(char*, unsigned long);
 
 /* sys.c */
+
+/* General */
+
+SYSCALL_ATTR int
+sys_reboot(int magic1, int magic2, unsigned int cmd, void* arg);
 
 /* Mount */
 

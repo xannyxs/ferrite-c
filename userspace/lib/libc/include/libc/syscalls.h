@@ -33,4 +33,6 @@ off_t lseek(int, off_t, int);
 
 int time(time_t*);
 
+int reboot(int, int, unsigned int, void*);
+
 #endif

@@ -16,6 +16,7 @@
 	%define SYS_GETPID   20
 	%define SYS_MKDIR    39
 	%define SYS_RMDIR    40
+	%define SYS_REBOOT   88
 	%define SYS_READDIR  89
 	%define SYS_GETCWD   183
 
@@ -214,5 +215,16 @@ global time
 time:
 	mov eax, SYS_TIME
 	mov ebx, [esp+4]
+	int 0x80
+	ret
+
+global reboot
+
+reboot:
+	mov eax, SYS_REBOOT
+	mov ebx, [esp+4]
+	mov ecx, [esp+8]
+	mov edx, [esp+12]
+	mov esi, [esp+16]
 	int 0x80
 	ret

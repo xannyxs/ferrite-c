@@ -1,4 +1,5 @@
 #include "uapi/fcntl.h"
+#include "uapi/reboot.h"
 #include <libc/stdio.h>
 #include <libc/string.h>
 #include <libc/syscalls.h>
@@ -250,6 +251,15 @@ static int builtin_env(void)
     return 0;
 }
 
+static int builtin_reboot(void)
+{
+    reboot(
+        FERRITE_REBOOT_MAGIC1, FERRITE_REBOOT_MAGIC2,
+        FERRITE_REBOOT_CMD_RESTART, NULL
+    );
+    return 0;
+}
+
 static int parse(char* line, char** argv)
 {
     int argc = 0;
@@ -344,6 +354,11 @@ int main(void)
 
         if (strcmp(argv[0], "echo") == 0) {
             builtin_echo(argc, argv);
+            continue;
+        }
+
+        if (strcmp(argv[0], "reboot") == 0) {
+            builtin_reboot();
             continue;
         }
 
