@@ -14,8 +14,8 @@
 #include "sys/timer/timer.h"
 
 #include <ferrite/string.h>
-#include <types.h>
 #include <stdbool.h>
+#include <types.h>
 
 extern vfs_inode_t* root_inode;
 extern u32 page_directory[1024];
@@ -117,7 +117,6 @@ inline void check_resched(void)
         return;
     }
 
-    printk("Preempting PID %d\n", current_proc->pid);
     need_resched = false;
     yield();
 }
