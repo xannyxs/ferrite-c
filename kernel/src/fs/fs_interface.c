@@ -240,21 +240,7 @@ SYSCALL_ATTR int sys_unlink(char const* path)
 
 SYSCALL_ATTR int sys_chdir(char const* path)
 {
-    vfs_inode_t* base = NULL;
-    if (path[0] == '/') {
-        vfs_inode_t* root = myproc()->root;
-
-        base = inode_get(root->i_sb, root->i_ino);
-    } else {
-        base = inode_get(myproc()->pwd->i_sb, myproc()->pwd->i_ino);
-    }
-
-    if (!base) {
-        return -EIO;
-    }
-
     vfs_inode_t* node = vfs_lookup(path);
-    inode_put(base);
     if (!node) {
         return -ENOENT;
     }
@@ -409,8 +395,6 @@ SYSCALL_ATTR int sys_readdir(u32 fd, dirent_t* dirent, int count)
     return result;
 }
 
-#include <drivers/printk.h>
-
 SYSCALL_ATTR int sys_mkdir(char const* pathname, int mode)
 {
     char clean_path[256];
@@ -444,6 +428,7 @@ SYSCALL_ATTR int sys_mkdir(char const* pathname, int mode)
         parent_path[parent_len] = '\0';
 
         parent = vfs_lookup(parent_path);
+        kfree(parent_path);
         if (!parent) {
             return -ENOENT;
         }
@@ -501,6 +486,7 @@ SYSCALL_ATTR int sys_rmdir(char const* path)
         parent_path[parent_len] = '\0';
 
         parent = vfs_lookup(parent_path);
+        kfree(parent_path);
         if (!parent) {
             return -ENOTDIR;
         }
