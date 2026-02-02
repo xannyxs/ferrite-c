@@ -431,8 +431,7 @@ SYSCALL_ATTR int sys_mkdir(char const* pathname, int mode)
     char* last_slash = strrchr(clean_path, '/');
 
     if (!last_slash) {
-        parent = myproc()->pwd;
-        inode_get(parent->i_sb, parent->i_ino);
+        parent = inode_get(myproc()->pwd->i_sb, myproc()->pwd->i_ino);
         name = clean_path;
     } else {
         size_t parent_len = last_slash - clean_path;
@@ -440,7 +439,7 @@ SYSCALL_ATTR int sys_mkdir(char const* pathname, int mode)
             parent_len = 1;
         }
 
-        char parent_path[parent_len + 1];
+        char* parent_path = kmalloc(parent_len + 1);
         memcpy(parent_path, clean_path, parent_len);
         parent_path[parent_len] = '\0';
 
@@ -484,32 +483,36 @@ SYSCALL_ATTR int sys_rmdir(char const* path)
         return err;
     }
 
-    char const* last_slash = strrchr(clean_path, '/');
+    vfs_inode_t* parent = NULL;
+    char* name = NULL;
+    char* last_slash = strrchr(clean_path, '/');
+
     if (!last_slash) {
-        return -ENOENT;
+        parent = inode_get(myproc()->pwd->i_sb, myproc()->pwd->i_ino);
+        name = clean_path;
+    } else {
+        size_t parent_len = last_slash - clean_path;
+        if (parent_len == 0) {
+            parent_len = 1;
+        }
+
+        char* parent_path = kmalloc(parent_len + 1);
+        memcpy(parent_path, clean_path, parent_len);
+        parent_path[parent_len] = '\0';
+
+        parent = vfs_lookup(parent_path);
+        if (!parent) {
+            return -ENOTDIR;
+        }
+
+        name = last_slash + 1;
     }
 
-    size_t parent_len = last_slash - clean_path;
-    if (parent_len == 0) {
-        parent_len = 1;
-    }
-
-    char parent_path[parent_len + 1];
-    memcpy(parent_path, clean_path, parent_len);
-    parent_path[parent_len] = '\0';
-
-    char const* name = last_slash + 1;
     size_t name_len = strlen(name);
-
-    vfs_inode_t* parent = vfs_lookup(parent_path);
-    if (!parent) {
-        return -ENOTDIR;
+    if (name_len == 0) {
+        inode_put(parent);
+        return -EEXIST;
     }
-
-    // if (IS_RDONLY(dir)) {
-    //     iput(dir);
-    //     return -EROFS;
-    // }
 
     if (!vfs_permission(parent, MAY_WRITE | MAY_EXEC)) {
         inode_put(parent);
