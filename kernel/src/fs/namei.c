@@ -1,12 +1,12 @@
 #include "ferrite/types.h"
 #include "fs/ext2/ext2.h"
-#include <uapi/stat.h>
 #include "fs/vfs.h"
 #include "memory/kmalloc.h"
 #include "sys/process/process.h"
+#include <uapi/stat.h>
 
-#include <uapi/errno.h>
 #include <ferrite/string.h>
+#include <uapi/errno.h>
 
 int dir_namei(
     char const* pathname,
@@ -18,7 +18,7 @@ int dir_namei(
 {
     char* tmp;
     char const* thisname;
-    int len;
+    size_t len;
     vfs_inode_t* inode;
 
     if (!base) {
@@ -39,7 +39,7 @@ int dir_namei(
         thisname = tmp + 1;
         *tmp = '\0';
 
-        inode = vfs_lookup(base, pathname);
+        inode = vfs_lookup(pathname);
 
         *tmp = '/';
 
@@ -55,7 +55,7 @@ int dir_namei(
         }
     }
 
-    *namelen = len;
+    *namelen = (int)len;
     *basename = thisname;
     *res_inode = inode;
 
@@ -104,40 +104,59 @@ int vfs_permission(vfs_inode_t* node, int mask)
     return 0;
 }
 
+#include <drivers/printk.h>
+
 /*
  * @brief Lookup a path starting from the given inode.
  *
  * @note Does NOT release the start node - caller must call inode_put(start).
  */
-vfs_inode_t* vfs_lookup(vfs_inode_t* start, char const* path)
+vfs_inode_t* vfs_lookup(char const* path)
 {
-    if (!start || !path) {
+    if (!path || path[0] == '\0') {
         return NULL;
-    }
-    if (!vfs_permission(start, MAY_EXEC)) {
-        return NULL;
-    }
-    if (path[0] == '/' && path[1] == '\0') {
-        return inode_get(myproc()->root->i_sb, EXT2_ROOT_INO);
     }
 
-    char** components = split(path, '/');
+    vfs_inode_t* base;
+    char const* search_path = path;
+
+    if (path[0] == '/') {
+        base = myproc()->root;
+        while (*search_path == '/') {
+            search_path++;
+        }
+    } else {
+        base = myproc()->pwd;
+    }
+
+    if (*search_path == '\0') {
+        return inode_get(base->i_sb, base->i_ino);
+    }
+
+    if (!vfs_permission(base, MAY_EXEC)) {
+        return NULL;
+    }
+
+    char** components = split(search_path, '/');
     if (!components) {
         return NULL;
     }
 
-    vfs_inode_t* current = NULL;
-    vfs_inode_t* new = NULL;
+    vfs_inode_t* current = inode_get(base->i_sb, base->i_ino);
+    if (!current) {
+        goto error;
+    }
 
     for (int i = 0; components[i]; i += 1) {
         if (components[i][0] == '\0') {
             continue;
         }
 
-        s32 name_len = (s32)strlen(components[i]);
-        vfs_inode_t* parent = (current == NULL) ? start : current;
+        size_t name_len = strlen(components[i]);
+        vfs_inode_t* new = NULL;
 
-        if (parent->i_op->lookup(parent, components[i], name_len, &new) < 0) {
+        if (current->i_op->lookup(current, components[i], (int)name_len, &new)
+            < 0) {
             inode_put(current);
             goto error;
         }
@@ -148,7 +167,6 @@ vfs_inode_t* vfs_lookup(vfs_inode_t* start, char const* path)
         if (current->i_mount) {
             vfs_inode_t* mounted_root
                 = inode_get(current->i_mount->i_sb, current->i_mount->i_ino);
-
             inode_put(current);
             current = mounted_root;
         }

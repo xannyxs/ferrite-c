@@ -74,7 +74,7 @@ static inline void __default_sigstop_handler(s32 sig)
 
 /* Public */
 
-s32 do_kill(pid_t pid, s32 sig)
+int do_kill(pid_t pid, int sig)
 {
     if (sig < 1 || sig > NSIG) {
         return -1;
@@ -104,7 +104,7 @@ void handle_signal(void)
         return;
     }
 
-    for (s32 sig = 1; sig < NSIG; sig += 1) {
+    for (int sig = 1; sig < NSIG; sig += 1) {
         if (!(current_proc->pending_signals & (1 << sig))) {
             continue;
         }
@@ -117,7 +117,7 @@ void handle_signal(void)
             continue;
         }
 
-        if (!handler && handler == SIG_DFL) {
+        if (handler == SIG_DFL || handler == NULL) {
             switch (sig) {
             case SIGSTOP:
             case SIGTSTP:
@@ -163,6 +163,8 @@ void handle_signal(void)
                 );
                 break;
             }
+
+            continue;
         }
 
         printk(

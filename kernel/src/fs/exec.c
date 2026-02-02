@@ -9,8 +9,8 @@
 #include <ferrite/string.h>
 #include <lib/stdlib.h>
 #include <memory/consts.h>
-#include <uapi/fcntl.h>
 #include <uapi/errno.h>
+#include <uapi/fcntl.h>
 #include <uapi/stat.h>
 
 /* Formats */
@@ -138,7 +138,7 @@ int do_execve(
         bin.b_page[i] = 0;
     }
 
-    bin.b_node = vfs_lookup(myproc()->root, filename);
+    bin.b_node = vfs_lookup(filename);
     if (!bin.b_node) {
         return -ENOENT;
     }

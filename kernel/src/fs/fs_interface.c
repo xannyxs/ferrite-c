@@ -3,12 +3,34 @@
 #include "fs/vfs.h"
 #include "idt/syscalls.h"
 #include "memory/kmalloc.h"
-#include <uapi/fcntl.h>
 #include "sys/process/process.h"
+#include <uapi/fcntl.h>
 #include <uapi/stat.h>
 
 #include <ferrite/string.h>
 #include <uapi/errno.h>
+
+static int vfs_normalize_path(char const* path, char* normalized, size_t size)
+{
+    if (!path) {
+        return -EINVAL;
+    }
+
+    size_t len = strlen(path);
+    if (len == 0 || len >= size) {
+        return -EINVAL;
+    }
+
+    memcpy(normalized, path, len);
+    normalized[len] = '\0';
+
+    while (len > 1 && normalized[len - 1] == '/') {
+        normalized[len - 1] = '\0';
+        len--;
+    }
+
+    return 0;
+}
 
 SYSCALL_ATTR int sys_read(int fd, void* buf, int count)
 {
@@ -42,7 +64,7 @@ SYSCALL_ATTR int sys_write(int fd, void* buf, int count)
 // https://man7.org/linux/man-pages/man2/open.2.html
 SYSCALL_ATTR int sys_open(char const* path, int flags, int mode)
 {
-    vfs_inode_t* node = vfs_lookup(myproc()->root, path);
+    vfs_inode_t* node = vfs_lookup(path);
     if (!node) {
         if (!(flags & O_CREAT)) {
             return -ENOENT;
@@ -65,7 +87,7 @@ SYSCALL_ATTR int sys_open(char const* path, int flags, int mode)
         char* name = last_slash + 1;
         size_t name_len = strlen(name);
 
-        vfs_inode_t* parent = vfs_lookup(myproc()->root, parent_path);
+        vfs_inode_t* parent = vfs_lookup(parent_path);
         if (!parent) {
             return -ENOENT;
         }
@@ -195,7 +217,7 @@ SYSCALL_ATTR int sys_unlink(char const* path)
     char* name = last_slash + 1;
     size_t name_len = strlen(name);
 
-    vfs_inode_t* parent = vfs_lookup(root, parent_path);
+    vfs_inode_t* parent = vfs_lookup(parent_path);
     if (!parent) {
         return -ENOTDIR;
     }
@@ -218,21 +240,7 @@ SYSCALL_ATTR int sys_unlink(char const* path)
 
 SYSCALL_ATTR int sys_chdir(char const* path)
 {
-    vfs_inode_t* base = NULL;
-    if (path[0] == '/') {
-        vfs_inode_t* root = myproc()->root;
-
-        base = inode_get(root->i_sb, root->i_ino);
-    } else {
-        base = inode_get(myproc()->pwd->i_sb, myproc()->pwd->i_ino);
-    }
-
-    if (!base) {
-        return -EIO;
-    }
-
-    vfs_inode_t* node = vfs_lookup(base, path);
-    inode_put(base);
+    vfs_inode_t* node = vfs_lookup(path);
     if (!node) {
         return -ENOENT;
     }
@@ -278,7 +286,7 @@ SYSCALL_ATTR int sys_mknod(char const* path, mode_t mode, dev_t dev)
 
 SYSCALL_ATTR int sys_stat(char const* filename, struct stat* statbuf)
 {
-    vfs_inode_t* node = vfs_lookup(myproc()->root, filename);
+    vfs_inode_t* node = vfs_lookup(filename);
     if (!node) {
         return -ENOENT;
     }
@@ -389,52 +397,50 @@ SYSCALL_ATTR int sys_readdir(u32 fd, dirent_t* dirent, int count)
 
 SYSCALL_ATTR int sys_mkdir(char const* pathname, int mode)
 {
-    if (!pathname) {
-        return -EINVAL;
-    }
-
-    size_t len = strlen(pathname);
-    while (len > 1 && pathname[len - 1] == '/') {
-        len--;
-    }
-
     char clean_path[256];
-    memcpy(clean_path, pathname, len);
-    clean_path[len] = '\0';
+    int err = vfs_normalize_path(pathname, clean_path, sizeof(clean_path));
+    if (err < 0) {
+        return err;
+    }
 
-    vfs_inode_t* node = vfs_lookup(myproc()->root, clean_path);
-    if (node) {
-        inode_put(node);
-
+    vfs_inode_t* existing = vfs_lookup(clean_path);
+    if (existing) {
+        inode_put(existing);
         return -EEXIST;
     }
 
-    char* last_slash = strrchr(pathname, '/');
+    vfs_inode_t* parent = NULL;
+    char* name = NULL;
+    size_t name_len;
+    char* last_slash = strrchr(clean_path, '/');
+
     if (!last_slash) {
-        return -ENOENT;
+        parent = inode_get(myproc()->pwd->i_sb, myproc()->pwd->i_ino);
+        name = clean_path;
+    } else {
+        size_t parent_len = last_slash - clean_path;
+        if (parent_len == 0) {
+            parent_len = 1;
+        }
+
+        char* parent_path = kmalloc(parent_len + 1);
+        memcpy(parent_path, clean_path, parent_len);
+        parent_path[parent_len] = '\0';
+
+        parent = vfs_lookup(parent_path);
+        kfree(parent_path);
+        if (!parent) {
+            return -ENOENT;
+        }
+
+        name = last_slash + 1;
     }
 
-    size_t parent_len = last_slash - pathname;
-    if (parent_len == 0) {
-        parent_len = 1;
+    name_len = strlen(name);
+    if (name_len == 0) {
+        inode_put(parent);
+        return -EEXIST;
     }
-
-    char parent_path[parent_len + 1];
-    memcpy(parent_path, pathname, parent_len);
-    parent_path[parent_len] = '\0';
-
-    char* name = last_slash + 1;
-    size_t name_len = strlen(name);
-
-    vfs_inode_t* parent = vfs_lookup(myproc()->root, parent_path);
-    if (!parent) {
-        return -ENOENT;
-    }
-
-    // if (IS_RDONLY(parent)) {
-    //     iput(dir);
-    //     return -EROFS;
-    // }
 
     if (!vfs_permission(parent, MAY_WRITE | MAY_EXEC)) {
         inode_put(parent);
@@ -456,32 +462,43 @@ SYSCALL_ATTR int sys_mkdir(char const* pathname, int mode)
 
 SYSCALL_ATTR int sys_rmdir(char const* path)
 {
-    char const* last_slash = strrchr(path, '/');
+    char clean_path[256];
+    int err = vfs_normalize_path(path, clean_path, sizeof(clean_path));
+    if (err < 0) {
+        return err;
+    }
+
+    vfs_inode_t* parent = NULL;
+    char* name = NULL;
+    char* last_slash = strrchr(clean_path, '/');
+
     if (!last_slash) {
-        return -ENOENT;
+        parent = inode_get(myproc()->pwd->i_sb, myproc()->pwd->i_ino);
+        name = clean_path;
+    } else {
+        size_t parent_len = last_slash - clean_path;
+        if (parent_len == 0) {
+            parent_len = 1;
+        }
+
+        char* parent_path = kmalloc(parent_len + 1);
+        memcpy(parent_path, clean_path, parent_len);
+        parent_path[parent_len] = '\0';
+
+        parent = vfs_lookup(parent_path);
+        kfree(parent_path);
+        if (!parent) {
+            return -ENOTDIR;
+        }
+
+        name = last_slash + 1;
     }
 
-    size_t parent_len = last_slash - path;
-    if (parent_len == 0) {
-        parent_len = 1;
-    }
-
-    char parent_path[parent_len + 1];
-    memcpy(parent_path, path, parent_len);
-    parent_path[parent_len] = '\0';
-
-    char const* name = last_slash + 1;
     size_t name_len = strlen(name);
-
-    vfs_inode_t* parent = vfs_lookup(myproc()->root, parent_path);
-    if (!parent) {
-        return -ENOTDIR;
+    if (name_len == 0) {
+        inode_put(parent);
+        return -EEXIST;
     }
-
-    // if (IS_RDONLY(dir)) {
-    //     iput(dir);
-    //     return -EROFS;
-    // }
 
     if (!vfs_permission(parent, MAY_WRITE | MAY_EXEC)) {
         inode_put(parent);
@@ -523,7 +540,7 @@ SYSCALL_ATTR int sys_fchdir(int fd)
 
 SYSCALL_ATTR int sys_truncate(char const* path, off_t len)
 {
-    vfs_inode_t* node = vfs_lookup(myproc()->root, path);
+    vfs_inode_t* node = vfs_lookup(path);
     if (!node) {
         return -ENOENT;
     }
@@ -597,7 +614,7 @@ SYSCALL_ATTR int sys_getcwd(char* buf, unsigned long size)
     }
 
     while (current != root) {
-        vfs_inode_t* parent = vfs_lookup(current, "..");
+        vfs_inode_t* parent = vfs_lookup("..");
         if (!parent) {
             inode_put(current);
             return -EIO;
