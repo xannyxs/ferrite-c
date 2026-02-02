@@ -52,6 +52,13 @@ TEST(fs_mkdir_trailing_slash)
 
     result = rmdir("/test_slash/");
     ASSERT(result == 0, "rmdir with trailing slash should work");
+
+    result = mkdir("///////////test_slash///////////", 0755);
+    printf("  mkdir with trailing slash returned: %d\n", result);
+    ASSERT(result == 0, "mkdir with trailing slash should work");
+
+    result = rmdir("///////////test_slash///////////");
+    ASSERT(result == 0, "rmdir with trailing slash should work");
 }
 
 TEST(fs_mkdir_nested)
@@ -359,21 +366,25 @@ void filesystem_tests(void)
     RUN_TEST(fs_mkdir_trailing_slash);
     RUN_TEST(fs_mkdir_nested);
     RUN_TEST(fs_mkdir_already_exists);
+
     RUN_TEST(fs_rmdir_nonexistent);
 
-    // RUN_TEST(fs_open_create);
-    // RUN_TEST(fs_open_nonexistent);
+    RUN_TEST(fs_open_create);
+    RUN_TEST(fs_open_nonexistent);
 
-    // RUN_TEST(fs_unlink_basic);
-    // RUN_TEST(fs_unlink_nonexistent);
+    RUN_TEST(fs_unlink_basic);
+    RUN_TEST(fs_unlink_nonexistent);
+
     // RUN_TEST(fs_chdir_basic);
     // RUN_TEST(fs_chdir_relative);
     // RUN_TEST(fs_chdir_dotdot);
     // RUN_TEST(fs_chdir_nonexistent);
+
     // RUN_TEST(fs_getcwd_basic);
     // RUN_TEST(fs_getcwd_after_chdir);
-    // RUN_TEST(fs_readdir_basic);
-    // RUN_TEST(fs_readdir_empty);
+
+    RUN_TEST(fs_readdir_basic);
+    RUN_TEST(fs_readdir_empty);
 
     printf("\n============================================\n");
 }
