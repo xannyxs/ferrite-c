@@ -1,14 +1,14 @@
 #include "net/unix.h"
 #include "drivers/printk.h"
-#include <uapi/stat.h>
 #include "fs/vfs.h"
 #include "memory/kmalloc.h"
 #include "net/socket.h"
 #include "sys/process/process.h"
+#include <uapi/stat.h>
 
-#include <uapi/errno.h>
 #include <ferrite/string.h>
 #include <types.h>
+#include <uapi/errno.h>
 
 #define MAX_UNIX_SOCKETS 64
 
@@ -124,7 +124,7 @@ static int unix_bind(socket_t* s, void* addr, s32 addrlen)
     char* filename = last_slash + 1;
     size_t name_len = strlen(filename);
 
-    vfs_inode_t* parent = vfs_lookup(myproc()->root, dir_path);
+    vfs_inode_t* parent = vfs_lookup(dir_path);
     if (!parent) {
         return -ENOENT;
     }
@@ -134,7 +134,7 @@ static int unix_bind(socket_t* s, void* addr, s32 addrlen)
         return -ENOTDIR;
     }
 
-    vfs_inode_t* existing = vfs_lookup(parent, filename);
+    vfs_inode_t* existing = vfs_lookup(filename);
     if (existing) {
         inode_put(existing);
         inode_put(parent);
@@ -179,7 +179,7 @@ static int unix_connect(socket_t* s, void* addr, int len)
         return -EINVAL;
     }
 
-    vfs_inode_t* node = vfs_lookup(myproc()->root, sun->sun_path);
+    vfs_inode_t* node = vfs_lookup(sun->sun_path);
     if (!node) {
         return -ENOENT;
     }

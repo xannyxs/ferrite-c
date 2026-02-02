@@ -8,9 +8,9 @@
 #include "memory/kmalloc.h"
 #include "sys/process/process.h"
 
-#include <uapi/errno.h>
 #include <ferrite/string.h>
 #include <lib/stdlib.h>
+#include <uapi/errno.h>
 #include <uapi/limits.h>
 #include <uapi/stat.h>
 
@@ -83,7 +83,7 @@ vfs_mount_t* find_mount_by_inode(vfs_inode_t* mounted_root)
 {
     vfs_mount_t* tmp = mount_table;
     while (tmp) {
-        vfs_inode_t* mountpoint = vfs_lookup(myproc()->root, tmp->m_name);
+        vfs_inode_t* mountpoint = vfs_lookup(tmp->m_name);
         if (mountpoint) {
             if (mountpoint->i_mount
                 && mountpoint->i_mount->i_sb == mounted_root->i_sb
@@ -130,7 +130,7 @@ int vfs_mount(
     if (strcmp(dir_name, "/") == 0) {
         printk("vfs_mount: Mounting root filesystem\n");
     } else {
-        mount_inode = vfs_lookup(myproc()->root, dir_name);
+        mount_inode = vfs_lookup(dir_name);
         if (!mount_inode) {
             printk("Mount point %s does not exist\n", dir_name);
             return -ENOENT;

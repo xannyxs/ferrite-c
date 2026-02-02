@@ -117,7 +117,7 @@ int in_group_p(gid_t grp);
 
 int vfs_permission(vfs_inode_t* node, int mask);
 
-vfs_inode_t* vfs_lookup(vfs_inode_t*, char const*);
+vfs_inode_t* vfs_lookup(char const*);
 
 int vfs_mknod(char const*, int, dev_t);
 
