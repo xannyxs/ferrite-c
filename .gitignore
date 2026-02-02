@@ -27,6 +27,7 @@ userspace/bin/time/time
 userspace/bin/insmod/insmod
 userspace/bin/rmmod/rmmod
 userspace/bin/mount/mount
+userspace/bin/test/test
 
 userspace/bin/*/build/
 
