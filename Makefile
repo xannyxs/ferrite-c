@@ -2,6 +2,7 @@ KERNEL_DIR = kernel
 KERNEL_ELF = $(KERNEL_DIR)/kernel.elf
 
 USERSPACE_DIR = userspace
+MODULE_DIR = module
 SYSROOT_DIR = sysroot
 
 ROOT_IMG = root.img
@@ -24,9 +25,13 @@ userspace:
 	@echo "=== Building Userspace ==="
 	@$(MAKE) -C $(USERSPACE_DIR)
 
-install: kernel userspace
+modules:
+	@echo "=== Building Modules ==="
+	@$(MAKE) -C $(MODULE_DIR)
+
+install: kernel userspace modules
 	@echo "=== Installing to sysroot ==="
-	@mkdir -p $(SYSROOT_DIR)/{bin,boot}
+	@mkdir -p $(SYSROOT_DIR)/{bin,boot,module}
 	@cp $(KERNEL_ELF) $(SYSROOT_DIR)/boot/kernel.elf
 	@cp $(USERSPACE_DIR)/bin/sh/sh $(SYSROOT_DIR)/bin/
 	@cp $(USERSPACE_DIR)/bin/hello/hello $(SYSROOT_DIR)/bin/
@@ -41,6 +46,9 @@ install: kernel userspace
 	@cp $(USERSPACE_DIR)/bin/insmod/insmod $(SYSROOT_DIR)/bin/
 	@cp $(USERSPACE_DIR)/bin/mount/mount $(SYSROOT_DIR)/bin/
 	@cp $(USERSPACE_DIR)/bin/test/test $(SYSROOT_DIR)/bin/
+	@cp $(MODULE_DIR)/src/basic_module.o $(SYSROOT_DIR)/module/
+	@cp $(MODULE_DIR)/src/keyboard_module.o $(SYSROOT_DIR)/module/
+	@cp $(MODULE_DIR)/src/timer_module.o $(SYSROOT_DIR)/module/
 	@echo "Sysroot populated"
 
 images: $(ROOT_IMG) $(TEST_IMG)
@@ -52,8 +60,9 @@ $(ROOT_IMG): install
 	@echo "Copying files to root image..."
 	@mkdir -p mnt
 	@sudo mount -o loop $(ROOT_IMG) mnt
-	@sudo mkdir -p mnt/bin mnt/sbin mnt/dev
+	@sudo mkdir -p mnt/{bin,sbin,dev,module}
 	@sudo cp $(SYSROOT_DIR)/bin/* mnt/bin/ 2>/dev/null || true
+	@sudo cp $(SYSROOT_DIR)/module/* mnt/module/ 2>/dev/null || true
 	@sudo umount mnt
 	@rmdir mnt
 	@echo "Root image ready"
@@ -88,6 +97,7 @@ clean:
 	@echo "=== Cleaning Build Artifacts ==="
 	@$(MAKE) -C $(KERNEL_DIR) clean
 	@$(MAKE) -C $(USERSPACE_DIR) clean
+	@$(MAKE) -C $(MODULE_DIR) clean
 	@rm -rf $(ISO_DIR) $(ISO_NAME)
 	@rm -rf $(SYSROOT_DIR)
 
