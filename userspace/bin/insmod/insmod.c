@@ -7,13 +7,13 @@
 
 int main(int argc, char** argv)
 {
-    if (argc < 2) {
-        printf("Usage: %s <module.ko> [parameters]\n", argv[0]);
+    if (argc < 3) {
+        printf("Usage: %s <module.ko> <name> [parameters]\n", argv[0]);
         exit(1);
     }
 
     char const* path = argv[1];
-    char const* params = argc > 2 ? argv[2] : "";
+    char const* params = argv[2];
 
     int fd = open(path, O_RDONLY, 0);
     if (fd < 0) {

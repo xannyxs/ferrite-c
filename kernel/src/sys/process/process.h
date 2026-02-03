@@ -2,10 +2,10 @@
 #define PROCESS_H
 
 #include "arch/x86/pit.h"
-#include <limits.h>
 #include "fs/vfs.h"
 #include "idt/idt.h"
 #include "sys/file/file.h"
+#include <limits.h>
 
 #include <types.h>
 
@@ -21,6 +21,15 @@ typedef enum { UNUSED, EMBRYO, SLEEPING, READY, RUNNING, ZOMBIE } procstate_e;
 typedef struct {
     u32 edi, esi, ebx, ebp, eip;
 } context_t;
+
+typedef struct {
+    unsigned int heap_start;
+    unsigned int current;
+    unsigned int heap_end;
+
+    unsigned int stack_start;
+    unsigned int stack_end;
+} memory_t;
 
 typedef struct process {
     pid_t pid;
@@ -40,10 +49,11 @@ typedef struct process {
 
     void* pgdir;
     char* kstack;
+    memory_t mm;
 
     void* channel;
-    u32 pending_signals;
-    s32 status;
+    unsigned int pending_signals;
+    int status;
 
     vfs_inode_t* root;
     vfs_inode_t* pwd;

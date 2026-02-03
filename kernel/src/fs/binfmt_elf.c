@@ -7,15 +7,18 @@
 #include "memory/buddy_allocator/buddy.h"
 #include "memory/consts.h"
 #include "memory/vmm.h"
+#include "sys/process/process.h"
 
 #include <ferrite/elf.h>
 #include <ferrite/string.h>
 #include <uapi/errno.h>
 
+#define MAX_HEAP_SIZE (128 * 1024 * 1024)
 #define MAX_ARGS 10
 
 int load_elf_binary(binpgm_t* pgm, trapframe_t* regs)
 {
+    unsigned int bss_end = 0;
     elf32_hdr_t* elf = (elf32_hdr_t*)pgm->b_buf;
 
     if (memcmp(elf->e_ident, ELFMAG, SELFMAG) != 0) {
@@ -61,19 +64,38 @@ int load_elf_binary(binpgm_t* pgm, trapframe_t* regs)
                 phdr->p_memsz - phdr->p_filesz
             );
         }
+
+        unsigned int segment_end = phdr->p_vaddr + phdr->p_memsz;
+        if (segment_end > bss_end) {
+            bss_end = segment_end;
+        }
     }
 
-    u32 stack_start = KERNBASE - (PAGE_SIZE * MAX_ARG_PAGES);
+    myproc()->mm.heap_start = ALIGN(bss_end, PAGE_SIZE);
+    myproc()->mm.current = myproc()->mm.heap_start;
+    myproc()->mm.heap_end = myproc()->mm.heap_start + MAX_HEAP_SIZE;
+
+    myproc()->mm.stack_start = KERNBASE - (PAGE_SIZE * MAX_ARG_PAGES);
+
+    if (myproc()->mm.heap_end > myproc()->mm.stack_start) {
+        myproc()->mm.heap_end = myproc()->mm.stack_start;
+
+        if (myproc()->mm.heap_end <= myproc()->mm.heap_start) {
+            printk("Error: No space for heap\n");
+            return -ENOMEM;
+        }
+    }
+
     for (int i = 0; i < MAX_ARG_PAGES; i++) {
         if (pgm->b_page[i]) {
-            u32 vaddr = stack_start + (i * PAGE_SIZE);
+            u32 vaddr = myproc()->mm.stack_start + (i * PAGE_SIZE);
             u32 paddr = V2P_WO(pgm->b_page[i]);
             vmm_remap_page((void*)vaddr, (void*)paddr, PTE_P | PTE_U | PTE_W);
             pgm->b_page[i] = 0;
         }
     }
 
-    u32 sp = stack_start + pgm->b_p;
+    u32 sp = myproc()->mm.stack_start + pgm->b_p;
     char* str_ptr = (char*)sp;
     u32 argv_addrs[MAX_ARGS];
     int argc = pgm->argc;
@@ -86,7 +108,7 @@ int load_elf_binary(binpgm_t* pgm, trapframe_t* regs)
     int total_entries = 1 + argc + 1;
     int total_bytes = total_entries * 4;
 
-    sp = (stack_start + pgm->b_p - total_bytes) & ~0xF; // Align down
+    sp = (myproc()->mm.stack_start + pgm->b_p - total_bytes) & ~0xF;
 
     u32* stack = (u32*)sp;
     stack[0] = argc;
