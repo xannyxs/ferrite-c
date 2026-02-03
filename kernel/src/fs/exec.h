@@ -3,7 +3,6 @@
 
 #include "arch/x86/idt/idt.h"
 #include "fs/vfs.h"
-#include "sys/process/process.h"
 
 /*
  * From Linux 1.0:

@@ -52,7 +52,7 @@ int knanosleep(unsigned int ms)
 {
     timer_t timer;
 
-    timer.expires = ticks + (unsigned long long)ms * HZ / 1000;
+    timer.expires = ticks + ((unsigned long long)ms * HZ / 1000);
     timer.function = wake_up_process;
     timer.data = (void*)current_proc;
 

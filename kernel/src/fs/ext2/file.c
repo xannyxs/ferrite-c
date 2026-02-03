@@ -164,7 +164,7 @@ int ext2_file_write(
         bytes_written += bytes_to_write;
     }
 
-    u32 now = getepoch();
+    time_t now = getepoch();
     node->i_ctime = now;
     node->i_mtime = now;
     dir->i_ctime = now;

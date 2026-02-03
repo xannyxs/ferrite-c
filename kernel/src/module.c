@@ -147,7 +147,7 @@ void module_list(void)
 
     module_t* tmp = modules;
     while (tmp) {
-        char const* state_str = "unknown";
+        char* state_str;
         switch (tmp->state) {
         case MODULE_STATE_LOADING:
             state_str = "loading";
@@ -157,6 +157,9 @@ void module_list(void)
             break;
         case MODULE_STATE_UNLOADING:
             state_str = "unloading";
+            break;
+        default:
+            state_str = "unknown";
             break;
         }
 
@@ -201,7 +204,7 @@ int sys_delete_module(char const* name, unsigned int flags)
     return module_remove(name);
 }
 
-int sys_init_module(void* mod, unsigned long len, char* const args)
+int sys_init_module(void* mod, unsigned long len, char const* const args)
 {
     (void)len;
 
@@ -295,9 +298,9 @@ int sys_init_module(void* mod, unsigned long len, char* const args)
         }
 
         Elf32_Rel* rels = (Elf32_Rel*)((char*)mod + sections[i].sh_offset);
-        int num_rels = sections[i].sh_size / sizeof(Elf32_Rel);
+        unsigned long num_rels = sections[i].sh_size / sizeof(Elf32_Rel);
 
-        for (int j = 0; j < num_rels; j++) {
+        for (unsigned long j = 0; j < num_rels; j++) {
             unsigned long* location
                 = (unsigned long*)((char*)mod_mem + text_offset
                                    + rels[j].r_offset);
@@ -342,14 +345,14 @@ int sys_init_module(void* mod, unsigned long len, char* const args)
     }
 
     int (*init_fn)(void) = NULL;
-    int num_syms = symtab_hdr->sh_size / sizeof(Elf32_Sym);
+    unsigned long num_syms = symtab_hdr->sh_size / sizeof(Elf32_Sym);
 
-    for (int i = 0; i < num_syms; i++) {
+    for (unsigned long i = 0; i < num_syms; i++) {
         char* name = strtab + symtab[i].st_name;
 
         if (strcmp(name, "init_module") == 0) {
             void* addr = (char*)mod_mem + text_offset + symtab[i].st_value;
-            memcpy(&init_fn, &addr, sizeof(init_fn));
+            memcpy((void*)&init_fn, (void const*)&addr, sizeof(init_fn));
             break;
         }
     }
@@ -376,11 +379,14 @@ int sys_init_module(void* mod, unsigned long len, char* const args)
     }
 
     module->init = init_fn;
-    for (int i = 0; i < num_syms; i++) {
+    for (unsigned long i = 0; i < num_syms; i++) {
         char* name = strtab + symtab[i].st_name;
         if (strcmp(name, "cleanup_module") == 0) {
             void* addr = (char*)mod_mem + text_offset + symtab[i].st_value;
-            memcpy(&module->cleanup, &addr, sizeof(module->cleanup));
+            memcpy(
+                (void*)&module->cleanup, (void const*)&addr,
+                sizeof(module->cleanup)
+            );
             break;
         }
     }

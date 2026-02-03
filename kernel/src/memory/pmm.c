@@ -3,7 +3,7 @@
 #include "arch/x86/multiboot.h"
 #include "drivers/printk.h"
 #include "lib/math.h"
-#include "lib/stdlib.h"
+#include <lib/stdlib.h>
 #include "memory/consts.h"
 #include "memory/vmm.h"
 

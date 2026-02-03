@@ -2,7 +2,9 @@
 
 int memcmp(void const* _l, void const* _r, size_t len)
 {
-    int d0, d1, d2;
+    int d0;
+    int d1;
+    int d2;
     int __res;
 
     __asm__ volatile("cld\n\t"

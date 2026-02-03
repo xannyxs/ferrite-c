@@ -1,6 +1,6 @@
 #include "arch/x86/gdt/gdt.h"
 #include "arch/x86/entry.h"
-#include "ferrite/string.h"
+#include <ferrite/string.h>
 #include <types.h>
 
 #define NUM_ENTRIES 6
@@ -42,7 +42,7 @@ void tss_set_stack(u32 stack) { tss_entry.esp0 = stack; }
 
 void gdt_init(void)
 {
-    gdt_ptr.limit = sizeof(entry_t) * NUM_ENTRIES - 1;
+    gdt_ptr.limit = (sizeof(entry_t) * NUM_ENTRIES) - 1;
     gdt_ptr.base = (u32)&gdt_entries;
 
     gdt_set_gate(0, 0, 0, 0, 0);                // NULL Gate

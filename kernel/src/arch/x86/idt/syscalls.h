@@ -181,6 +181,6 @@ SYSCALL_ATTR gid_t sys_setgroups(gid_t* grouplist, int len);
 
 int sys_delete_module(char const* name_user, unsigned int flags);
 
-int sys_init_module(void* mod, unsigned long len, char* const args);
+int sys_init_module(void* mod, unsigned long len, char* args);
 
 #endif /* SYSCALLS_H */

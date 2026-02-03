@@ -2,7 +2,9 @@
 
 void* memmove(void* dest, void const* src, size_t len)
 {
-    int d0, d1, d2;
+    int d0;
+    int d1;
+    int d2;
 
     if (dest == src || len == 0) {
         return dest;

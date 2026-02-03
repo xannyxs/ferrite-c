@@ -263,7 +263,7 @@ s32 ide_read(block_device_t* d, u32 lba, u32 count, void* buf, size_t len)
         }
 
         for (int i = 0; i < 256; i++) {
-            buffer[sector * 256 + i] = inw(base_port + 0);
+            buffer[(sector * 256) + i] = inw(base_port + 0);
         }
     }
 
@@ -340,7 +340,7 @@ s32 ide_write(
         } while (!(status & 0x08));
 
         for (int i = 0; i < 256; i += 1) {
-            outw(base_port + 0, buffer[sector * 256 + i]);
+            outw(base_port + 0, buffer[(sector * 256) + i]);
         }
     }
 

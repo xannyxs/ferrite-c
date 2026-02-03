@@ -84,7 +84,7 @@ SYSCALL_ATTR s32 sys_setuid(uid_t uid)
     return 0;
 }
 
-SYSCALL_ATTR s32 sys_seteuid(uid_t uid)
+SYSCALL_ATTR int sys_seteuid(uid_t uid)
 {
     proc_t* current = myproc();
 

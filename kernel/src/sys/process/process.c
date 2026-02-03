@@ -2,8 +2,6 @@
 #include "arch/x86/gdt/gdt.h"
 #include "arch/x86/io.h"
 #include "arch/x86/memlayout.h"
-#include "debug/debug.h"
-#include "drivers/printk.h"
 #include "fs/vfs.h"
 #include "lib/stdlib.h"
 #include "memory/consts.h"
@@ -264,7 +262,7 @@ extern u32 trapret(void);
 
 #define PTE_ADDR(pte) ((pte) & ~0xFFF)
 
-void* vmm_copy_pgdir(u32* parent_pgdir)
+void* vmm_copy_pgdir(const u32* parent_pgdir)
 {
     u32* child_pgdir = (u32*)setup_kvm();
     if (!child_pgdir)

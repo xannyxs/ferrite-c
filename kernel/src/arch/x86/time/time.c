@@ -40,7 +40,7 @@ time_t to_epoch(rtc_time_t* t)
 
     days_since_epoch += t->day - 1;
 
-    unsigned long long epoch_seconds = (days_since_epoch * 86400ULL)
+    time_t epoch_seconds = (days_since_epoch * 86400ULL)
         + (t->hour * 3600ULL) + (t->minute * 60ULL) + t->second;
 
     return epoch_seconds;

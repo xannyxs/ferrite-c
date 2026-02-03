@@ -1,4 +1,4 @@
-#include "ferrite/string.h"
+#include <ferrite/string.h>
 #include "memory/kmalloc.h"
 #include <types.h>
 
@@ -8,7 +8,7 @@ static inline void freearray(char** s, int i)
         i--;
         kfree(s[i]);
     }
-    kfree(s);
+    kfree((void*)s);
 }
 
 static inline size_t countwords(char const* str, int c)

@@ -2,7 +2,8 @@
 
 int strcmp(char const* _l, char const* _r)
 {
-    int d0, d1;
+    int d0;
+    int d1;
     int __res;
 
     __asm__ volatile("1:\t lodsb\n\t"

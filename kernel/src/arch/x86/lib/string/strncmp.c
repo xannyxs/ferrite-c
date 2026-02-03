@@ -2,7 +2,9 @@
 
 int strncmp(char const* _l, char const* _r, size_t n)
 {
-    int d0, d1, d2;
+    int d0;
+    int d1;
+    int d2;
     int __res;
 
     __asm__ volatile("1:\t decl %3\n\t"

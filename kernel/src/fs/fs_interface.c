@@ -222,11 +222,6 @@ SYSCALL_ATTR int sys_unlink(char const* path)
         return -ENOTDIR;
     }
 
-    // if (IS_RDONLY(dir)) {
-    //     inode_put(parent);
-    //     return -EROFS;
-    // }
-
     if (!vfs_permission(parent, MAY_WRITE | MAY_EXEC)) {
         inode_put(parent);
         return -EACCES;

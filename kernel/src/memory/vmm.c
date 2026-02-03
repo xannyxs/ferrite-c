@@ -1,7 +1,7 @@
 #include "memory/vmm.h"
 #include "arch/x86/memlayout.h"
 #include "drivers/printk.h"
-#include "ferrite/string.h"
+#include <ferrite/string.h>
 #include "ferrite/types.h"
 #include "lib/math.h"
 #include "lib/stdlib.h"
