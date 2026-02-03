@@ -2,12 +2,15 @@
 #include "arch/x86/idt/idt.h"
 #include "arch/x86/time/time.h"
 #include "fs/exec.h"
+#include "memory/buddy_allocator/buddy.h"
+#include "memory/vmm.h"
 #include "sys/process/process.h"
 #include "sys/signal/signal.h"
 #include "sys/timer/timer.h"
 #include "syscalls.h"
-
 #include <ferrite/string.h>
+#include <lib/math.h>
+#include <memory/consts.h>
 #include <types.h>
 #include <uapi/errno.h>
 
@@ -41,8 +44,32 @@ SYSCALL_ATTR static s32 sys_fork(trapframe_t* tf)
 
 SYSCALL_ATTR static int sys_brk(unsigned long brk)
 {
-    (void)brk;
-    return -ENOSYS;
+    unsigned int old_brk = myproc()->mm.current;
+    unsigned int heap_start = myproc()->mm.heap_start;
+    unsigned int heap_end = myproc()->mm.heap_end;
+
+    if (brk == 0) {
+        return (int)old_brk;
+    }
+
+    if (heap_start > brk || heap_end < brk) {
+        return -EINVAL;
+    }
+
+    if (brk < old_brk) {
+        unsigned int old_page_end = ALIGN(old_brk, PAGE_SIZE);
+        unsigned int new_page_end = ALIGN(brk, PAGE_SIZE);
+
+        for (u32 addr = new_page_end; addr < old_page_end; addr += PAGE_SIZE) {
+            void* phys = vmm_unmap_page((void*)addr);
+            if (phys && buddy_manages((paddr_t)phys)) {
+                buddy_dealloc((paddr_t)phys, 0);
+            }
+        }
+    }
+
+    myproc()->mm.current = brk;
+    return 0;
 }
 
 SYSCALL_ATTR static pid_t sys_waitpid(pid_t pid, s32* status, s32 options)

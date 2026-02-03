@@ -1,3 +1,4 @@
+#include <libc/stdio.h>
 #include <libc/stdlib.h>
 #include <libc/string.h>
 #include <libc/syscalls.h>
@@ -48,11 +49,11 @@ static block_t* request_space(size_t size)
 
 void* malloc(size_t size)
 {
-    if (size == 0)
+    if (size == 0) {
         return NULL;
+    }
 
     size = ALIGN4(size);
-
     block_t* block;
 
     if (!heap_start) {

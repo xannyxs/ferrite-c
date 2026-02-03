@@ -42,17 +42,20 @@ int delete_module(char const*, unsigned int);
 
 int mount(char const*, char const*, char const*, unsigned long, void const*);
 
-void* brk(void*);
+int brk(unsigned long);
 
-static inline void* sbrk(unsigned int increment)
+static inline void* sbrk(int increment)
 {
-    void* old = brk(NULL);
+    void* old = (void*)brk(0);
     if (increment == 0) {
         return old;
     }
 
-    void* new = brk((char*)old + increment);
-    return (new == (char*)old + increment) ? old : (void*)-1;
+    if (brk((int)old + increment) < 0) {
+        return (void*)-1;
+    }
+
+    return old;
 }
 
 #endif
