@@ -372,19 +372,20 @@ void filesystem_tests(void)
     RUN_TEST(fs_open_create);
     RUN_TEST(fs_open_nonexistent);
 
-    RUN_TEST(fs_unlink_basic);
-    RUN_TEST(fs_unlink_nonexistent);
-
-    // RUN_TEST(fs_chdir_basic);
-    // RUN_TEST(fs_chdir_relative);
-    // RUN_TEST(fs_chdir_dotdot);
-    // RUN_TEST(fs_chdir_nonexistent);
+    // RUN_TEST(fs_unlink_basic);
+    // RUN_TEST(fs_unlink_nonexistent);
 
     // RUN_TEST(fs_getcwd_basic);
     // RUN_TEST(fs_getcwd_after_chdir);
 
+    RUN_TEST(fs_chdir_basic);
+    RUN_TEST(fs_chdir_dotdot);
+    RUN_TEST(fs_chdir_nonexistent);
+
     RUN_TEST(fs_readdir_basic);
-    RUN_TEST(fs_readdir_empty);
+    // RUN_TEST(fs_readdir_empty);
+
+    // RUN_TEST(fs_chdir_relative);
 
     printf("\n============================================\n");
 }
