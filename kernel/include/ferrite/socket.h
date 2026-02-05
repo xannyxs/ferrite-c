@@ -1,11 +1,8 @@
-#ifndef SOCKET_H
-#define SOCKET_H
+#ifndef _KERNEL_SOCKET_H
+#define _KERNEL_SOCKET_H
 
-#include "sys/file/file.h"
-#include <types.h>
-
-#define SOCK_STREAM 1 /* Stream socket (TCP, Unix STREAM) */
-#define SOCK_DGRAM 2  /* Datagram socket (UDP, Unix DGRAM) */
+#include <sys/file/file.h>
+#include <uapi/types.h>
 
 struct vfs_inode;
 
