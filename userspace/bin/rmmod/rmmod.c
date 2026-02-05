@@ -8,8 +8,9 @@ int main(int argc, char* argv[])
         return 1;
     }
 
-    if (delete_module(argv[1], 0) < 0) {
-        printf("rmmod: failed to remove '%s'\n", argv[1]);
+    int ret = delete_module(argv[1], 0);
+    if (ret < 0) {
+        printf("rmmod: error %d - failed to remove '%s'\n", ret, argv[1]);
         return 1;
     }
 

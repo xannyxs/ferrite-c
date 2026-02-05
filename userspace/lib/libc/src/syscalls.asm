@@ -247,10 +247,12 @@ init_module:
 global delete_module
 
 delete_module:
-	mov eax, SYS_DELETE_MODULE
-	mov ebx, [esp+4]
-	mov ecx, [esp+8]
-	int 0x80
+	push ebx
+	mov  eax, SYS_DELETE_MODULE
+	mov  ebx, [esp+8]
+	mov  ecx, [esp+12]
+	int  0x80
+	pop  ebx
 	ret
 
 global mount
