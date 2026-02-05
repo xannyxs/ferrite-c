@@ -13,7 +13,7 @@ syscall_handler:
 	push fs
 	push gs
 
-	pusha ; This pushes: EDI, ESI, EBP, ESP, EBX, EDX, ECX, EAX
+	pusha
 
 	mov ax, 0x10
 	mov ds, ax
@@ -26,10 +26,10 @@ syscall_handler:
 	add  esp, 4
 
 trapret:
-	popa ; Pop: EAX, ECX, EDX, EBX, ESP, EBP, ESI, EDI
-	pop  gs
-	pop  fs
-	pop  es
-	pop  ds
-	add  esp, 8; Skip int_no and err_code
+	popa
+	pop gs
+	pop fs
+	pop es
+	pop ds
+	add esp, 8; Skip int_no and err_code
 	iret
