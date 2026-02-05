@@ -42,7 +42,6 @@ static int verify_elf_header(elf32_hdr_t* hdr)
 static module_t* module_find(char const* name)
 {
     if (!modules) {
-        printk("No modules loaded\n");
         return NULL;
     }
 
@@ -172,12 +171,23 @@ void module_list(void)
     }
 }
 
-int sys_delete_module(char const* name, unsigned int flags)
+int sys_delete_module(char const* name_user, unsigned int flags)
 {
-    if (!name) {
+    if (!name_user) {
         printk("sys_delete_module: NULL module name\n");
         return -EINVAL;
     }
+
+    char name[MOD_MAX_NAME];
+
+    int len = 0;
+    for (len = 0; len < MOD_MAX_NAME; len++) {
+        name[len] = name_user[len];
+        if (name[len] == '\0') {
+            break;
+        }
+    }
+    name[MOD_MAX_NAME - 1] = '\0';
 
     if (strlen(name) >= MOD_MAX_NAME) {
         printk("sys_delete_module: module name too long\n");
@@ -390,6 +400,8 @@ int sys_init_module(void* mod, unsigned long len, char const* const args)
             break;
         }
     }
+
+    module_list();
 
     return 0;
 }
