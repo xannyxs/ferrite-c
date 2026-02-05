@@ -19,6 +19,7 @@ programs: libc
 	$(MAKE) -C bin/insmod
 	$(MAKE) -C bin/mount
 	$(MAKE) -C bin/test
+	$(MAKE) -C bin/socket_test
 
 clean:
 	$(MAKE) -C lib/libc clean
@@ -35,5 +36,6 @@ clean:
 	$(MAKE) -C bin/insmod clean
 	$(MAKE) -C bin/mount clean
 	$(MAKE) -C bin/test clean
+	$(MAKE) -C bin/socket_test clean
 
 .PHONY: all libc programs clean
