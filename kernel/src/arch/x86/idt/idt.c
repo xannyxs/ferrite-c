@@ -76,7 +76,7 @@ void idt_init(void)
     // Syscalls
     idt_set_gate(0x80, (u32)syscall_handler, 0xEE);
 
-    idt_ptr.limit = sizeof(entry_t) * IDT_ENTRY_COUNT - 1;
+    idt_ptr.limit = (sizeof(entry_t) * IDT_ENTRY_COUNT) - 1;
     idt_ptr.base = (u32)&idt_entries;
 
     __asm__ __volatile__("lidt %0" : : "m"(idt_ptr));

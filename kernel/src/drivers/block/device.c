@@ -1,7 +1,6 @@
 #include "drivers/block/device.h"
 #include "drivers/block/ide.h"
 #include "drivers/printk.h"
-#include "ferrite/types.h"
 #include "memory/kmalloc.h"
 
 #include <uapi/errno.h>

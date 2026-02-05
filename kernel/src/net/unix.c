@@ -57,7 +57,7 @@ int unix_unregister_socket(socket_t* sock)
 {
     unix_socket_node_t** current = &unix_sockets_head;
 
-    while (current != NULL) {
+    while (*current != NULL) {
         if ((*current)->socket == sock) {
             unix_socket_node_t* to_free = *current;
             *current = (*current)->next;

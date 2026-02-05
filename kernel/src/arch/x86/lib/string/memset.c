@@ -2,7 +2,9 @@
 
 void* memset(void* str, int c, size_t len)
 {
-    int d0, d1, d2;
+    int d0;
+    int d1;
+    int d2;
 
     __asm__ volatile("cld\n\t"
                      "rep\n\t"

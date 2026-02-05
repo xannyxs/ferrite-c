@@ -4,7 +4,6 @@
 #include "idt/idt.h"
 #include "memory/page.h"
 #include "sys/file/file.h"
-#include "sys/process/process.h"
 
 #include <ferrite/string.h>
 #include <lib/stdlib.h>
@@ -54,8 +53,8 @@ static unsigned long copy_strings(
         p -= len;
 
         for (size_t j = 0; j < len; j += 1) {
-            int page_index = (p + j) / PAGE_SIZE;
-            int offset = (p + j) % PAGE_SIZE;
+            size_t page_index = (p + j) / PAGE_SIZE;
+            size_t offset = (p + j) % PAGE_SIZE;
 
             if (!page[page_index]) {
                 page[page_index] = (unsigned long)get_free_page();
@@ -133,7 +132,7 @@ int do_execve(
     binfmt_t* fmt = supported_formats;
     binpgm_t bin = { 0 };
 
-    bin.b_p = PAGE_SIZE * MAX_ARG_PAGES - 4;
+    bin.b_p = (PAGE_SIZE * MAX_ARG_PAGES) - 4;
     for (int i = 0; i < MAX_ARG_PAGES; i += 1) {
         bin.b_page[i] = 0;
     }

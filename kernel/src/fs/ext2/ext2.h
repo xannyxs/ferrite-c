@@ -173,7 +173,7 @@ int ext2_free_inode(vfs_inode_t* dir);
 
 int ext2_find_entry(
     struct vfs_inode* dir,
-    char const* const name,
+    char const*  name,
     int name_len,
     ext2_entry_t** result
 );
@@ -223,7 +223,7 @@ static inline int find_free_bit_in_bitmap(u8 const* bitmap, u32 size)
 
         for (int j = 0; j < 8; j += 1) {
             if (!(byte & (1 << j))) {
-                return (s32)(i * 8 + j);
+                return (s32)((i * 8) + j);
             }
         }
     }

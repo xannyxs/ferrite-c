@@ -3,7 +3,9 @@
 
 void* memcpy(void* dest, void const* src, size_t n)
 {
-    int d0, d1, d2;
+    int d0;
+    int d1;
+    int d2;
 
     if (n == 0 || src == dest) {
         return dest;

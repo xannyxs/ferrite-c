@@ -1,4 +1,3 @@
-#include "ferrite/types.h"
 #include "fs/ext2/ext2.h"
 #include "fs/vfs.h"
 #include "memory/kmalloc.h"
@@ -182,21 +181,22 @@ vfs_inode_t* vfs_lookup(char const* path)
     for (int i = 0; components[i]; i += 1) {
         kfree(components[i]);
     }
-    kfree(components);
+    kfree((void*)components);
     return current;
 
 error:
     for (int i = 0; components[i]; i += 1) {
-        kfree(components[i]);
+        kfree((void*)components[i]);
     }
-    kfree(components);
+    kfree((void*)components);
     return NULL;
 }
 
 int vfs_mknod(char const* path, int mode, dev_t dev)
 {
+    int namelen;
+    int error;
     char const* basename;
-    int namelen, error;
     vfs_inode_t* dir;
 
     error = dir_namei(path, &namelen, &basename, NULL, &dir);

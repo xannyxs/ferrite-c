@@ -3,10 +3,10 @@
 #include "drivers/block/device.h"
 #include "drivers/printk.h"
 #include "fs/ext2/ext2.h"
-#include <uapi/stat.h>
 #include "fs/vfs.h"
 #include "lib/math.h"
 #include "memory/kmalloc.h"
+#include <uapi/stat.h>
 
 #include <uapi/errno.h>
 
@@ -35,7 +35,7 @@ vfs_inode_t* ext2_new_inode(vfs_inode_t const* dir, int mode, int* err)
     }
 
     u8 bitmap[sb->s_blocksize];
-    if (ext2_read_block((vfs_inode_t*)dir, bitmap, bgd->bg_inode_bitmap) < 0) {
+    if (ext2_read_block(dir, bitmap, bgd->bg_inode_bitmap) < 0) {
         if (err) {
             *err = -EIO;
         }
@@ -158,7 +158,7 @@ int ext2_free_inode(vfs_inode_t* dir)
     }
 
     u8 bitmap[sb->s_blocksize];
-    if (ext2_read_block((vfs_inode_t*)dir, bitmap, bgd->bg_inode_bitmap) < 0) {
+    if (ext2_read_block(dir, bitmap, bgd->bg_inode_bitmap) < 0) {
         return -EIO;
     }
 

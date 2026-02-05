@@ -6,7 +6,6 @@
 #include "fs/vfs.h"
 #include "idt/syscalls.h"
 #include "memory/kmalloc.h"
-#include "sys/process/process.h"
 
 #include <ferrite/string.h>
 #include <lib/stdlib.h>
@@ -38,6 +37,11 @@ static parsed_device_t parse_device_path(char const* device)
     char const* type_device = device + 5;
     if (strncmp(type_device, "hd", 2) != 0) {
         printk("Unsupported device type. Expected 'hd'\n");
+        return result;
+    }
+
+    if (strlen(type_device) < 3) {
+        printk("Device path too short. Expected /dev/hdX[Y]\n");
         return result;
     }
 

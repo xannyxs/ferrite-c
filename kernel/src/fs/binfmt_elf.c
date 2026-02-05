@@ -31,7 +31,7 @@ int load_elf_binary(binpgm_t* pgm, trapframe_t* regs)
 
     for (int i = 0; i < elf->e_phnum; i++) {
         elf32_phdr_t* phdr = (elf32_phdr_t*)(pgm->b_buf + elf->e_phoff
-                                             + i * sizeof(elf32_phdr_t));
+                                             + (i * sizeof(elf32_phdr_t)));
         if (phdr->p_type != PT_LOAD) {
             continue;
         }
