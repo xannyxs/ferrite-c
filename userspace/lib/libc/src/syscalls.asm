@@ -21,9 +21,17 @@
 	%define SYS_BRK      45
 	%define SYS_REBOOT   88
 	%define SYS_READDIR  89
+	%define SYS_SOCKETCALL 102
 	%define SYS_INIT_MODULE  128
 	%define SYS_DELETE_MODULE  129
 	%define SYS_GETCWD   183
+
+	;       Socket subcall numbers
+	%define SOCKOP_SOCKET      1
+	%define SOCKOP_BIND        2
+	%define SOCKOP_CONNECT     3
+	%define SOCKOP_LISTEN      4
+	%define SOCKOP_ACCEPT      5
 
 	section .text
 
@@ -283,4 +291,112 @@ brk:
 	mov ebx, [esp+4]
 
 	int 0x80
+	ret
+
+global socket
+
+socket:
+	push ebx
+	sub  esp, 12
+
+	mov eax, [esp+20]; domain
+	mov [esp], eax
+	mov eax, [esp+24]; type
+	mov [esp+4], eax
+	mov eax, [esp+28]; protocol
+	mov [esp+8], eax
+
+	mov eax, SYS_SOCKETCALL
+	mov ebx, SOCKOP_SOCKET
+	mov ecx, esp
+	int 0x80
+
+	add esp, 12
+	pop ebx
+	ret
+
+global bind
+
+bind:
+	push ebx
+	sub  esp, 12
+
+	mov eax, [esp+20]; sockfd
+	mov [esp], eax
+	mov eax, [esp+24]; addr
+	mov [esp+4], eax
+	mov eax, [esp+28]; addrlen
+	mov [esp+8], eax
+
+	mov eax, SYS_SOCKETCALL
+	mov ebx, SOCKOP_BIND
+	mov ecx, esp
+	int 0x80
+
+	add esp, 12
+	pop ebx
+	ret
+
+global connect
+
+connect:
+	push ebx
+	sub  esp, 12
+
+	mov eax, [esp+20]; sockfd
+	mov [esp], eax
+	mov eax, [esp+24]; addr
+	mov [esp+4], eax
+	mov eax, [esp+28]; addrlen
+	mov [esp+8], eax
+
+	mov eax, SYS_SOCKETCALL
+	mov ebx, SOCKOP_CONNECT
+	mov ecx, esp
+	int 0x80
+
+	add esp, 12
+	pop ebx
+	ret
+
+global listen
+
+listen:
+	push ebx
+	sub  esp, 8
+
+	mov eax, [esp+16]; sockfd
+	mov [esp], eax
+	mov eax, [esp+20]; backlog
+	mov [esp+4], eax
+
+	mov eax, SYS_SOCKETCALL
+	mov ebx, SOCKOP_LISTEN
+	mov ecx, esp
+	int 0x80
+
+	add esp, 8
+	pop ebx
+	ret
+
+global accept
+
+accept:
+	push ebx
+	sub  esp, 12
+
+	mov eax, [esp+20]; sockfd
+	mov [esp], eax
+	mov eax, [esp+24]; addr
+	mov [esp+4], eax
+	mov eax, [esp+28]; addrlen
+	mov [esp+8], eax
+
+	mov eax, SYS_SOCKETCALL
+	mov ebx, SOCKOP_ACCEPT
+	mov ecx, esp
+	int 0x80
+
+	add esp, 12
+	pop ebx
 	ret
