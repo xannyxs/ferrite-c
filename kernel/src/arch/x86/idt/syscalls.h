@@ -89,7 +89,7 @@ enum syscalls_e {
 
 void syscall_dispatcher_c(trapframe_t*);
 
-int sys_socketcall(int call, unsigned long* args);
+int sys_socketcall(int, unsigned long*);
 
 /* fscalls */
 
