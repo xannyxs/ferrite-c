@@ -1,16 +1,16 @@
-#include "net/unix.h"
 #include "drivers/printk.h"
 #include "fs/vfs.h"
 #include "memory/kmalloc.h"
-#include "net/socket.h"
 #include "sys/process/process.h"
-#include <uapi/stat.h>
 
+#include <ferrite/socket.h>
 #include <ferrite/string.h>
 #include <types.h>
 #include <uapi/errno.h>
+#include <uapi/stat.h>
+#include <uapi/unix.h>
 
-#define MAX_UNIX_SOCKETS 64
+#define MAX_UNIX_SOCKETS 32
 
 typedef struct unix_socket_node {
     socket_t* socket;

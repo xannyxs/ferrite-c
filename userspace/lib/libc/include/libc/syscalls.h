@@ -4,9 +4,16 @@
 #include <uapi/dirent.h>
 #include <uapi/stat.h>
 #include <uapi/types.h>
+#include <uapi/unix.h>
 
 typedef int pid_t;
 typedef int ssize_t;
+
+int socket(int, int, int);
+int bind(int, const struct sockaddr_un*, socklen_t);
+int connect(int, struct sockaddr_un*, socklen_t);
+int listen(int, int);
+int accept(int, struct sockaddr_un*, socklen_t);
 
 void exit(int status) __attribute__((noreturn));
 void _exit(int status) __attribute__((noreturn));

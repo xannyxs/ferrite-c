@@ -1,8 +1,8 @@
 #ifndef FS_VFS_H
 #define FS_VFS_H
 
-#include "net/socket.h"
 #include "sys/file/file.h"
+#include <ferrite/socket.h>
 
 #include <types.h>
 
