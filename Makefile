@@ -46,6 +46,7 @@ install: kernel userspace modules
 	@cp $(USERSPACE_DIR)/bin/insmod/insmod $(SYSROOT_DIR)/bin/
 	@cp $(USERSPACE_DIR)/bin/mount/mount $(SYSROOT_DIR)/bin/
 	@cp $(USERSPACE_DIR)/bin/test/test $(SYSROOT_DIR)/bin/
+	@cp $(USERSPACE_DIR)/bin/socket_test/socket_test $(SYSROOT_DIR)/bin/
 	@cp $(MODULE_DIR)/src/basic_module.o $(SYSROOT_DIR)/module/
 	@cp $(MODULE_DIR)/src/keyboard_module.o $(SYSROOT_DIR)/module/
 	@cp $(MODULE_DIR)/src/timer_module.o $(SYSROOT_DIR)/module/

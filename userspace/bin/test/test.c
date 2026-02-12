@@ -26,8 +26,8 @@
         tests_passed++;                 \
     } while (0)
 
-int tests_passed = 0;
-int tests_failed = 0;
+static int tests_passed = 0;
+static int tests_failed = 0;
 
 TEST(fs_mkdir_basic)
 {
